@@ -7,9 +7,10 @@ import { animate, stagger, useReducedMotion } from 'framer-motion';
 type PageEnterProps = {
   children: ReactNode;
   className: string;
+  skipAnimation?: boolean;
 };
 
-export default function PageEnter({ children, className }: PageEnterProps) {
+export default function PageEnter({ children, className, skipAnimation = false }: PageEnterProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
 
@@ -21,7 +22,7 @@ export default function PageEnter({ children, className }: PageEnterProps) {
       rootElement.querySelectorAll<HTMLElement>('.minimal-reveal-line'),
     );
 
-    if (shouldReduceMotion) {
+    if (shouldReduceMotion || skipAnimation) {
       revealElements.forEach((element) => {
         element.style.opacity = '1';
         element.style.transform = 'none';
@@ -43,10 +44,10 @@ export default function PageEnter({ children, className }: PageEnterProps) {
     );
 
     return () => controls.stop();
-  }, [shouldReduceMotion]);
+  }, [shouldReduceMotion, skipAnimation]);
 
   return (
-    <div ref={rootRef} className={className}>
+    <div ref={rootRef} className={`${className}${skipAnimation ? ' minimal-navigation-arrival' : ''}`}>
       {children}
     </div>
   );

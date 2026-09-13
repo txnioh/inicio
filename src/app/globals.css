@@ -243,6 +243,56 @@ input {
   overflow: hidden;
 }
 
+.ink-writing-preview {
+  position: absolute;
+  left: 43px;
+  top: 7px;
+  width: 54px;
+  height: 27px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.ink-writing-preview svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.ink-preview-pass { clip-path: inset(0 100% 0 0); }
+.ink-writing-link:is(:hover, :focus-visible) .ink-writing-preview { opacity: 1; }
+.ink-writing-link:is(:hover, :focus-visible) .ink-preview-pass { animation: ink-link-draw 650ms cubic-bezier(.2, .65, .3, 1) both; }
+@keyframes ink-link-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+
+.ink-title { width: fit-content; }
+.minimal-navigation-arrival .minimal-reveal-line { opacity: 1; transform: none; }
+.minimal-portfolio-page:focus { outline: none; }
+html[data-page-transition] .ink-title { view-transition-name: ink-title; }
+html[data-page-transition]::view-transition-group(ink-title) { animation-duration: 420ms; animation-timing-function: cubic-bezier(.22, .8, .25, 1); }
+html[data-page-transition]::view-transition-old(ink-title),
+html[data-page-transition]::view-transition-new(ink-title) { height: 100%; object-fit: none; object-position: left center; }
+html[data-page-transition]::view-transition-old(root) { animation: page-fade-out 140ms ease both; }
+html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 260ms 100ms ease both; }
+@keyframes page-fade-out { to { opacity: 0; } }
+@keyframes page-fade-in { from { opacity: 0; } }
+
+@media (min-width: 1101px) {
+  html[data-page-transition] .page-index { view-transition-name: page-index; }
+  html[data-page-transition] .page-index a { view-transition-name: var(--index-row); view-transition-class: index-row; }
+  html[data-page-transition]::view-transition-group(page-index),
+  html[data-page-transition]::view-transition-group(.index-row) { animation-duration: 460ms; animation-timing-function: cubic-bezier(.22, .8, .25, 1); }
+  html[data-page-transition]::view-transition-old(.index-row),
+  html[data-page-transition]::view-transition-new(.index-row) { height: 100%; object-fit: none; object-position: left center; overflow: clip; }
+}
+
+@media (max-width: 640px) {
+  .ink-writing-preview { left: auto; right: 0; top: -32px; width: 64px; height: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-writing-preview { transition: none; }
+  .ink-writing-link:is(:hover, :focus-visible) .ink-preview-pass { animation: none; clip-path: inset(0); }
+  html[data-page-transition]::view-transition-group(*),
+  html[data-page-transition]::view-transition-old(*),
+  html[data-page-transition]::view-transition-new(*) { animation: none !important; }
+}
+
 .minimal-inline-player {
   position: relative;
   box-sizing: border-box;

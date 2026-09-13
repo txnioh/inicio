@@ -1,9 +1,11 @@
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import FooterRobotMark from './components/FooterRobotMark';
+import InkWritingLink from './components/InkWritingLink';
 import LocalTime from './components/LocalTime';
 import PageEnter from './components/PageEnter';
 import ProjectShowcase from './components/ProjectShowcase';
 import { VinylPlayer } from './components/VinylPlayer';
+import usePageNavigation from './usePageNavigation';
 
 function formatUpdatedAt(date: Date) {
   return new Intl.DateTimeFormat('en-US', {
@@ -21,15 +23,24 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
   );
 }
 
-export default function Home() {
+export default function App() {
+  const { path, Article, arrived } = usePageNavigation();
+  if (path === '/') return <Home arrived={arrived} />;
+  if (path === '/writing/ink') return <Suspense fallback={<main className="minimal-portfolio-page"><div className="minimal-portfolio-shell" role="status">Loading article…</div></main>}><Article /></Suspense>;
+  return <main className="minimal-portfolio-page"><div className="minimal-portfolio-shell minimal-article">
+    <header><h1>Page not found</h1></header><p>This page doesn’t exist. <a className="minimal-basic-link" href="/">Back to Index</a></p>
+  </div></main>;
+}
+
+function Home({ arrived }: { arrived: boolean }) {
   const latestCommit = {
     ...__BUILD_INFO__,
     date: new Date(__BUILD_INFO__.date),
   };
 
   return (
-    <main className="minimal-portfolio-page">
-      <PageEnter className="minimal-portfolio-shell">
+    <main className="minimal-portfolio-page" tabIndex={-1}>
+      <PageEnter className="minimal-portfolio-shell" skipAnimation={arrived}>
         <div className="minimal-homepage">
           <article className="minimal-article">
             <header>
@@ -59,6 +70,15 @@ export default function Home() {
               <a className="minimal-basic-link" href="mailto:txniodev@gmail.com">email</a>.
             </p>
           </article>
+
+          <section className="minimal-section" aria-labelledby="writing-title">
+            <div className="minimal-project-list">
+              <h3 id="writing-title" className="minimal-reveal-line">Writing</h3>
+              <ul><li><ul><li>
+                <InkWritingLink />
+              </li></ul></li></ul>
+            </div>
+          </section>
 
           <section className="minimal-section" aria-labelledby="projects-title">
             <ProjectShowcase />

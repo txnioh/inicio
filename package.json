@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name inicio --branch main"
+    "deploy": "vercel --prod"
   },
   "dependencies": {
     "framer-motion": "^12.43.0",
@@ -21,7 +21,6 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.9.0",
-    "vite": "^8.2.0",
-    "wrangler": "^4.118.0"
+    "vite": "^8.2.0"
   }
 }

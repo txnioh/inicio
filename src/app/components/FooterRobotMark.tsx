@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 
 function clamp(value: number) {
   return Math.max(-1, Math.min(1, value));
 }
 
-export default function FooterRobotMark() {
+export default function FooterRobotMark({ draggable = true, inked = false }: { draggable?: boolean; inked?: boolean }) {
   const rootRef = useRef<HTMLSpanElement>(null);
+  const reducedMotion = useReducedMotion();
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
   const attention = useMotionValue(0);
@@ -24,10 +25,12 @@ export default function FooterRobotMark() {
 
   useEffect(() => {
     const rootElement = rootRef.current;
-    if (!rootElement) return;
+    if (!rootElement || reducedMotion) return;
 
     const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse') return;
       const bounds = rootElement.getBoundingClientRect();
+      if (!bounds.width || !bounds.height) return;
       const centerX = bounds.left + bounds.width / 2;
       const centerY = bounds.top + bounds.height / 2;
       const deltaX = event.clientX - centerX;
@@ -61,29 +64,33 @@ export default function FooterRobotMark() {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('blur', handleWindowBlur);
     };
-  }, [attention, pointerX, pointerY]);
+  }, [attention, pointerX, pointerY, reducedMotion]);
 
   return (
     <span ref={rootRef} className="minimal-footer-robot-gallery" aria-hidden="true">
       <motion.span
         className="minimal-robot-option"
-        drag
+        drag={draggable && !reducedMotion}
         dragElastic={0}
         dragMomentum={false}
-        style={{ opacity }}
-        whileDrag={{ scale: 1.08 }}
+        style={reducedMotion ? undefined : { opacity }}
+        whileDrag={reducedMotion ? undefined : { scale: 1.08 }}
       >
         <svg viewBox="0 0 48 36" focusable="false">
           <motion.g
             className="minimal-robot-head-follow"
-            style={{ x: headX, y: headY, rotate: headRotate }}
+            style={reducedMotion ? undefined : { x: headX, y: headY, rotate: headRotate }}
           >
             <rect className="minimal-robot-shell" x="7" y="8" width="34" height="23" rx="10" />
             <rect className="minimal-robot-screen" x="12" y="12" width="24" height="14" rx="6" />
-            <motion.g className="minimal-robot-eyes" style={{ x: eyeX, y: eyeY }}>
+            <motion.g className="minimal-robot-eyes" style={reducedMotion ? undefined : { x: eyeX, y: eyeY }}>
               <rect x="18" y="16" width="3.6" height="6.8" rx="1.8" />
               <rect x="26.4" y="16" width="3.6" height="6.8" rx="1.8" />
             </motion.g>
+            {inked && <g className="minimal-robot-ink" stroke="none" fill="#b97096" opacity=".8">
+              <path d="M34.2 25.1c1.1-1 2.4-.2 3.2-1.1.7-.8 2.4-.2 1.7 1.1-.6 1.2-2.2 2.7-3.7 2.1-1.3-.5-2-.9-1.2-2.1Z" />
+              <circle cx="39.4" cy="22.3" r=".8" />
+            </g>}
           </motion.g>
         </svg>
       </motion.span>
