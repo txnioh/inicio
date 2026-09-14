@@ -1,23 +1,25 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { buildFan, clamp, curve, dashedPieces, markerStroke, pathThrough, resample, ribbon, segmentProgress, tangents, type Point } from './ink';
 import InkExample, { InkFilters, InkPaths } from './InkExample';
+import { InkButton, InkSlider } from './InkControls';
 
-function Choices<T extends string>({ label, value, options, onChange }: {
+function Choices<T extends string>({ label, value, options, onChange, ink, palette }: {
   label: string; value: T; options: readonly T[]; onChange: (value: T) => void;
+  ink?: string; palette?: Record<string, string>;
 }) {
   return <div className="ink-choices" role="group" aria-label={label}>
-    {options.map(option => <button type="button" key={option} aria-pressed={value === option}
-      onClick={() => onChange(option)}>{option}</button>)}
+    {options.map(option => <InkButton key={option} ink={palette?.[option] ?? ink} aria-pressed={value === option}
+      onClick={() => onChange(option)}>{option}</InkButton>)}
   </div>;
 }
 
-function Surface({ label, children, height = 210, mode = 'full', grid = false }: {
-  label: string; children: (filter: string) => ReactNode; height?: number;
+function Surface({ label, children, height = 210, width = 550, mode = 'full', grid = false }: {
+  label: string; children: (filter: string) => ReactNode; height?: number; width?: number;
   mode?: 'plain' | 'grain' | 'full'; grid?: boolean;
 }) {
   const id = `surface-${useId().replace(/:/g, '')}`;
   return <div className={`ink-board${grid ? ' ink-paper-grid' : ''}`}>
-    <svg viewBox={`0 0 550 ${height}`} role="img" aria-label={label}>
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label}>
       <InkFilters id={id} mode={mode === 'grain' ? 'grain' : 'full'} />
       {children(mode === 'plain' ? '' : `url(#${id})`)}
     </svg>
@@ -30,6 +32,7 @@ function useInkPlayback(duration: number) {
   const ref = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLInputElement>(null);
   const outputRef = useRef<HTMLOutputElement>(null);
+  const sliderRef = useRef<HTMLLabelElement>(null);
   const frame = useRef(0);
   const reduced = useRef(false);
   const started = useRef(false);
@@ -69,6 +72,7 @@ function useInkPlayback(duration: number) {
       for (const element of wipes) element.style.clipPath = `inset(0 ${(1 - t) * 100}% 0 0)`;
       if (progressRef.current) progressRef.current.value = String(Math.round(t * 100));
       if (outputRef.current) outputRef.current.value = `${Math.round(t * 100)}%`;
+      sliderRef.current?.style.setProperty('--ink-progress', String(t));
       root.dataset.progress = String(Math.round(t * 100));
     };
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -96,7 +100,7 @@ function useInkPlayback(duration: number) {
       media.removeEventListener('change', onMotionChange);
     };
   }, [replay]);
-  return { ref, replay, scrub, pause, progressRef, outputRef };
+  return { ref, replay, scrub, pause, progressRef, outputRef, sliderRef };
 }
 
 export function FanDemo() {
@@ -115,7 +119,7 @@ export function FanDemo() {
       </Surface>
     </div>
     <figcaption className="ink-demo-footer"><span>A little ink, a lot of little paths.</span>
-      <button type="button" className="ink-text-button" onClick={playback.replay} aria-label="Replay the ink fan">↻ Replay</button>
+      <InkButton className="ink-text-button" icon="replay" onClick={playback.replay} aria-label="Replay the ink fan">Replay</InkButton>
     </figcaption>
   </figure>;
 }
@@ -153,8 +157,8 @@ export function WobbleDemo() {
       {() => <InkPaths paths={paths} />}
     </Surface>
     <div className="ink-demo-controls">
-      <label className="ink-slider">Irregularity <input aria-label="Stroke irregularity" type="range" min="0" max="100" value={amount} onChange={e => setAmount(Number(e.target.value))} /><output>{amount}%</output></label>
-      <button type="button" onClick={() => setSeed(s => s + 1)}>New stroke</button>
+      <InkSlider label="Irregularity" ariaLabel="Stroke irregularity" value={amount} suffix="%" ink="#6A9BCC" onChange={e => setAmount(Number(e.target.value))} />
+      <InkButton icon="stroke" ink="#6A9BCC" onClick={() => setSeed(s => s + 1)}>New stroke</InkButton>
     </div>
     <figcaption>Seed {seed}. Bring the slider back to the same value: the same edge returns.</figcaption>
   </figure>;
@@ -167,31 +171,36 @@ export function TextureDemo() {
     <Surface label={`Pink marker stroke with ${mode.toLowerCase()} texture`} mode={mode === 'Plain' ? 'plain' : mode === 'Grain' ? 'grain' : 'full'}>
       {filter => <g filter={filter}><InkPaths paths={paths} /></g>}
     </Surface>
-    <div className="ink-demo-controls"><Choices label="Ink texture" value={mode} options={['Plain', 'Grain', 'Grain + warp']} onChange={setMode} /></div>
+    <div className="ink-demo-controls"><Choices label="Ink texture" value={mode} options={['Plain', 'Grain', 'Grain + warp']} ink="#C46686" onChange={setMode} /></div>
     <figcaption>Look inside the stroke for grain, and along the edge for displacement.</figcaption>
   </figure>;
 }
 
 export function LayersDemo() {
-  const [passes, setPasses] = useState(4);
-  const [blend, setBlend] = useState(true);
+  const [passes, setPasses] = useState(2);
   const rows = useMemo(() => Array.from({ length: 6 }, (_, i) => {
-    const y = 58 + i * 19;
-    const points: Point[] = [[120 + i * 2, y], [280, y - 3 + i], [426 - i * 3, y + 2]];
-    return markerStroke(points, { width: 32, seed: 41 + i * 17, color: '#629987', opacity: .72,
+    const y = 48 + i * 18;
+    const points: Point[] = [[32 + i, y], [138, y - 3 + i], [243 - i * 2, y + 2]];
+    return markerStroke(points, { width: 38, seed: 41 + i * 17, color: i % 2 ? '#E5C34F' : '#579DCA', opacity: .92,
       core: false, taperIn: .035, taperOut: .035, startWidth: .85, endWidth: .85 });
   }), []);
   return <figure className="ink-demo">
-    <Surface label={`${passes} green marker passes with multiply ${blend ? 'on' : 'off'}`}>
-      {filter => <g style={{ isolation: 'isolate' }}>
-        {rows.slice(0, passes).map((paths, i) => <g key={i} filter={filter} style={{ mixBlendMode: blend ? 'multiply' : 'normal' }}><InkPaths paths={paths} /></g>)}
-      </g>}
-    </Surface>
-    <div className="ink-demo-controls">
-      <label className="ink-slider">Passes <input aria-label="Number of ink passes" type="range" min="1" max="6" value={passes} onChange={e => setPasses(Number(e.target.value))} /><output>{passes}</output></label>
-      <button type="button" aria-pressed={blend} onClick={() => setBlend(v => !v)}>Multiply {blend ? 'on' : 'off'}</button>
+    <div className="ink-blend-comparison">
+      {(['normal', 'multiply'] as const).map(mode => <div key={mode} className="ink-blend-sample">
+        <div className="ink-blend-label">{mode === 'normal' ? 'Normal' : 'Multiply'}</div>
+        <Surface label={`${passes} alternating blue and yellow marker passes with ${mode} blending`} width={275} height={190} mode="grain">
+          {filter => <g style={{ isolation: 'isolate' }} transform={`translate(0 ${(6 - passes) * 9})`}>
+            {rows.slice(0, passes).map((paths, i) => <g key={i} filter={filter} style={{ mixBlendMode: mode }}><InkPaths paths={paths} /></g>)}
+          </g>}
+        </Surface>
+      </div>)}
     </div>
-    <figcaption>Where two passes meet, the same colour gets heavier.</figcaption>
+    <div className="ink-demo-controls">
+      <InkSlider label="Passes" ariaLabel="Number of ink passes" min={1} max={6} value={passes} ink="#629987" onChange={e => setPasses(Number(e.target.value))} />
+    </div>
+    <figcaption>{passes === 1
+      ? 'One pass, no overlap. Both look the same. Add a second pass.'
+      : 'Same strokes, same opacity. Look at the overlap: yellow sits on blue; Multiply makes a deeper green.'}</figcaption>
   </figure>;
 }
 
@@ -214,11 +223,12 @@ export function RevealDemo() {
       </Surface>
     </div>
     <div className="ink-demo-controls">
-      <label className="ink-slider">Progress <input ref={playback.progressRef} aria-label="Reveal progress" type="range" min="0" max="100" defaultValue="100"
+      <InkSlider label="Progress" ariaLabel="Reveal progress" inputRef={playback.progressRef} outputRef={playback.outputRef} rootRef={playback.sliderRef}
+        defaultValue={100} suffix="%" ink="#6A9BCC"
         onPointerDown={playback.pause}
         onKeyDown={e => { if (['Home', 'End', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown'].includes(e.key)) playback.pause(); }}
-        onChange={e => playback.scrub(Number(e.target.value) / 100)} /><output ref={playback.outputRef} aria-live="off">100%</output></label>
-      <button type="button" onClick={playback.replay} aria-label="Replay the reveal comparison">↻ Replay</button>
+        onChange={e => playback.scrub(Number(e.target.value) / 100)} />
+      <InkButton icon="replay" ink="#6A9BCC" onClick={playback.replay} aria-label="Replay the reveal comparison">Replay</InkButton>
     </div>
     <figcaption>Scrub slowly. A wipe exposes an area; the lower line adds complete marks.</figcaption>
   </figure>;
@@ -233,7 +243,7 @@ export function ExampleDemo() {
       <InkExample color={palette[color]} />
       <div className="ink-chart-axis"><span>Monday</span><span>Friday</span></div>
     </div>
-    <div className="ink-demo-controls"><Choices label="Example ink colour" value={color} options={['Green', 'Blue', 'Rose']} onChange={setColor} /></div>
+    <div className="ink-demo-controls"><Choices label="Example ink colour" value={color} options={['Green', 'Blue', 'Rose']} palette={palette} onChange={setColor} /></div>
     <figcaption>Same points, same seed. A different pen.</figcaption>
   </figure>;
 }

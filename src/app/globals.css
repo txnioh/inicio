@@ -285,9 +285,25 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   .ink-writing-preview { left: auto; right: 0; top: -32px; width: 64px; height: 28px; }
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .ink-writing-preview { display: none; }
+  .ink-writing-link .ink-title {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    background-size: 0 1px;
+  }
+  .ink-writing-link.ink-touch-leaving .ink-title {
+    animation: ink-touch-underline 320ms cubic-bezier(.22, .8, .25, 1) both;
+  }
+}
+
+@keyframes ink-touch-underline { to { background-size: 100% 1px; } }
+
 @media (prefers-reduced-motion: reduce) {
   .ink-writing-preview { transition: none; }
   .ink-writing-link:is(:hover, :focus-visible) .ink-preview-pass { animation: none; clip-path: inset(0); }
+  .ink-writing-link.ink-touch-leaving .ink-title { animation: none; background-size: 100% 1px; }
   html[data-page-transition]::view-transition-group(*),
   html[data-page-transition]::view-transition-old(*),
   html[data-page-transition]::view-transition-new(*) { animation: none !important; }

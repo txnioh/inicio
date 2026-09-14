@@ -1,0 +1,94 @@
+- main [ref=e3]:
+  - generic [ref=e5]:
+    - article [ref=e6]:
+      - generic [ref=e7]:
+        - heading "Antonio J. Gonzalez" [level=1] [ref=e8]
+        - time [ref=e9]: Updated Sep 13, 2026 · b2114f0 Simplify web animation implementation
+      - region "Now playing" [ref=e10]:
+        - generic [ref=e11]:
+          - button "Browse record collection" [ref=e13] [cursor=pointer]
+          - generic [ref=e18]:
+            - paragraph [ref=e19]:
+              - strong [ref=e20]: Birds Are Still
+              - generic [aria-hidden] [ref=e21]: —
+              - generic [ref=e22]: Takashi Yoshimatsu
+            - generic [ref=e23]:
+              - generic [ref=e24]:
+                - button "Previous track" [ref=e25] [cursor=pointer]: prev
+                - button "Play Birds Are Still" [ref=e26] [cursor=pointer]: wait
+                - button "Next track" [ref=e27] [cursor=pointer]: next
+              - slider "Track progress" [disabled] [ref=e28]
+              - generic [ref=e30]: loading…
+            - status [ref=e31]
+            - button "Browse 9 records ↗" [ref=e33] [cursor=pointer]
+      - paragraph [ref=e34]: I'm Antonio, also known as txnio. I build things for the web and use browser windows as a place for interface experiments.
+      - paragraph [ref=e35]: I make practical software, automation, and visual interface experiments with TypeScript, React, Next.js, Python, .NET, and AI.
+      - paragraph [ref=e36]:
+        - text: You can find me on
+        - link "LinkedIn" [ref=e37] [cursor=pointer]:
+          - /url: https://www.linkedin.com/in/txnio/
+        - text: ","
+        - link "GitHub" [ref=e38] [cursor=pointer]:
+          - /url: https://github.com/txnioh
+        - text: ", try"
+        - link "txniOS" [ref=e39] [cursor=pointer]:
+          - /url: https://os.txnio.com
+        - text: ", or reach me via"
+        - link "email" [ref=e40] [cursor=pointer]:
+          - /url: mailto:txniodev@gmail.com
+        - text: .
+    - region [ref=e41]:
+      - generic [ref=e42]:
+        - heading "Writing" [level=3] [ref=e43]
+        - list [ref=e44]:
+          - listitem [ref=e45]:
+            - list [ref=e46]:
+              - listitem [ref=e47]:
+                - link "Making SVG feel like ink 2026 Read" [ref=e48] [cursor=pointer]:
+                  - /url: /writing/ink
+                  - heading "Making SVG feel like ink" [level=2] [ref=e49]
+                  - generic [ref=e50]:
+                    - generic [ref=e51]: "2026"
+                    - generic [ref=e52]: Read
+    - region [ref=e53]:
+      - generic [ref=e54]:
+        - heading "Projects" [level=3] [ref=e55]
+        - list [ref=e56]:
+          - listitem [ref=e57]:
+            - list [ref=e58]:
+              - listitem [ref=e59]:
+                - link [ref=e60] [cursor=pointer]:
+                  - /url: https://tresde.txnio.com
+                  - heading "Tresdé" [level=2] [ref=e61]
+                  - generic "apps project" [ref=e62]:
+                    - generic [ref=e63]: apps
+                    - generic [ref=e64]: View
+              - listitem [ref=e65]:
+                - link [ref=e66] [cursor=pointer]:
+                  - /url: https://os.txnio.com
+                  - heading "txniOS" [level=2] [ref=e67]
+                  - generic "apps project" [ref=e68]:
+                    - generic [ref=e69]: apps
+                    - generic [ref=e70]: View
+              - listitem [ref=e71]:
+                - link [ref=e72] [cursor=pointer]:
+                  - /url: https://vgpulab.txnio.com
+                  - heading "VGPU Lab" [level=2] [ref=e73]
+                  - generic "lab project" [ref=e74]:
+                    - generic [ref=e75]: lab
+                    - generic [ref=e76]: View
+              - listitem [ref=e77]:
+                - link [ref=e78] [cursor=pointer]:
+                  - /url: https://varita.txnio.com
+                  - heading "Varita" [level=2] [ref=e79]
+                  - generic "lab project" [ref=e80]:
+                    - generic [ref=e81]: lab
+                    - generic [ref=e82]: View
+              - listitem [ref=e83]:
+                - link [ref=e84] [cursor=pointer]:
+                  - /url: https://minder-txnio.vercel.app/
+                  - heading "Minder" [level=2] [ref=e85]
+                  - generic "apps project" [ref=e86]:
+                    - generic [ref=e87]: apps
+                    - generic [ref=e88]: View
+    - paragraph [ref=e91]: 11:43 in Madrid, Spain

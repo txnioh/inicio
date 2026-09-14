@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type SyntheticEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import RobotHomeLink from '../components/RobotHomeLink';
 import FooterRobotMark from '../components/FooterRobotMark';
 import { ExampleDemo, FanDemo, LayersDemo, RevealDemo, ShapeDemo, TextureDemo, WobbleDemo } from './InkDemos';
@@ -14,12 +14,12 @@ const sections = [
   ['credits', 'Notes & credits'],
 ] as const;
 
-function Contents({ activeId, inked, onNavigate }: { activeId: string | null; inked: boolean; onNavigate: (id: string) => void }) {
+function Contents({ activeId, onNavigate }: { activeId: string | null; onNavigate: (id: string) => void }) {
   const activeIndex = sections.findIndex(([id]) => id === activeId);
   return <div className="ink-contents-list">
     <span className="ink-section-robot" data-active={activeIndex >= 0}
       style={{ '--active-section': Math.max(0, activeIndex) } as CSSProperties} aria-hidden="true">
-      <FooterRobotMark draggable={false} inked={inked} />
+      <FooterRobotMark draggable={false} />
     </span>
     <ul>{sections.map(([id, title], index) => <li key={id}>
       <a href={`#${id}`} style={{ '--index-row': `index-row-${index}` } as CSSProperties}
@@ -30,14 +30,7 @@ function Contents({ activeId, inked, onNavigate }: { activeId: string | null; in
 
 export default function InkArticle() {
   const mobileContents = useRef<HTMLDetailsElement>(null);
-  const [inked, setInked] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
-
-  function noticeInk(event: SyntheticEvent<HTMLElement>) {
-    if (!inked && event.target instanceof Element && event.target.closest('.ink-demo button, .ink-demo input')) {
-      setInked(true);
-    }
-  }
 
   useEffect(() => {
     const headings = sections.map(([id]) => document.getElementById(id)!);
@@ -73,12 +66,12 @@ export default function InkArticle() {
   return <main className="minimal-portfolio-page ink-page" tabIndex={-1}>
     <a className="ink-skip" href="#ink-article">Skip to article</a>
     <aside className="ink-sidebar">
-      <RobotHomeLink className="ink-index" inked={inked} />
-      <nav className="page-index" aria-label="Article sections"><Contents activeId={activeSection} inked={inked} onNavigate={setActiveSection} /></nav>
+      <RobotHomeLink className="ink-index" />
+      <nav className="page-index" aria-label="Article sections"><Contents activeId={activeSection} onNavigate={setActiveSection} /></nav>
     </aside>
     <div className="minimal-portfolio-shell ink-shell">
-      <RobotHomeLink className="ink-mobile-index" inked={inked} />
-      <article className="minimal-article ink-article" id="ink-article" onClick={noticeInk} onChange={noticeInk}>
+      <RobotHomeLink className="ink-mobile-index" />
+      <article className="minimal-article ink-article" id="ink-article">
         <header>
           <h1 className="ink-title">Making SVG feel like ink</h1>
           <time dateTime="2026-09-11">11 September, 2026</time>
@@ -90,7 +83,7 @@ export default function InkArticle() {
 
         <details className="ink-mobile-contents" ref={mobileContents}>
           <summary>In this article <span aria-hidden="true">+</span></summary>
-          <nav aria-label="Article sections on mobile"><Contents activeId={activeSection} inked={inked} onNavigate={id => {
+          <nav aria-label="Article sections on mobile"><Contents activeId={activeSection} onNavigate={id => {
             setActiveSection(id);
             if (mobileContents.current) mobileContents.current.open = false;
           }} /></nav>
@@ -125,11 +118,12 @@ export default function InkArticle() {
 
         <section id="layers">
           <h2>Go over it again</h2>
-          <p>A broad patch of colour can be built from several narrower passes. Leave a little variation in their starting points and let the edges overlap. You can see the direction the imaginary hand travelled.</p>
+          <p>A broad patch of colour can be built from several narrower passes. Where they overlap, the colour builds up. With one pen, that mostly looks darker. I’m using blue and yellow here to make the mixing easier to see.</p>
           <LayersDemo />
-          <p>Multiply makes the overlap darker. For opaque colours it multiplies their colour channels; with translucent ink, the browser also accounts for alpha. The result depends on what is already underneath. Turn Multiply off and the crossing becomes less pronounced even though the passes have exactly the same shape.</p>
-          <p>Each pass needs its own blending group. Putting all the passes in one group and multiplying that finished group against the paper changes a different relationship. Here they blend against each other inside an isolated group, keeping the effect local to the drawing.</p>
-          <p>The stroke generator also has a small darker core for thicker lines. I’ve disabled it in this example to keep the comparison about overlapping passes. Layering can get muddy quickly; four passes already give this little rectangle quite a lot of ink.</p>
+          <p>In <strong>Normal</strong>, the newest pass covers part of the colour underneath. Some blue still shows through the translucent yellow. Transparency alone already mixes the two; overlapping passes of the same colour would also get darker.</p>
+          <p><strong>Multiply</strong> changes how those colours combine. It multiplies their red, green and blue channel values before compositing with the same opacity. With these two pens, the overlap becomes a deeper green. The parts that don’t overlap stay the same. It is a useful approximation of layered ink, not a physical simulation of pigment.</p>
+          <p>Bring the slider down to one pass: both views match. Add a second and the difference appears where the marks meet. Keep adding passes to see why too much ink gets muddy. Both views use the same paths, grain and opacity; only the blend mode changes.</p>
+          <p>Apply the blend mode to each pass, inside an isolated group. That lets the marks mix with each other without picking up colours elsewhere on the page. Blending the finished patch as one image would affect its relationship with the background instead.</p>
         </section>
 
         <section id="reveal">
@@ -155,7 +149,7 @@ export default function InkArticle() {
           <p>This adaptation uses my standalone extraction as its starting point. The geometry, ink layers, filters and fan timing were checked against the public page code on 11 September 2026. The simplified fan, controls and illustrative chart here are for exploring the drawing technique.</p>
           <p>The format owes a lot to Benji Taylor’s <a href="https://benji.org/drawesome" target="_blank" rel="noreferrer">Drawesome</a>, <a href="https://benji.org/morphing-icons-with-claude" target="_blank" rel="noreferrer">morphing icons</a> and <a href="https://benji.org/liveline" target="_blank" rel="noreferrer">Liveline</a> posts: something to try, followed by enough explanation to make use of it.</p>
         </section>
-        <footer className="ink-article-footer"><RobotHomeLink inked={inked} /><span>Antonio J. Gonzalez</span></footer>
+        <footer className="ink-article-footer"><RobotHomeLink /><span>Antonio J. Gonzalez</span></footer>
       </article>
     </div>
   </main>;

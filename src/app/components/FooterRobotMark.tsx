@@ -7,7 +7,7 @@ function clamp(value: number) {
   return Math.max(-1, Math.min(1, value));
 }
 
-export default function FooterRobotMark({ draggable = true, inked = false }: { draggable?: boolean; inked?: boolean }) {
+export default function FooterRobotMark({ draggable = true }: { draggable?: boolean }) {
   const rootRef = useRef<HTMLSpanElement>(null);
   const reducedMotion = useReducedMotion();
   const pointerX = useMotionValue(0);
@@ -87,10 +87,6 @@ export default function FooterRobotMark({ draggable = true, inked = false }: { d
               <rect x="18" y="16" width="3.6" height="6.8" rx="1.8" />
               <rect x="26.4" y="16" width="3.6" height="6.8" rx="1.8" />
             </motion.g>
-            {inked && <g className="minimal-robot-ink" stroke="none" fill="#b97096" opacity=".8">
-              <path d="M34.2 25.1c1.1-1 2.4-.2 3.2-1.1.7-.8 2.4-.2 1.7 1.1-.6 1.2-2.2 2.7-3.7 2.1-1.3-.5-2-.9-1.2-2.1Z" />
-              <circle cx="39.4" cy="22.3" r=".8" />
-            </g>}
           </motion.g>
         </svg>
       </motion.span>

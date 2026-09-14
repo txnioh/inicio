@@ -17,6 +17,7 @@ export default function usePageNavigation() {
     history.scrollRestoration = 'manual';
     let request = 0;
     let running: ViewTransition | undefined;
+    let touchNavigationTimer = 0;
 
     async function navigate(url: URL, fromHistory = false) {
       const nextPath = pathname(url);
@@ -64,6 +65,15 @@ export default function usePageNavigation() {
       const url = new URL(link.href);
       if (url.origin !== location.origin || !['/', '/writing/ink'].includes(pathname(url)) || pathname(url) === currentPath.current) return;
       event.preventDefault();
+      if (link.classList.contains('ink-writing-link') && matchMedia('(hover: none) and (pointer: coarse)').matches) {
+        if (touchNavigationTimer) return;
+        link.classList.add('ink-touch-leaving');
+        touchNavigationTimer = window.setTimeout(() => {
+          touchNavigationTimer = 0;
+          void navigate(url);
+        }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 360);
+        return;
+      }
       void navigate(url);
     }
 
@@ -82,6 +92,7 @@ export default function usePageNavigation() {
     window.addEventListener('popstate', onPopState);
     return () => {
       request++;
+      clearTimeout(touchNavigationTimer);
       running?.skipTransition();
       delete document.documentElement.dataset.pageTransition;
       history.scrollRestoration = previousRestoration;

@@ -1,0 +1,159 @@
+- main [ref=e5]:
+  - link "Skip to article" [ref=e6] [cursor=pointer]:
+    - /url: "#ink-article"
+  - complementary [ref=e7]:
+    - link "Home" [ref=e8] [cursor=pointer]:
+      - /url: /
+    - navigation "Article sections" [ref=e10]:
+      - list [ref=e12]:
+        - listitem [ref=e13]:
+          - link "Start with a shape" [ref=e14] [cursor=pointer]:
+            - /url: "#shape"
+        - listitem [ref=e15]:
+          - link "Keep the wobble still" [ref=e16] [cursor=pointer]:
+            - /url: "#wobble"
+        - listitem [ref=e17]:
+          - link "Leave some paper showing" [ref=e18] [cursor=pointer]:
+            - /url: "#texture"
+        - listitem [ref=e19]:
+          - link "Go over it again" [ref=e20] [cursor=pointer]:
+            - /url: "#layers"
+        - listitem [ref=e21]:
+          - link "Let it arrive" [ref=e22] [cursor=pointer]:
+            - /url: "#reveal"
+        - listitem [ref=e23]:
+          - link "Use it somewhere" [ref=e24] [cursor=pointer]:
+            - /url: "#use"
+        - listitem [ref=e25]:
+          - link "Notes & credits" [ref=e26] [cursor=pointer]:
+            - /url: "#credits"
+  - article [ref=e28]:
+    - generic [ref=e29]:
+      - heading "Making SVG feel like ink" [level=1] [ref=e30]
+      - time [ref=e31]: 11 September, 2026
+    - paragraph [ref=e32]:
+      - text: The coloured lines in
+      - link "Anthropic’s economic scenarios" [ref=e33] [cursor=pointer]:
+        - /url: https://www.anthropic.com/institute/econ-scenarios
+      - text: have a lovely unevenness. Some parts carry more ink. Little gaps let the paper through. As the fan opens, individual marks arrive at slightly different times.
+    - paragraph [ref=e34]: I pulled the drawing into a standalone demo, then broke it into smaller examples. Here’s the result, followed by the pieces you can take apart.
+    - figure "A little ink, a lot of little paths. Replay the ink fan" [ref=e35]:
+      - img "A fan of blue, green and pink ink strokes opening across graph paper" [ref=e38]
+      - generic [ref=e146]:
+        - generic [ref=e147]: A little ink, a lot of little paths.
+        - button "Replay the ink fan" [ref=e148] [cursor=pointer]:
+          - generic [ref=e152]: Replay
+    - paragraph [ref=e153]: The drawings on this page use SVG. Their outlines come from JavaScript, and a filter gives the colour its grain. The examples use synthetic curves; the original article is where the economic model lives. I’ve kept its drawing approach and simplified the scenes so each control has something specific to explain.
+    - generic [ref=e154]:
+      - heading "Start with a shape" [level=2] [ref=e155]
+      - paragraph [ref=e156]: A regular SVG stroke has one width along its path. A marker leaves a broader middle, uneven edges, and a small change in shape where you lift the pen. Drawing that perimeter gives us control over all of those details.
+      - paragraph [ref=e157]: "Start with points along a curve. At each point, look at its neighbours to find the direction of travel. Turn that direction a quarter turn to get a normal: a line pointing across the stroke. Move a little way along it for one edge, and the opposite way for the other."
+      - figure "One curve. Switch to Outline to see the two edges around it." [ref=e158]:
+        - img "The same curved stroke shown as outline" [ref=e3205]
+        - group "Stroke construction" [ref=e166]:
+          - button "Path" [ref=e167] [cursor=pointer]
+          - button "Outline" [pressed] [ref=e169] [cursor=pointer]
+          - button "Ink" [ref=e171] [cursor=pointer]
+      - paragraph [ref=e174]: Join the left edge forwards and the right edge backwards, then close the shape. The result is a filled path. Width becomes a value we can change at each point. Simulated pressure widens the middle and tapers the ends, while separate noise values add independent irregularity to the edges.
+      - paragraph [ref=e175]: "The points are spaced by distance along the curve before this calculation. That keeps a crowded group of input points from packing all the roughness into one corner. For these gently curving marks, a modest number of samples is enough. Tight turns need more care: a very wide outline can fold over itself."
+    - generic [ref=e176]:
+      - heading "Keep the wobble still" [level=2] [ref=e177]
+      - paragraph [ref=e178]: Randomness gives a stroke some variation, but it also needs a memory. If every render chooses new random values, the edges move whenever anything else on the page updates. A line that has already been drawn should stay put.
+      - paragraph [ref=e179]: Each stroke gets a seed. The generator produces the same sequence from that seed, and neighbouring values blend smoothly into each other. The irregularity runs along the line’s length. It has no clock.
+      - 'figure "Seed 7. Bring the slider back to the same value: the same edge returns." [ref=e180]':
+        - img "Blue stroke with 50 percent irregularity, seed 7" [ref=e3250]
+        - generic [ref=e184]:
+          - generic [ref=e185]:
+            - generic [ref=e186]: Irregularity
+            - slider "Stroke irregularity" [active] [ref=e188] [cursor=pointer]: "50"
+            - status [ref=e189]: 50%
+          - button "New stroke" [ref=e190] [cursor=pointer]
+      - paragraph [ref=e196]:
+        - text: Move the slider, then bring it back to 35%. The old edge returns.
+        - strong [ref=e197]: New stroke
+        - text: changes the seed, giving the next mark a different shape. This example has its texture filter switched off so you can see exactly what the geometry contributes.
+      - paragraph [ref=e198]: The width and the two edges use different sequences derived from the same seed. If both sides followed identical noise, the line would look much more regular. Keep the variation small enough that you can still read the underlying curve; the far end of the slider is there to make the tradeoff obvious.
+    - generic [ref=e199]:
+      - heading "Leave some paper showing" [level=2] [ref=e200]
+      - paragraph [ref=e201]: Even an irregular silhouette can look like a flat sticker. The little pale interruptions inside a real mark help it feel attached to the paper. SVG filters can make that texture without loading an image.
+      - figure "Look inside the stroke for grain, and along the edge for displacement." [ref=e202]:
+        - img "Pink marker stroke with grain + warp texture" [ref=e204]
+        - group "Ink texture" [ref=e208]:
+          - button "Plain" [ref=e209] [cursor=pointer]
+          - button "Grain" [ref=e211] [cursor=pointer]
+          - button "Grain + warp" [pressed] [ref=e213] [cursor=pointer]
+      - paragraph [ref=e216]: A turbulence filter generates a noise field. Its brightness becomes a transparency map, which removes some ink from parts of the mark. The paper becomes visible through those areas.
+      - paragraph [ref=e217]: The full filter adds another, coarser noise field and uses a displacement map to shift the ink slightly. Look at the outer edge when switching between Grain and Grain + warp. Both views keep the exact same path underneath.
+      - paragraph [ref=e218]: The source includes lighter filters that omit this displacement, too. That is a useful option for a dense scene. Filters work on rendered pixels, so a large filtered area costs more than a small swatch. I would start by checking the effect at its actual display size before adding more noise or stronger distortion.
+    - generic [ref=e219]:
+      - heading "Go over it again" [level=2] [ref=e220]
+      - paragraph [ref=e221]: A broad patch of colour can be built from several narrower passes. Leave a little variation in their starting points and let the edges overlap. You can see the direction the imaginary hand travelled.
+      - figure "Where two passes meet, the same colour gets heavier." [ref=e222]:
+        - img "4 green marker passes with multiply on" [ref=e224]
+        - generic [ref=e234]:
+          - generic [ref=e235]:
+            - generic [ref=e236]: Passes
+            - slider "Number of ink passes" [ref=e238] [cursor=pointer]: "4"
+            - status [ref=e239]: "4"
+          - button "Multiply on" [pressed] [ref=e240] [cursor=pointer]
+      - paragraph [ref=e246]: Multiply makes the overlap darker. For opaque colours it multiplies their colour channels; with translucent ink, the browser also accounts for alpha. The result depends on what is already underneath. Turn Multiply off and the crossing becomes less pronounced even though the passes have exactly the same shape.
+      - paragraph [ref=e247]: Each pass needs its own blending group. Putting all the passes in one group and multiplying that finished group against the paper changes a different relationship. Here they blend against each other inside an isolated group, keeping the effect local to the drawing.
+      - paragraph [ref=e248]: The stroke generator also has a small darker core for thicker lines. I’ve disabled it in this example to keep the comparison about overlapping passes. Layering can get muddy quickly; four passes already give this little rectangle quite a lot of ink.
+    - generic [ref=e249]:
+      - heading "Let it arrive" [level=2] [ref=e250]
+      - paragraph [ref=e251]: "Once the shape and texture are in place, the animation has surprisingly little drawing to do. The standalone demo uses two approaches: a moving crop for its small filled shapes, and progressively added pieces for the fan."
+      - figure "Scrub slowly. A wipe exposes an area; the lower line adds complete marks." [ref=e252]:
+        - img "Comparison of a left to right wipe and the same curve appearing segment by segment" [ref=e255]:
+          - generic [ref=e256]: Clip reveal
+          - generic [ref=e262]: Segments
+        - generic [ref=e264]:
+          - generic [ref=e265]:
+            - generic [ref=e266]: Progress
+            - slider "Reveal progress" [ref=e268] [cursor=pointer]: "0"
+            - status [ref=e269]: 0%
+          - button "Replay the reveal comparison" [ref=e270] [cursor=pointer]:
+            - generic [ref=e274]: Replay
+      - paragraph [ref=e276]: The upper line uses a moving crop. Its right inset shrinks from 100% to zero, exposing the drawing from left to right. That works well for these horizontal examples. A curve that doubles back would expose several parts at once; following that path needs a different reveal.
+      - paragraph [ref=e277]: The lower line consists of short, complete marks. Each gets a threshold along the animation timeline. Each lane has a repeatable delay and duration, so a group of lines can start together without marching in perfect lockstep.
+      - paragraph [ref=e278]: Anthropic’s fan appends pieces as it advances, with variation around the leading edge. These teaching demos build the pieces first and change their visibility, which also lets the progress slider run backwards. The frame loop never regenerates the outlines. With reduced motion enabled, the completed drawing appears immediately.
+    - generic [ref=e279]:
+      - heading "Use it somewhere" [level=2] [ref=e280]
+      - paragraph [ref=e281]: A small graph is a good place to try this. Give the generator a handful of points, choose a width and a seed, and put the returned paths inside a filtered group. Change the colour below to see how the same drawing feels with a different pen.
+      - figure "Same points, same seed. A different pen." [ref=e282]:
+        - generic [ref=e283]:
+          - generic [ref=e284]:
+            - generic [ref=e285]: Tabs I meant to close
+            - generic [ref=e286]: an illustrative trend ↗
+          - img "An illustrative line rising across the page" [ref=e287]
+          - generic [ref=e292]:
+            - generic [ref=e293]: Monday
+            - generic [ref=e294]: Friday
+        - group "Example ink colour" [ref=e296]:
+          - button "Green" [pressed] [ref=e297] [cursor=pointer]
+          - button "Blue" [ref=e299] [cursor=pointer]
+          - button "Rose" [ref=e301] [cursor=pointer]
+      - paragraph [ref=e304]: Use a unique filter ID for every instance. Otherwise two examples on the same page can quietly use each other’s filter. The fixed viewBox lets this graph resize with its container. For a live chart, keep the seed attached to the series and rebuild the geometry when its data changes.
+      - paragraph [ref=e305]: I like this at the size of a margin note or a small illustration. Keep labels crisp, give the paper room, and let a few marks do the work. My browser tabs have supplied enough growth for one chart.
+    - generic [ref=e306]:
+      - heading "Notes & credits" [level=2] [ref=e307]
+      - paragraph [ref=e308]:
+        - text: The drawing approach comes from
+        - link "Anthropic’s Scenarios for our Economic Future" [ref=e309] [cursor=pointer]:
+          - /url: https://www.anthropic.com/institute/econ-scenarios
+        - text: . Its credits name Kelsey Nanan for design and implementation of the interactive experience, with visual design and art direction by Nikki Makagiansar and Monika Tuchowska. Kyle Turman and Szymon Sacher built the scenario explorer; Fayaz Ashraf and Ryan Heller contributed engineering.
+      - paragraph [ref=e310]: This adaptation uses my standalone extraction as its starting point. The geometry, ink layers, filters and fan timing were checked against the public page code on 11 September 2026. The simplified fan, controls and illustrative chart here are for exploring the drawing technique.
+      - paragraph [ref=e311]:
+        - text: The format owes a lot to Benji Taylor’s
+        - link "Drawesome" [ref=e312] [cursor=pointer]:
+          - /url: https://benji.org/drawesome
+        - text: ","
+        - link "morphing icons" [ref=e313] [cursor=pointer]:
+          - /url: https://benji.org/morphing-icons-with-claude
+        - text: and
+        - link "Liveline" [ref=e314] [cursor=pointer]:
+          - /url: https://benji.org/liveline
+        - text: "posts: something to try, followed by enough explanation to make use of it."
+    - generic [ref=e315]:
+      - link "Home" [ref=e316] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e318]: Antonio J. Gonzalez
