@@ -35,10 +35,10 @@ for (const [source, name] of [['ink.ts', 'ink'], ['InkExample.tsx', 'InkExample'
 }
 const ink = await import(pathToFileURL(path.join(cache, 'ink.mjs')));
 const { InkFilters, InkPaths } = await import(pathToFileURL(path.join(cache, 'InkExample.mjs')));
-const { curve, markerStroke, resample, ribbon, tangents, pathThrough, buildFan, segmentProgress, clamp } = ink;
+const { curve, markerStroke, resample, ribbon, tangents, pathThrough, buildFan, buildLayerPasses, segmentProgress, clamp } = ink;
 
 const W = 1080, H = 1080, FPS = 30, DURATION = 18;
-const PAPER = '#f8f6f0', TEXT = '#373b35', MUTED = '#777b72';
+const PAPER = '#fdfdfc', TEXT = '#373b35', MUTED = '#777b72';
 const canvas = createCanvas(W, H);
 const ctx = canvas.getContext('2d');
 const ease = n => { const t = clamp(n); return t * t * (3 - 2 * t); };
@@ -71,8 +71,8 @@ function paper() {
   for (let x = 36; x < W; x += 36) line(x, 0, x, H, .045);
   for (let y = 36; y < H; y += 36) line(0, y, W, y, .045);
   const fade = ctx.createLinearGradient(0, 0, 0, H);
-  fade.addColorStop(0, '#f8f6f0'); fade.addColorStop(.27, '#f8f6f000');
-  fade.addColorStop(.78, '#f8f6f000'); fade.addColorStop(1, '#f8f6f0');
+  fade.addColorStop(0, PAPER); fade.addColorStop(.27, `${PAPER}00`);
+  fade.addColorStop(.78, `${PAPER}00`); fade.addColorStop(1, PAPER);
   ctx.fillStyle = fade; ctx.fillRect(0, 0, W, H);
 }
 function chrome() {
@@ -93,8 +93,8 @@ function choices(labels, selected, y = 818) {
   let x = (W - total) / 2;
   labels.forEach((label, i) => {
     if (i === selected) {
-      ctx.fillStyle = '#e9e9e0';
-      ctx.beginPath(); ctx.roundRect(x, y - 34, widths[i], 52, 26); ctx.fill();
+      ctx.fillStyle = TEXT;
+      ctx.fillRect(x + 22, y + 11, widths[i] - 44, 1.5);
     }
     text(label, x + widths[i] / 2, y, 23, i === selected ? TEXT : MUTED, 400, 'center');
     x += widths[i] + 8;
@@ -128,17 +128,14 @@ const pink = svgPaths(markerStroke(curve(), { width: 52, seed: 23, color: '#C466
 const textures = await Promise.all(['plain','grain','full'].map((mode,i)=>svgImage(`texture-${i}`,
   mode==='plain' ? pink : `${defs(mode)}<g filter="url(#ink)">${pink}</g>`,
   '92 20 366 171', 988, 462)));
-const rows = Array.from({length:6},(_,i)=> {
-  const y=58+i*19;
-  return markerStroke([[120+i*2,y],[280,y-3+i],[426-i*3,y+2]],{
-    width:32,seed:41+i*17,color:'#629987',opacity:.72,core:false,
-    taperIn:.035,taperOut:.035,startWidth:.85,endWidth:.85,
-  });
-});
+const rows = buildLayerPasses().slice(0, 2);
 // Render passes separately; Skia's multiply keeps the same overlap composition
 // as the isolated groups in LayersDemo (and avoids renderer-specific SVG CSS).
 const layers = await Promise.all(rows.map((p,i)=>svgImage(`layer-${i}`,
-  `${defs('full')}<g filter="url(#ink)">${svgPaths(p)}</g>`, '80 18 390 190', 975, 475)));
+  `${defs('grain')}<g transform="translate(0 36)"><g filter="url(#ink)">${svgPaths(p)}</g></g>`,
+  '0 0 275 190', 450, 312)));
+const blendCanvas = createCanvas(450, 312);
+const blendCtx = blendCanvas.getContext('2d');
 
 async function scene(id, time, opacity = 1, shift = 0) {
   ctx.save(); ctx.globalAlpha = opacity; ctx.translate(0, shift);
@@ -164,17 +161,22 @@ async function scene(id, time, opacity = 1, shift = 0) {
     choices(['Plain','Grain','Grain + warp'],s);
   }
   if (id === 3) {
-    title('go over it again.', 'ink builds up where the strokes overlap.');
-    const passes = Math.min(6, 1 + Math.floor(Math.max(0,time-.35)/.4));
-    ctx.globalCompositeOperation='multiply';
-    for(let i=0;i<passes;i++) {
-      const start = i === 0 ? -1 : .35+i*.4;
-      const p = ease((time-start)/.35);
-      ctx.save(); ctx.beginPath(); ctx.rect(52,310,975*p,480); ctx.clip();
-      ctx.drawImage(layers[i],52,310); ctx.restore();
+    title('go over it again.', 'same strokes. same opacity.');
+    for (const [index, mode] of ['source-over', 'multiply'].entries()) {
+      blendCtx.clearRect(0, 0, 450, 312);
+      blendCtx.globalCompositeOperation = mode;
+      for (let i = 0; i < layers.length; i++) {
+        const p = i === 0 ? 1 : ease((time - .85) / .6);
+        blendCtx.save(); blendCtx.beginPath(); blendCtx.rect(0, 0, 450 * p, 312); blendCtx.clip();
+        blendCtx.drawImage(layers[i], 0, 0); blendCtx.restore();
+      }
+      const x = 72 + index * 486;
+      text(index === 0 ? 'Normal' : 'Multiply', x + 225, 392, 28, TEXT, 400, 'center');
+      // Composite the finished transparent group onto the paper, as in the article.
+      ctx.drawImage(blendCanvas, x, 414);
     }
-    ctx.globalCompositeOperation='source-over';
-    choices([`${passes} ${passes===1?'pass':'passes'}`, 'Multiply on'],0);
+    text(time < .85 ? 'one pass. both look the same.' : 'the difference lives in the overlap.',
+      540, 818, 25, MUTED, 400, 'center');
   }
   ctx.restore();
 }
@@ -211,11 +213,12 @@ console.log('Preview frames saved.');
 if (process.argv.includes('--preview')) process.exit(0);
 
 const videoPath = path.join(out,'ink-for-x.mp4');
+const pendingVideoPath = path.join(cache, 'ink-for-x.mp4');
 const ffmpeg = spawn('ffmpeg', ['-y','-loglevel','error','-f','image2pipe','-framerate',String(FPS),
   '-vcodec','png','-i','pipe:0','-an','-c:v','libx264','-preset','slow','-crf','17',
   '-pix_fmt','yuv420p','-r',String(FPS),'-movflags','+faststart',
   '-metadata','title=Making SVG feel like ink',
-  '-metadata','comment=An SVG study by txnio, adapted from Anthropic. Synthetic curves, not economic data.',videoPath],
+  '-metadata','comment=An SVG study by txnio, adapted from Anthropic. Synthetic curves, not economic data.',pendingVideoPath],
   {stdio:['pipe','inherit','inherit']});
 const ended=once(ffmpeg,'exit');
 for(let i=0;i<DURATION*FPS;i++) {
@@ -226,4 +229,5 @@ for(let i=0;i<DURATION*FPS;i++) {
 ffmpeg.stdin.end();
 const [code]=await ended;
 if(code!==0) throw new Error(`ffmpeg exited ${code}`);
+await fs.rename(pendingVideoPath, videoPath);
 console.log(videoPath);

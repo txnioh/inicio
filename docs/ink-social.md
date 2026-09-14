@@ -1,6 +1,6 @@
 # Post y vídeo de tinta SVG
 
-Preparado el 13 de septiembre de 2026. Borrador local, sin publicar.
+Preparado el 13 de septiembre de 2026; vídeo actualizado el 14 de septiembre. Borrador local, sin publicar.
 
 ## Texto
 
@@ -26,21 +26,21 @@ Sustituir el marcador por la URL pública de `/writing/ink` cuando exista. No en
 
 ## Dirección del vídeo
 
-Una demostración tranquila del material: papel claro, Geist, colores del efecto y planos cercanos. Movimiento desde el principio, comparaciones estables y pausas breves que permitan ver cada cambio. Las curvas son ilustrativas; no representan datos económicos.
+Una demostración tranquila del material: el blanco de la web (`#fdfdfc`), Geist, colores del efecto y planos cercanos. Movimiento desde el principio, comparaciones estables y pausas breves que permitan ver cada cambio. Las opciones se indican con un subrayado, como en los controles actuales del artículo. Las curvas son ilustrativas; no representan datos económicos.
 
-El montaje usa las funciones de `src/app/writing/ink.ts` y renderiza los componentes `InkFilters` e `InkPaths` reales. Es un montaje exportado del SVG, no una grabación de la interfaz. Los cambios de estado están coreografiados y los rótulos pertenecen al vídeo. No muestra código.
+El montaje usa las funciones de `src/app/writing/ink.ts` y renderiza los componentes `InkFilters` e `InkPaths` reales. Las pasadas azules y amarillas salen de `buildLayerPasses`, compartida con la demo del artículo. Normal y Multiply componen las mismas imágenes sobre grupos transparentes separados antes de colocarlas sobre el papel. Es un montaje exportado del SVG, no una grabación de la interfaz. Los cambios de estado están coreografiados y los rótulos pertenecen al vídeo. No muestra código.
 
 | Tiempo | Plano | Qué permite observar |
 | --- | --- | --- |
 | 0–3,65 s | Abanico de tinta | El resultado y la aparición de segmentos con tiempos distintos. |
 | 3,65–7,05 s | Path → Outline → Ink | La misma trayectoria vista como línea, contorno y relleno. |
 | 7,05–11,5 s | Plain → Grain → Grain + warp | Acercamiento a la misma geometría para distinguir textura y borde. |
-| 11,5–15,35 s | Una a seis pasadas | La composición multiplicada oscurece los cruces. |
+| 11,5–15,35 s | Normal y Multiply, lado a lado | Una pasada azul coincide en ambos lados. Al dibujar la segunda, amarilla, el cruce se vuelve más verde con Multiply. Misma geometría, textura y opacidad. |
 | 15,35–18 s | Abanico completo | Cierre con invitación a explorar las demos. |
 
 Exportación principal: `out/ink-social/ink-for-x.mp4`, 1080 × 1080, 30 fps, H.264, YUV 4:2:0, 18 segundos, sin audio. Portada: `out/ink-social/ink-cover.png`. La carpeta `out` ya está excluida de Git.
 
-Verificación del archivo final: 540 fotogramas, 1.020.644 bytes, decodificación completa sin errores. Se revisaron fotogramas extraídos del MP4, incluido el grano a tamaño completo y el montaje reducido a 360 px por plano (`out/ink-social/storyboard.png`).
+Verificación del archivo final actualizado: 540 fotogramas, 948.462 bytes, decodificación completa sin errores. Se revisaron fotogramas extraídos del MP4, incluida la comparación a tamaño completo y el montaje reducido a 360 px por plano (`out/ink-social/storyboard.png`). La versión anterior se conserva en `out/ink-social/ink-for-x-v1.mp4`.
 
 Regenerar con `node scripts/render-ink-video.mjs`. Añadir `--preview` para exportar solo fotogramas de revisión. El renderizador usa FFmpeg, Sharp y Canvas del runtime de trabajo; no añade dependencias a Inicio. Se puede indicar otra instalación con `INK_RENDER_NODE_MODULES`.
 

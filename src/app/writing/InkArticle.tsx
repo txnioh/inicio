@@ -146,8 +146,6 @@ export default function InkArticle() {
         <section className="ink-notes" id="credits">
           <h2>Notes &amp; credits</h2>
           <p>The drawing approach comes from <a href="https://www.anthropic.com/institute/econ-scenarios" target="_blank" rel="noreferrer">Anthropic’s Scenarios for our Economic Future</a>. Its credits name Kelsey Nanan for design and implementation of the interactive experience, with visual design and art direction by Nikki Makagiansar and Monika Tuchowska. Kyle Turman and Szymon Sacher built the scenario explorer; Fayaz Ashraf and Ryan Heller contributed engineering.</p>
-          <p>This adaptation uses my standalone extraction as its starting point. The geometry, ink layers, filters and fan timing were checked against the public page code on 11 September 2026. The simplified fan, controls and illustrative chart here are for exploring the drawing technique.</p>
-          <p>The format owes a lot to Benji Taylor’s <a href="https://benji.org/drawesome" target="_blank" rel="noreferrer">Drawesome</a>, <a href="https://benji.org/morphing-icons-with-claude" target="_blank" rel="noreferrer">morphing icons</a> and <a href="https://benji.org/liveline" target="_blank" rel="noreferrer">Liveline</a> posts: something to try, followed by enough explanation to make use of it.</p>
         </section>
         <footer className="ink-article-footer"><RobotHomeLink /><span>Antonio J. Gonzalez</span></footer>
       </article>

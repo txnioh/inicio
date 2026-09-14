@@ -7,14 +7,6 @@ import ProjectShowcase from './components/ProjectShowcase';
 import { VinylPlayer } from './components/VinylPlayer';
 import usePageNavigation from './usePageNavigation';
 
-function formatUpdatedAt(date: Date) {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(date);
-}
-
 function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <a className="minimal-basic-link" href={href} target="_blank" rel="noopener noreferrer">
@@ -33,11 +25,6 @@ export default function App() {
 }
 
 function Home({ arrived }: { arrived: boolean }) {
-  const latestCommit = {
-    ...__BUILD_INFO__,
-    date: new Date(__BUILD_INFO__.date),
-  };
-
   return (
     <main className="minimal-portfolio-page" tabIndex={-1}>
       <PageEnter className="minimal-portfolio-shell" skipAnimation={arrived}>
@@ -45,30 +32,44 @@ function Home({ arrived }: { arrived: boolean }) {
           <article className="minimal-article">
             <header>
               <h1 className="minimal-reveal-line">Antonio J. Gonzalez</h1>
-              <time className="minimal-reveal-line" dateTime={latestCommit.date.toISOString()}>
-                Updated {formatUpdatedAt(latestCommit.date)} · {latestCommit.hash}{' '}
-                {latestCommit.message}
-              </time>
             </header>
 
             <VinylPlayer />
 
-            <p className="minimal-reveal-line">
-              I&apos;m Antonio, also known as txnio. I build things for the web and use browser
-              windows as a place for interface experiments.
-            </p>
+            <div className="minimal-home-intro">
+              <p className="minimal-reveal-line">
+                I&apos;m Antonio, also known as txnio. I build software for the web,
+                automate everyday tasks, and experiment with how interfaces look and feel.
+              </p>
 
-            <p className="minimal-reveal-line">
-              I make practical software, automation, and visual interface experiments with
-              TypeScript, React, Next.js, Python, .NET, and AI.
-            </p>
+              <p className="minimal-reveal-line">
+                I&apos;ve worked as a fullstack engineer at{' '}
+                <span className="minimal-inline-label minimal-company-label">
+                  <img className="minimal-ntt-logo" src="/logos/ntt-data.png" width="16" height="16" alt="" />
+                  ntt data
+                </span> and{' '}
+                <span className="minimal-inline-label minimal-company-label">
+                  <img src="/logos/cemosa.png" width="16" height="16" alt="" />
+                  cemosa
+                </span>.
+                My work spans TypeScript, React, Next.js, Python, and .NET.
+                On my own time, I build things like{' '}
+                <ExternalLink href="https://os.txnio.com">txniOS</ExternalLink>{' '}
+                and explore small interface ideas here.
+              </p>
 
-            <p className="minimal-reveal-line">
+              <p className="minimal-reveal-line">
+                I also take photographs. I&apos;m putting together{' '}
+                <span className="minimal-inline-label">Carrete</span>, a separate
+                website for my photos. It&apos;s still under construction.
+              </p>
+
+              <p className="minimal-reveal-line">
               You can find me on <ExternalLink href="https://www.linkedin.com/in/txnio/">LinkedIn</ExternalLink>,{' '}
-              <ExternalLink href="https://github.com/txnioh">GitHub</ExternalLink>, try{' '}
-              <ExternalLink href="https://os.txnio.com">txniOS</ExternalLink>, or reach me via{' '}
+              <ExternalLink href="https://github.com/txnioh">GitHub</ExternalLink>, or reach me via{' '}
               <a className="minimal-basic-link" href="mailto:txniodev@gmail.com">email</a>.
-            </p>
+              </p>
+            </div>
           </article>
 
           <section className="minimal-section" aria-labelledby="writing-title">

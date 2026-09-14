@@ -175,6 +175,15 @@ export function curve(width = 550, height = 210): Point[] {
   });
 }
 
+export function buildLayerPasses(): InkPath[][] {
+  return Array.from({ length: 6 }, (_, i) => {
+    const y = 48 + i * 18;
+    const points: Point[] = [[32 + i, y], [138, y - 3 + i], [243 - i * 2, y + 2]];
+    return markerStroke(points, { width: 38, seed: 41 + i * 17, color: i % 2 ? '#E5C34F' : '#579DCA', opacity: .92,
+      core: false, taperIn: .035, taperOut: .035, startWidth: .85, endWidth: .85 });
+  });
+}
+
 export function buildFan(width = 550, height = 330) {
   const colors = ['#6A9BCC', '#788C5D', '#C46686'];
   return Array.from({ length: 38 }, (_, key) => {

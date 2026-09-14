@@ -33,11 +33,10 @@
 .ink-skip:focus { top: 12px; }
 
 .ink-demo { margin: 28px 0 8px; }
-.ink-board { overflow: hidden; background: #faf9f5; border: 1px solid #eeede7; border-radius: 8px; isolation: isolate; }
+.ink-board { overflow: hidden; background: #faf9f5; border: 0; border-radius: 2px; isolation: isolate; mask-image: linear-gradient(90deg, transparent, #000 5%, #000 92%, transparent); }
 .ink-board > svg { display: block; width: 100%; height: auto; }
 .ink-paper-grid { background-image: linear-gradient(#87867f12 1px, transparent 1px), linear-gradient(90deg, #87867f12 1px, transparent 1px); background-size: 26px 26px; }
 .ink-hero { margin-top: 30px; margin-bottom: 12px; }
-.ink-hero .ink-board { border: 0; border-radius: 2px; mask-image: linear-gradient(90deg, transparent, #000 5%, #000 92%, transparent); }
 .ink-demo figcaption { margin-top: 10px; text-align: center; font-size: 12px; line-height: 18px; color: #77776e; text-wrap: pretty; }
 .ink-demo .ink-demo-footer { display: flex; justify-content: space-between; align-items: center; text-align: left; gap: 16px; }
 .ink-blend-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }

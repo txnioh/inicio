@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
-import { buildFan, clamp, curve, dashedPieces, markerStroke, pathThrough, resample, ribbon, segmentProgress, tangents, type Point } from './ink';
+import { buildFan, buildLayerPasses, clamp, curve, dashedPieces, markerStroke, pathThrough, resample, ribbon, segmentProgress, tangents, type Point } from './ink';
 import InkExample, { InkFilters, InkPaths } from './InkExample';
 import { InkButton, InkSlider } from './InkControls';
 
@@ -178,12 +178,7 @@ export function TextureDemo() {
 
 export function LayersDemo() {
   const [passes, setPasses] = useState(2);
-  const rows = useMemo(() => Array.from({ length: 6 }, (_, i) => {
-    const y = 48 + i * 18;
-    const points: Point[] = [[32 + i, y], [138, y - 3 + i], [243 - i * 2, y + 2]];
-    return markerStroke(points, { width: 38, seed: 41 + i * 17, color: i % 2 ? '#E5C34F' : '#579DCA', opacity: .92,
-      core: false, taperIn: .035, taperOut: .035, startWidth: .85, endWidth: .85 });
-  }), []);
+  const rows = useMemo(buildLayerPasses, []);
   return <figure className="ink-demo">
     <div className="ink-blend-comparison">
       {(['normal', 'multiply'] as const).map(mode => <div key={mode} className="ink-blend-sample">

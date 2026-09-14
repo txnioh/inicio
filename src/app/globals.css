@@ -97,6 +97,47 @@ input {
   line-height: 20px;
 }
 
+.minimal-home-intro p {
+  padding-top: 24px;
+  color: #646460;
+  line-height: 1.65;
+}
+
+.minimal-home-intro p:first-child {
+  color: #111111;
+}
+
+.minimal-inline-label {
+  display: inline;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f0f0ee;
+  color: #252523;
+  white-space: nowrap;
+}
+
+.minimal-company-label {
+  display: inline;
+  font: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+
+.minimal-company-label img {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+  vertical-align: -3px;
+  border-radius: 4px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.minimal-company-label .minimal-ntt-logo {
+  padding: 2px;
+}
+
 .minimal-basic-link {
   position: relative;
   color: inherit;
@@ -209,20 +250,10 @@ input {
   transition: color 140ms ease;
 }
 
-.minimal-project-list:has(.minimal-row-link:is(:hover, :focus-visible)) > ul .minimal-row-link h2 {
-  color: rgba(0, 0, 0, 0.32);
-}
-
-.minimal-project-list:has(.minimal-row-link:is(:hover, :focus-visible)) > ul .minimal-row-link .minimal-row-meta {
-  color: rgba(0, 0, 0, 0.22);
-}
-
-.minimal-project-list:has(.minimal-row-link:is(:hover, :focus-visible)) > ul .minimal-row-link:is(:hover, :focus-visible) h2 {
-  color: #111111;
-}
-
-.minimal-project-list:has(.minimal-row-link:is(:hover, :focus-visible)) > ul .minimal-row-link:is(:hover, :focus-visible) .minimal-row-meta {
-  color: rgba(0, 0, 0, 0.4);
+.page-index .minimal-row-link:is(:hover, :focus-visible) h2 {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
 .minimal-row-meta span {
