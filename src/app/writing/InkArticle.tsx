@@ -76,10 +76,8 @@ export default function InkArticle() {
           <h1 className="ink-title">Making SVG feel like ink</h1>
           <time dateTime="2026-09-11">11 September, 2026</time>
         </header>
-        <p>The coloured lines in <a href="https://www.anthropic.com/institute/econ-scenarios" target="_blank" rel="noreferrer">Anthropic’s economic scenarios</a> have a lovely unevenness. Some parts carry more ink. Little gaps let the paper through. As the fan opens, individual marks arrive at slightly different times.</p>
-        <p>I pulled the drawing into a standalone demo, then broke it into smaller examples. Here’s the result, followed by the pieces you can take apart.</p>
+        <p>Uneven edges, grain and overlapping colour make SVG feel like ink. These interactive examples break down the drawing approach in <a href="https://www.anthropic.com/institute/econ-scenarios" target="_blank" rel="noreferrer">Anthropic’s economic scenarios</a>.</p>
         <FanDemo />
-        <p>The drawings on this page use SVG. Their outlines come from JavaScript, and a filter gives the colour its grain. The examples use synthetic curves; the original article is where the economic model lives. I’ve kept its drawing approach and simplified the scenes so each control has something specific to explain.</p>
 
         <details className="ink-mobile-contents" ref={mobileContents}>
           <summary>In this article <span aria-hidden="true">+</span></summary>
@@ -91,61 +89,43 @@ export default function InkArticle() {
 
         <section id="shape">
           <h2>Start with a shape</h2>
-          <p>A regular SVG stroke has one width along its path. A marker leaves a broader middle, uneven edges, and a small change in shape where you lift the pen. Drawing that perimeter gives us control over all of those details.</p>
-          <p>Start with points along a curve. At each point, look at its neighbours to find the direction of travel. Turn that direction a quarter turn to get a normal: a line pointing across the stroke. Move a little way along it for one edge, and the opposite way for the other.</p>
+          <p>Build a filled shape around the curve. Moving its two edges independently gives the mark uneven sides, a wider middle and tapered ends.</p>
           <ShapeDemo />
-          <p>Join the left edge forwards and the right edge backwards, then close the shape. The result is a filled path. Width becomes a value we can change at each point. Simulated pressure widens the middle and tapers the ends, while separate noise values add independent irregularity to the edges.</p>
-          <p>The points are spaced by distance along the curve before this calculation. That keeps a crowded group of input points from packing all the roughness into one corner. For these gently curving marks, a modest number of samples is enough. Tight turns need more care: a very wide outline can fold over itself.</p>
         </section>
 
         <section id="wobble">
           <h2>Keep the wobble still</h2>
-          <p>Randomness gives a stroke some variation, but it also needs a memory. If every render chooses new random values, the edges move whenever anything else on the page updates. A line that has already been drawn should stay put.</p>
-          <p>Each stroke gets a seed. The generator produces the same sequence from that seed, and neighbouring values blend smoothly into each other. The irregularity runs along the line’s length. It has no clock.</p>
+          <p>A fixed seed keeps the irregular edges in place across renders. <strong>New stroke</strong> changes that seed to draw a different mark. Keep the variation small enough to preserve the curve.</p>
           <WobbleDemo />
-          <p>Move the slider, then bring it back to 35%. The old edge returns. <strong>New stroke</strong> changes the seed, giving the next mark a different shape. This example has its texture filter switched off so you can see exactly what the geometry contributes.</p>
-          <p>The width and the two edges use different sequences derived from the same seed. If both sides followed identical noise, the line would look much more regular. Keep the variation small enough that you can still read the underlying curve; the far end of the slider is there to make the tradeoff obvious.</p>
         </section>
 
         <section id="texture">
           <h2>Leave some paper showing</h2>
-          <p>Even an irregular silhouette can look like a flat sticker. The little pale interruptions inside a real mark help it feel attached to the paper. SVG filters can make that texture without loading an image.</p>
+          <p>An SVG noise filter makes parts of the ink transparent, letting the paper show through. Displacement adds a slight warp to the edges; grain alone is a lighter option.</p>
           <TextureDemo />
-          <p>A turbulence filter generates a noise field. Its brightness becomes a transparency map, which removes some ink from parts of the mark. The paper becomes visible through those areas.</p>
-          <p>The full filter adds another, coarser noise field and uses a displacement map to shift the ink slightly. Look at the outer edge when switching between Grain and Grain + warp. Both views keep the exact same path underneath.</p>
-          <p>The source includes lighter filters that omit this displacement, too. That is a useful option for a dense scene. Filters work on rendered pixels, so a large filtered area costs more than a small swatch. I would start by checking the effect at its actual display size before adding more noise or stronger distortion.</p>
         </section>
 
         <section id="layers">
           <h2>Go over it again</h2>
-          <p>A broad patch of colour can be built from several narrower passes. Where they overlap, the colour builds up. With one pen, that mostly looks darker. I’m using blue and yellow here to make the mixing easier to see.</p>
+          <p>Build colour with overlapping passes. <strong>Multiply</strong> makes their overlap darker—blue and yellow meet in a deeper green. Apply it to each pass inside an isolated group so the ink only mixes with itself.</p>
           <LayersDemo />
-          <p>In <strong>Normal</strong>, the newest pass covers part of the colour underneath. Some blue still shows through the translucent yellow. Transparency alone already mixes the two; overlapping passes of the same colour would also get darker.</p>
-          <p><strong>Multiply</strong> changes how those colours combine. It multiplies their red, green and blue channel values before compositing with the same opacity. With these two pens, the overlap becomes a deeper green. The parts that don’t overlap stay the same. It is a useful approximation of layered ink, not a physical simulation of pigment.</p>
-          <p>Bring the slider down to one pass: both views match. Add a second and the difference appears where the marks meet. Keep adding passes to see why too much ink gets muddy. Both views use the same paths, grain and opacity; only the blend mode changes.</p>
-          <p>Apply the blend mode to each pass, inside an isolated group. That lets the marks mix with each other without picking up colours elsewhere on the page. Blending the finished patch as one image would affect its relationship with the background instead.</p>
         </section>
 
         <section id="reveal">
           <h2>Let it arrive</h2>
-          <p>Once the shape and texture are in place, the animation has surprisingly little drawing to do. The standalone demo uses two approaches: a moving crop for its small filled shapes, and progressively added pieces for the fan.</p>
+          <p>Build the shapes once, then reveal them with a moving crop or timed segments. Small timing differences keep the fan’s lines from moving in lockstep. With reduced motion enabled, show the finished drawing immediately.</p>
           <RevealDemo />
-          <p>The upper line uses a moving crop. Its right inset shrinks from 100% to zero, exposing the drawing from left to right. That works well for these horizontal examples. A curve that doubles back would expose several parts at once; following that path needs a different reveal.</p>
-          <p>The lower line consists of short, complete marks. Each gets a threshold along the animation timeline. Each lane has a repeatable delay and duration, so a group of lines can start together without marching in perfect lockstep.</p>
-          <p>Anthropic’s fan appends pieces as it advances, with variation around the leading edge. These teaching demos build the pieces first and change their visibility, which also lets the progress slider run backwards. The frame loop never regenerates the outlines. With reduced motion enabled, the completed drawing appears immediately.</p>
         </section>
 
         <section id="use">
           <h2>Use it somewhere</h2>
-          <p>A small graph is a good place to try this. Give the generator a handful of points, choose a width and a seed, and put the returned paths inside a filtered group. Change the colour below to see how the same drawing feels with a different pen.</p>
+          <p>Try it on a small graph or annotation. Keep labels crisp and the texture subtle so the data stays readable. For a live chart, keep the seed attached to the series as its data changes.</p>
           <ExampleDemo />
-          <p>Use a unique filter ID for every instance. Otherwise two examples on the same page can quietly use each other’s filter. The fixed viewBox lets this graph resize with its container. For a live chart, keep the seed attached to the series and rebuild the geometry when its data changes.</p>
-          <p>I like this at the size of a margin note or a small illustration. Keep labels crisp, give the paper room, and let a few marks do the work. My browser tabs have supplied enough growth for one chart.</p>
         </section>
 
         <section className="ink-notes" id="credits">
           <h2>Notes &amp; credits</h2>
-          <p>The drawing approach comes from <a href="https://www.anthropic.com/institute/econ-scenarios" target="_blank" rel="noreferrer">Anthropic’s Scenarios for our Economic Future</a>. Its credits name Kelsey Nanan for design and implementation of the interactive experience, with visual design and art direction by Nikki Makagiansar and Monika Tuchowska. Kyle Turman and Szymon Sacher built the scenario explorer; Fayaz Ashraf and Ryan Heller contributed engineering.</p>
+          <p>Adapted from <a href="https://www.anthropic.com/institute/econ-scenarios" target="_blank" rel="noreferrer">Anthropic’s Scenarios for our Economic Future</a>. Interactive experience by Kelsey Nanan; visual design and art direction by Nikki Makagiansar and Monika Tuchowska. These demos use synthetic data and simplified scenes.</p>
         </section>
         <footer className="ink-article-footer"><RobotHomeLink /><span>Antonio J. Gonzalez</span></footer>
       </article>
