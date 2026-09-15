@@ -55,10 +55,8 @@ async function svgImage(key, body, viewBox = '0 0 550 210', width = 1000, height
   return img;
 }
 function text(value, x, y, size = 26, color = TEXT, weight = 400, align = 'left') {
-  ctx.fillStyle = color;
-  ctx.font = `${weight} ${size}px Geist`;
-  ctx.textAlign = align;
-  ctx.fillText(value, x, y);
+  // The social cut is intentionally text-free: only the ink examples remain.
+  return;
 }
 function line(x1, y1, x2, y2, alpha = 1) {
   ctx.strokeStyle = `rgba(97,108,87,${alpha})`;

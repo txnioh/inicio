@@ -438,7 +438,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   inset: 0;
   z-index: 10;
   border-radius: inherit;
-  background-image: url('https://i.imgur.com/i0fMWpe.jpg');
+  background-image: url('/textures/cover-grain.webp');
   background-size: 100% 100%;
   mix-blend-mode: screen;
   opacity: 0.5;
@@ -451,7 +451,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   inset: 0;
   z-index: 20;
   border-radius: inherit;
-  background-image: url('https://orig06.deviantart.net/0124/f/2013/136/6/7/texture_326_by_sirius_sdz-d65gs3s.jpg');
+  background-image: url('/textures/cover-texture.webp');
   background-size: 100% 100%;
   mix-blend-mode: screen;
   opacity: 0.2;
@@ -485,7 +485,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background-image: url('https://intheclouds.io/cdn/shop/files/Custom_Vinyl_Record_12inch_Transparent_3024x.png?v=1741182986');
+  background-image: url('/textures/vinyl-disc.webp');
   background-size: cover;
   background-position: center;
   transform-origin: center;

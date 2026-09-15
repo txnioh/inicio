@@ -45,11 +45,11 @@ function Home({ arrived }: { arrived: boolean }) {
               <p className="minimal-reveal-line">
                 I&apos;ve worked as a fullstack engineer at{' '}
                 <span className="minimal-inline-label minimal-company-label">
-                  <img className="minimal-ntt-logo" src="/logos/ntt-data.png" width="16" height="16" alt="" />
+                  <img className="minimal-ntt-logo" src="/logos/ntt-data.webp" width="16" height="16" alt="" />
                   ntt data
                 </span> and{' '}
                 <span className="minimal-inline-label minimal-company-label">
-                  <img src="/logos/cemosa.png" width="16" height="16" alt="" />
+                  <img src="/logos/cemosa.webp" width="16" height="16" alt="" />
                   cemosa
                 </span>.
                 My work spans TypeScript, React, Next.js, Python, and .NET.

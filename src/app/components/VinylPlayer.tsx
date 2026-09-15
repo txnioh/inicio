@@ -153,10 +153,12 @@ export function VinylPlayer() {
   } = useGlobalAudioPlayer();
 
   useEffect(() => {
-    const img = new window.Image();
-    img.crossOrigin = 'anonymous';
-    img.src = activeTrack.cover;
-    img.onload = () => {
+    const img = document.querySelector<HTMLImageElement>(
+      `img.minimal-vinyl-cover[src="${activeTrack.cover}"]`,
+    );
+    if (!img) return undefined;
+
+    const updateDominantColor = () => {
       const canvas = document.createElement('canvas');
       canvas.width = 50;
       canvas.height = 50;
@@ -176,6 +178,14 @@ export function VinylPlayer() {
       b = Math.round(b / count);
       setDominantColor(`rgb(${r}, ${g}, ${b})`);
     };
+
+    if (img.complete && img.naturalWidth > 0) {
+      updateDominantColor();
+      return undefined;
+    }
+
+    img.addEventListener('load', updateDominantColor, { once: true });
+    return () => img.removeEventListener('load', updateDominantColor);
   }, [activeTrack.cover]);
   const progressPercent = isReady
     ? Math.min(currentTime / duration, 1) * 100
