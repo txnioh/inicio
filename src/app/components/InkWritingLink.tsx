@@ -4,8 +4,11 @@ const InkLinkPreview = lazy(() => import('../writing/InkLinkPreview'));
 
 export default function InkWritingLink() {
   const [hasPreview, setHasPreview] = useState(false);
+  const showPreview = () => {
+    if (matchMedia('(hover: hover) and (pointer: fine)').matches) setHasPreview(true);
+  };
   return <a className="minimal-row-link minimal-reveal-line ink-writing-link" href="/writing/ink"
-    onPointerEnter={() => setHasPreview(true)} onFocus={() => setHasPreview(true)}>
+    onPointerEnter={(event) => { if (event.pointerType === 'mouse') showPreview(); }} onFocus={showPreview}>
     <span className="ink-writing-preview" aria-hidden="true">
       {hasPreview && <Suspense fallback={null}><InkLinkPreview /></Suspense>}
     </span>

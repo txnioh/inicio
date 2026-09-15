@@ -156,8 +156,10 @@ input {
   content: "";
 }
 
-.minimal-basic-link:hover::before {
-  background: #111111;
+@media (hover: hover) and (pointer: fine) {
+  .minimal-basic-link:hover::before {
+    background: #111111;
+  }
 }
 
 .minimal-section {
@@ -250,7 +252,7 @@ input {
   transition: color 140ms ease;
 }
 
-.page-index .minimal-row-link:is(:hover, :focus-visible) h2 {
+.page-index .minimal-row-link:focus-visible h2 {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
@@ -275,6 +277,7 @@ input {
 }
 
 .ink-writing-preview {
+  display: none;
   position: absolute;
   left: 43px;
   top: 7px;
@@ -287,8 +290,17 @@ input {
 
 .ink-writing-preview svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .ink-preview-pass { clip-path: inset(0 100% 0 0); }
-.ink-writing-link:is(:hover, :focus-visible) .ink-writing-preview { opacity: 1; }
-.ink-writing-link:is(:hover, :focus-visible) .ink-preview-pass { animation: ink-link-draw 650ms cubic-bezier(.2, .65, .3, 1) both; }
+.ink-writing-link { touch-action: manipulation; }
+@media (hover: hover) and (pointer: fine) {
+  .page-index .minimal-row-link:hover h2 {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  .ink-writing-preview { display: block; }
+  .ink-writing-link:is(:hover, :focus-visible) .ink-writing-preview { opacity: 1; }
+  .ink-writing-link:is(:hover, :focus-visible) .ink-preview-pass { animation: ink-link-draw 650ms cubic-bezier(.2, .65, .3, 1) both; }
+}
 @keyframes ink-link-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
 
 .ink-title { width: fit-content; }
@@ -316,25 +328,9 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   .ink-writing-preview { left: auto; right: 0; top: -32px; width: 64px; height: 28px; }
 }
 
-@media (hover: none) and (pointer: coarse) {
-  .ink-writing-preview { display: none; }
-  .ink-writing-link .ink-title {
-    background-image: linear-gradient(currentColor, currentColor);
-    background-position: 0 100%;
-    background-repeat: no-repeat;
-    background-size: 0 1px;
-  }
-  .ink-writing-link.ink-touch-leaving .ink-title {
-    animation: ink-touch-underline 320ms cubic-bezier(.22, .8, .25, 1) both;
-  }
-}
-
-@keyframes ink-touch-underline { to { background-size: 100% 1px; } }
-
 @media (prefers-reduced-motion: reduce) {
   .ink-writing-preview { transition: none; }
   .ink-writing-link:is(:hover, :focus-visible) .ink-preview-pass { animation: none; clip-path: inset(0); }
-  .ink-writing-link.ink-touch-leaving .ink-title { animation: none; background-size: 100% 1px; }
   html[data-page-transition]::view-transition-group(*),
   html[data-page-transition]::view-transition-old(*),
   html[data-page-transition]::view-transition-new(*) { animation: none !important; }
@@ -620,10 +616,12 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   line-height: 20px;
 }
 
-.minimal-inline-controls button:hover,
-.minimal-collection-label:hover,
-.minimal-library-back:hover {
-  color: #111111;
+@media (hover: hover) and (pointer: fine) {
+  .minimal-inline-controls button:hover,
+  .minimal-collection-label:hover,
+  .minimal-library-back:hover {
+    color: #111111;
+  }
 }
 
 .minimal-timeline {
@@ -1075,4 +1073,36 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+/* Small native cursors. Coordinates place the click on each silhouette. */
+@media (hover: hover) and (pointer: fine) {
+  .minimal-release-trigger,
+  .minimal-collection-label {
+    cursor: url('/cursors/record.svg') 10 10, pointer;
+  }
+
+  .ink-writing-link {
+    cursor: url('/cursors/marker.svg') 2 18, pointer;
+  }
+
+  .minimal-portfolio-page a[href='https://tresde.txnio.com'] {
+    cursor: url('/cursors/cube.svg') 10 2, pointer;
+  }
+
+  .minimal-portfolio-page a[href='https://os.txnio.com'] {
+    cursor: url('/cursors/mac.svg') 10 10, pointer;
+  }
+
+  .minimal-portfolio-page a[href='https://vgpulab.txnio.com'] {
+    cursor: url('/cursors/shader.svg') 10 10, pointer;
+  }
+
+  .minimal-portfolio-page a[href='https://varita.txnio.com'] {
+    cursor: url('/cursors/phone.svg') 4 3, pointer;
+  }
+
+  .minimal-portfolio-page a[href^='mailto:'] {
+    cursor: url('/cursors/envelope.svg') 2 6, pointer;
+  }
 }
