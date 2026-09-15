@@ -24,7 +24,10 @@ export default function PageEnter({ children, className, skipAnimation = false }
 
     // Content is visible at first paint; entry motion never gates reading or LCP.
     const animations = revealElements.map((element, index) => element.animate(
-      [{ transform: 'translateY(6px)' }, { transform: 'translateY(0)' }],
+      [
+        { opacity: 0, transform: 'translateY(6px)' },
+        { opacity: 1, transform: 'translateY(0)' },
+      ],
       { delay: index * 34, duration: 260, easing: 'ease-out', fill: 'backwards' },
     ));
 
