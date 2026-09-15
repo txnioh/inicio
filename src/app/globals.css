@@ -492,6 +492,13 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   translate: 7px 0;
 }
 
+/* During the library -> player view transition the cover arrives a moment
+   after the player shell. Keep the record out of that gap so it never flashes
+   in front of the incoming album artwork. */
+:root[data-audio-transition="to-player"] .minimal-release-vinyl {
+  visibility: hidden;
+}
+
 .minimal-release-vinyl-disc {
   position: absolute;
   inset: 0;
