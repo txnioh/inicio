@@ -2,7 +2,15 @@
 
 Revisado el 14 de septiembre de 2026. Investigación inicial conservada como referencia.
 
-**Alcance corregido por Antonio:** únicamente cursores SVG pequeños, con relleno blanco y contorno negro o la combinación inversa. Las propuestas de shaders, materiales y pistas adicionales de este estudio quedan fuera de la tarea. Los siete SVG de `public/cursors/` miden 20 × 20 px y se asignan mediante CSS a los elementos existentes: disco, marcador, cubo, manzana de Apple, esfera de ondas para shaders, móvil y sobre. Los puntos activos se ajustan al tamaño final. La silueta de Apple procede de Simple Icons; los otros seis dibujos son propios.
+**Alcance corregido por Antonio:** únicamente cursores SVG pequeños, con relleno blanco y contorno negro o la combinación inversa. Las propuestas de shaders, materiales y pistas adicionales de este estudio quedan fuera de la tarea. Los siete SVG de `public/cursors/` conservan figuras de unos 16–18 px, dentro de un lienzo transparente de 28 × 28 px que deja espacio para la sombra. Se asignan mediante CSS a los elementos existentes: disco, marcador, cubo, manzana de Apple, esfera de ondas para shaders, móvil y sobre. Los puntos activos incluyen los 4 px de margen. La silueta de Apple procede de Simple Icons; los otros seis dibujos son propios.
+
+### Acabado del cursor de macOS — 15 de septiembre de 2026
+
+Se contrastó la captura de Antonio con la documentación de [NSCursor de Apple](https://developer.apple.com/documentation/appkit/nscursor) y los recursos locales de macOS 27.0, compilación 26A5425a. El recurso `HIServices.framework/Resources/cursors/pointinghand/cursor.pdf` usa figuras rellenas de blanco y negro puros, con curvas redondeadas y contornos expandidos de aproximadamente 1 punto. Su `info.plist` declara sombra negra con alfa 0,45, `blur: 2` y desplazamiento vertical de −1 en coordenadas nativas. La imagen obtenida mediante `NSCursor.pointingHand` tiene lienzo lógico de 32 × 32 y representaciones de 32 y 64 px; el lienzo incluye margen y no equivale al tamaño visible de la mano.
+
+La adaptación a nuestros dibujos usa `#fff` / `#000`, contorno exterior de 1,35 px y detalles de 1,05 px, con extremos y uniones redondeados. La sombra SVG tiene `dy="1"`, `stdDeviation="1"` y opacidad 0,45. El desenfoque SVG es una aproximación visual al recurso nativo, no una equivalencia documentada entre ambos motores. El disco conserva su borde blanco y la punta negra del marcador tiene un filo blanco para mantener su lectura sobre fondos oscuros.
+
+Todos los SVG son autónomos y la sombra se aplica a la silueta completa. Se mantienen el fallback `pointer` y la condición `(hover: hover) and (pointer: fine)`. En móvil no se cargan estos cursores ni la previsualización de Ink; el toque sigue navegando directamente. Verificado el build, la decodificación de los siete SVG y los estilos en escritorio y móvil. El estudio inicial que sigue se conserva como archivo de ideas, fuera del alcance implementado.
 
 ## Qué merece la pena trasladar
 

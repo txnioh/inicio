@@ -1,8 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
-  <g stroke="#171717" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
-    <path d="m5 12.5-3 5.25 4.75.25 2-2.5Z" fill="#171717"/>
-    <path d="m6.5 10.5-2 2 5 5 2-2Z" fill="#fff"/>
-    <path d="M6.5 10.5 13 4a1.5 1.5 0 0 1 2.1 0L18 6.9A1.5 1.5 0 0 1 18 9l-6.5 6.5Z" fill="#fff"/>
-    <path d="m11.5 5.5 5 5" fill="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="-4 -4 28 28">
+  <defs>
+    <filter id="shadow" x="-4" y="-4" width="28" height="28" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000" flood-opacity=".45"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m5 12.5-3 5.25 4.75.25 2-2.5Z" fill="#000" stroke="#fff" stroke-width="1"/>
+    <path d="m6.5 10.5-2 2 5 5 2-2Z" fill="#fff" stroke-width="1.35"/>
+    <path d="M6.5 10.5 13 4a1.5 1.5 0 0 1 2.1 0L18 6.9A1.5 1.5 0 0 1 18 9l-6.5 6.5Z" fill="#fff" stroke-width="1.35"/>
+    <path d="m11.5 5.5 5 5" fill="none" stroke-width="1.05"/>
   </g>
 </svg>

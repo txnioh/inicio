@@ -1,7 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
-  <g transform="rotate(-10 12 12)" fill="#fff" stroke="#171717" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="2.5" y="5" width="19" height="14" rx="1.5"/>
-    <path d="m3 18.5 6.5-6m11.5 6-6.5-6" fill="none"/>
-    <path d="m3 5.5 8.25 7a1.2 1.2 0 0 0 1.5 0l8.25-7"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="-4 -4 28 28">
+  <defs>
+    <filter id="shadow" x="-4" y="-4" width="28" height="28" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000" flood-opacity=".45"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <g transform="rotate(-10 10 10)" fill="#fff" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="4.25" width="16" height="11.5" rx="1.5" stroke-width="1.35"/>
+      <path d="m2.5 15.25 5.25-4.75m9.75 4.75-5.25-4.75" fill="none" stroke-width="1.05"/>
+      <path d="m2.5 4.75 6.75 5.75a1.2 1.2 0 0 0 1.5 0l6.75-5.75" stroke-width="1.05"/>
+    </g>
   </g>
 </svg>

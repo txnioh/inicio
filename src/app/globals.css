@@ -1075,34 +1075,35 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   gap: 14px;
 }
 
-/* Small native cursors. Coordinates place the click on each silhouette. */
+/* 16–18px artwork in a 28px canvas: 4px padding keeps the cursor shadow intact.
+   Hotspots include that padding and stay on the silhouette's contact point. */
 @media (hover: hover) and (pointer: fine) {
   .minimal-release-trigger,
   .minimal-collection-label {
-    cursor: url('/cursors/record.svg') 10 10, pointer;
+    cursor: url('/cursors/record.svg') 14 14, pointer;
   }
 
   .ink-writing-link {
-    cursor: url('/cursors/marker.svg') 2 18, pointer;
+    cursor: url('/cursors/marker.svg') 6 22, pointer;
   }
 
   .minimal-portfolio-page a[href='https://tresde.txnio.com'] {
-    cursor: url('/cursors/cube.svg') 10 2, pointer;
+    cursor: url('/cursors/cube.svg') 14 6, pointer;
   }
 
   .minimal-portfolio-page a[href='https://os.txnio.com'] {
-    cursor: url('/cursors/mac.svg') 10 10, pointer;
+    cursor: url('/cursors/mac.svg') 14 14, pointer;
   }
 
   .minimal-portfolio-page a[href='https://vgpulab.txnio.com'] {
-    cursor: url('/cursors/shader.svg') 10 10, pointer;
+    cursor: url('/cursors/shader.svg') 14 14, pointer;
   }
 
   .minimal-portfolio-page a[href='https://varita.txnio.com'] {
-    cursor: url('/cursors/phone.svg') 4 3, pointer;
+    cursor: url('/cursors/phone.svg') 8 7, pointer;
   }
 
   .minimal-portfolio-page a[href^='mailto:'] {
-    cursor: url('/cursors/envelope.svg') 2 6, pointer;
+    cursor: url('/cursors/envelope.svg') 6 10, pointer;
   }
 }
