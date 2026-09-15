@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/prerender.mjs",
     "preview": "vite preview",
+    "perf": "node scripts/audit-performance.mjs",
     "lint": "tsc --noEmit",
     "deploy": "vercel --prod"
   },

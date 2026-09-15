@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
+import * as motion from 'framer-motion/m';
+import { useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 
 function clamp(value: number) {
   return Math.max(-1, Math.min(1, value));
@@ -25,10 +26,16 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
 
   useEffect(() => {
     const rootElement = rootRef.current;
-    if (!rootElement || reducedMotion) return;
+    if (!rootElement || reducedMotion || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-    const handlePointerMove = (event: PointerEvent) => {
-      if (event.pointerType !== 'mouse') return;
+    let visible = false;
+    let frame = 0;
+    let latestEvent: PointerEvent | undefined;
+
+    const updatePointer = () => {
+      frame = 0;
+      const event = latestEvent;
+      if (!event || !visible) return;
       const bounds = rootElement.getBoundingClientRect();
       if (!bounds.width || !bounds.height) return;
       const centerX = bounds.left + bounds.width / 2;
@@ -51,16 +58,32 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
       attention.set(nextAttention);
     };
 
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse' || !visible) return;
+      latestEvent = event;
+      if (!frame) frame = requestAnimationFrame(updatePointer);
+    };
+
     const handleWindowBlur = () => {
+      cancelAnimationFrame(frame);
+      frame = 0;
       pointerX.set(0);
       pointerY.set(0);
       attention.set(0);
     };
 
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (!visible) handleWindowBlur();
+    });
+    observer.observe(rootElement);
+
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
     window.addEventListener('blur', handleWindowBlur);
 
     return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('blur', handleWindowBlur);
     };

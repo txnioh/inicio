@@ -24,7 +24,7 @@ export default function App() {
   </div></main>;
 }
 
-function Home({ arrived }: { arrived: boolean }) {
+export function Home({ arrived }: { arrived: boolean }) {
   return (
     <main className="minimal-portfolio-page" tabIndex={-1}>
       <PageEnter className="minimal-portfolio-shell" skipAnimation={arrived}>
@@ -45,11 +45,11 @@ function Home({ arrived }: { arrived: boolean }) {
               <p className="minimal-reveal-line">
                 I&apos;ve worked as a fullstack engineer at{' '}
                 <span className="minimal-inline-label minimal-company-label">
-                  <img className="minimal-ntt-logo" src="/logos/ntt-data.webp" width="16" height="16" alt="" />
+                  <img className="minimal-ntt-logo" src="/logos/ntt-data-48.webp" width="16" height="16" alt="" />
                   ntt data
                 </span> and{' '}
                 <span className="minimal-inline-label minimal-company-label">
-                  <img src="/logos/cemosa.webp" width="16" height="16" alt="" />
+                  <img src="/logos/cemosa-48.webp" width="16" height="16" alt="" />
                   cemosa
                 </span>.
                 My work spans TypeScript, React, Next.js, Python, and .NET.

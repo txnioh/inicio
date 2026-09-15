@@ -1,8 +1,8 @@
 'use client';
 
 import Image from './Image';
+import * as motion from 'framer-motion/m';
 import {
-  motion,
   type PanInfo,
   useReducedMotion,
 } from 'framer-motion';
@@ -126,7 +126,6 @@ function useVinylRotation(visibleTime: number, isPlaying: boolean, isSeeking: bo
 export function VinylPlayer() {
   const [screen, setScreen] = useState<'player' | 'library'>('player');
   const [collectionPosition, setCollectionPosition] = useState(0);
-  const [dominantColor, setDominantColor] = useState<string>('#1a1a1a');
   const [previewPercent, setPreviewPercent] = useState<number | null>(null);
   const [seekPercent, setSeekPercent] = useState<number | null>(null);
   const [isSeeking, setIsSeeking] = useState(false);
@@ -152,41 +151,6 @@ export function VinylPlayer() {
     tracks,
   } = useGlobalAudioPlayer();
 
-  useEffect(() => {
-    const img = document.querySelector<HTMLImageElement>(
-      `img.minimal-vinyl-cover[src="${activeTrack.cover}"]`,
-    );
-    if (!img) return undefined;
-
-    const updateDominantColor = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 50;
-      canvas.height = 50;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0, 50, 50);
-      const data = ctx.getImageData(0, 0, 50, 50).data;
-      let r = 0, g = 0, b = 0, count = 0;
-      for (let i = 0; i < data.length; i += 16) {
-        r += data[i];
-        g += data[i + 1];
-        b += data[i + 2];
-        count++;
-      }
-      r = Math.round(r / count);
-      g = Math.round(g / count);
-      b = Math.round(b / count);
-      setDominantColor(`rgb(${r}, ${g}, ${b})`);
-    };
-
-    if (img.complete && img.naturalWidth > 0) {
-      updateDominantColor();
-      return undefined;
-    }
-
-    img.addEventListener('load', updateDominantColor, { once: true });
-    return () => img.removeEventListener('load', updateDominantColor);
-  }, [activeTrack.cover]);
   const progressPercent = isReady
     ? Math.min(currentTime / duration, 1) * 100
     : 0;
@@ -409,9 +373,10 @@ export function VinylPlayer() {
                 <span className="minimal-release-cover">
                   <Image
                     src={activeTrack.cover}
+                    srcSet={`${activeTrack.cover.replace('.webp', '-144.webp')} 144w, ${activeTrack.cover} 256w`}
                     alt=""
                     fill
-                    sizes="(max-width: 640px) 72px, 96px"
+                    sizes="(max-width: 640px) 72px, 128px"
                     draggable={false}
                     className="minimal-vinyl-cover"
                   />
@@ -425,15 +390,16 @@ export function VinylPlayer() {
                     animate={{ rotate: vinylRotation }}
                     transition={vinylRotationTransition}
                     style={{
-                      '--vinyl-dominant-color': dominantColor,
+                      '--vinyl-dominant-color': activeTrack.color,
                     } as CSSProperties}
                   >
                     <span className="minimal-release-vinyl-label">
                       <Image
                         src={activeTrack.cover}
+                        srcSet={`${activeTrack.cover.replace('.webp', '-144.webp')} 144w, ${activeTrack.cover} 256w`}
                         alt=""
                         fill
-                        sizes="30px"
+                        sizes="(max-width: 640px) 72px, 128px"
                         draggable={false}
                         className="minimal-vinyl-cover"
                       />
@@ -533,7 +499,7 @@ export function VinylPlayer() {
                     ? 'loading…'
                     : isReady
                     ? `${formatTime(currentTime)} / ${formatTime(duration)}`
-                    : '--:-- / --:--'}
+                    : `0:00 / ${formatTime(activeTrack.duration)}`}
                 </span>
               </div>
               <p
@@ -617,6 +583,7 @@ export function VinylPlayer() {
                     <span className="minimal-coverflow-artwork">
                       <Image
                         src={track.cover}
+                        srcSet={`${track.cover.replace('.webp', '-144.webp')} 144w, ${track.cover} 256w`}
                         alt={`${track.album} cover`}
                         fill
                         sizes="96px"
@@ -627,6 +594,7 @@ export function VinylPlayer() {
                     <span className="minimal-coverflow-reflection" aria-hidden="true">
                       <Image
                         src={track.cover}
+                        srcSet={`${track.cover.replace('.webp', '-144.webp')} 144w, ${track.cover} 256w`}
                         alt=""
                         fill
                         sizes="96px"

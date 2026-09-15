@@ -1,0 +1,679 @@
+{
+  "date": "2026-09-15",
+  "scope": "Local production build, no deployment",
+  "method": {
+    "lighthouseVersion": "13.4.1",
+    "environment": {
+      "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36",
+      "hostUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+      "benchmarkIndex": 3760.5,
+      "credits": {}
+    },
+    "mobileThrottling": {
+      "rttMs": 150,
+      "throughputKbps": 1638.4,
+      "requestLatencyMs": 562.5,
+      "downloadThroughputKbps": 1474.5600000000002,
+      "uploadThroughputKbps": 675,
+      "cpuSlowdownMultiplier": 4
+    },
+    "screenEmulation": {
+      "mobile": true,
+      "width": 412,
+      "height": 823,
+      "deviceScaleFactor": 1.75,
+      "disabled": false
+    },
+    "baselineRuns": 2,
+    "finalRunsPerDevice": 3,
+    "notes": "Other baseline attempts returned NO_FCP and were excluded. No reliable desktop baseline or real-user field data."
+  },
+  "baseline": [
+    {
+      "lighthouseVersion": "13.4.1",
+      "fetchTime": "2026-09-15T20:58:54.427Z",
+      "url": "http://127.0.0.1:4173/",
+      "score": 95,
+      "metrics": {
+        "first-contentful-paint": 1803.8738,
+        "largest-contentful-paint": 2737.8738000000003,
+        "total-blocking-time": 9,
+        "cumulative-layout-shift": 0.006627071222805822,
+        "speed-index": 1830.7508472501297,
+        "total-byte-weight": 360385
+      },
+      "resources": [
+        {
+          "resourceType": "total",
+          "label": "Total",
+          "requestCount": 12,
+          "transferSize": 354967
+        },
+        {
+          "resourceType": "image",
+          "label": "Image",
+          "requestCount": 6,
+          "transferSize": 167560
+        },
+        {
+          "resourceType": "script",
+          "label": "Script",
+          "requestCount": 1,
+          "transferSize": 110064
+        },
+        {
+          "resourceType": "font",
+          "label": "Font",
+          "requestCount": 1,
+          "transferSize": 66587
+        },
+        {
+          "resourceType": "other",
+          "label": "Other",
+          "requestCount": 1,
+          "transferSize": 4770
+        },
+        {
+          "resourceType": "stylesheet",
+          "label": "Stylesheet",
+          "requestCount": 1,
+          "transferSize": 4663
+        },
+        {
+          "resourceType": "document",
+          "label": "Document",
+          "requestCount": 1,
+          "transferSize": 980
+        },
+        {
+          "resourceType": "media",
+          "label": "Media",
+          "requestCount": 1,
+          "transferSize": 343
+        },
+        {
+          "resourceType": "third-party",
+          "label": "Third-party",
+          "requestCount": 0,
+          "transferSize": 0
+        }
+      ]
+    },
+    {
+      "lighthouseVersion": "13.4.1",
+      "fetchTime": "2026-09-15T21:04:07.057Z",
+      "url": "http://127.0.0.1:4174/",
+      "score": 95,
+      "metrics": {
+        "first-contentful-paint": 1803.7768,
+        "largest-contentful-paint": 2721.2768000000005,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0.006627071222805822,
+        "speed-index": 1803.7768,
+        "total-byte-weight": 360385
+      },
+      "resources": [
+        {
+          "resourceType": "total",
+          "label": "Total",
+          "requestCount": 12,
+          "transferSize": 354967
+        },
+        {
+          "resourceType": "image",
+          "label": "Image",
+          "requestCount": 6,
+          "transferSize": 167560
+        },
+        {
+          "resourceType": "script",
+          "label": "Script",
+          "requestCount": 1,
+          "transferSize": 110064
+        },
+        {
+          "resourceType": "font",
+          "label": "Font",
+          "requestCount": 1,
+          "transferSize": 66587
+        },
+        {
+          "resourceType": "other",
+          "label": "Other",
+          "requestCount": 1,
+          "transferSize": 4770
+        },
+        {
+          "resourceType": "stylesheet",
+          "label": "Stylesheet",
+          "requestCount": 1,
+          "transferSize": 4663
+        },
+        {
+          "resourceType": "document",
+          "label": "Document",
+          "requestCount": 1,
+          "transferSize": 980
+        },
+        {
+          "resourceType": "media",
+          "label": "Media",
+          "requestCount": 1,
+          "transferSize": 343
+        },
+        {
+          "resourceType": "third-party",
+          "label": "Third-party",
+          "requestCount": 0,
+          "transferSize": 0
+        }
+      ]
+    }
+  ],
+  "final": [
+    {
+      "device": "mobile",
+      "run": 1,
+      "lighthouseVersion": "13.4.1",
+      "fetchTime": "2026-09-15T21:15:29.522Z",
+      "url": "http://127.0.0.1:4173/",
+      "score": 98,
+      "metrics": {
+        "first-contentful-paint": 1293.383375,
+        "largest-contentful-paint": 2272.06005,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 1800.936419965286,
+        "total-byte-weight": 195620
+      },
+      "resources": [
+        {
+          "resourceType": "total",
+          "label": "Total",
+          "requestCount": 12,
+          "transferSize": 190202
+        },
+        {
+          "resourceType": "script",
+          "label": "Script",
+          "requestCount": 3,
+          "transferSize": 111334
+        },
+        {
+          "resourceType": "font",
+          "label": "Font",
+          "requestCount": 1,
+          "transferSize": 35480
+        },
+        {
+          "resourceType": "image",
+          "label": "Image",
+          "requestCount": 6,
+          "transferSize": 31622
+        },
+        {
+          "resourceType": "document",
+          "label": "Document",
+          "requestCount": 1,
+          "transferSize": 6996
+        },
+        {
+          "resourceType": "other",
+          "label": "Other",
+          "requestCount": 1,
+          "transferSize": 4770
+        },
+        {
+          "resourceType": "stylesheet",
+          "label": "Stylesheet",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "media",
+          "label": "Media",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "third-party",
+          "label": "Third-party",
+          "requestCount": 0,
+          "transferSize": 0
+        }
+      ]
+    },
+    {
+      "device": "mobile",
+      "run": 2,
+      "lighthouseVersion": "13.4.1",
+      "fetchTime": "2026-09-15T21:15:41.579Z",
+      "url": "http://127.0.0.1:4173/",
+      "score": 99,
+      "metrics": {
+        "first-contentful-paint": 1354.6663,
+        "largest-contentful-paint": 2029.6662999999999,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 1354.6663,
+        "total-byte-weight": 195620
+      },
+      "resources": [
+        {
+          "resourceType": "total",
+          "label": "Total",
+          "requestCount": 12,
+          "transferSize": 190202
+        },
+        {
+          "resourceType": "script",
+          "label": "Script",
+          "requestCount": 3,
+          "transferSize": 111334
+        },
+        {
+          "resourceType": "font",
+          "label": "Font",
+          "requestCount": 1,
+          "transferSize": 35480
+        },
+        {
+          "resourceType": "image",
+          "label": "Image",
+          "requestCount": 6,
+          "transferSize": 31622
+        },
+        {
+          "resourceType": "document",
+          "label": "Document",
+          "requestCount": 1,
+          "transferSize": 6996
+        },
+        {
+          "resourceType": "other",
+          "label": "Other",
+          "requestCount": 1,
+          "transferSize": 4770
+        },
+        {
+          "resourceType": "stylesheet",
+          "label": "Stylesheet",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "media",
+          "label": "Media",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "third-party",
+          "label": "Third-party",
+          "requestCount": 0,
+          "transferSize": 0
+        }
+      ]
+    },
+    {
+      "device": "mobile",
+      "run": 3,
+      "lighthouseVersion": "13.4.1",
+      "fetchTime": "2026-09-15T21:15:52.477Z",
+      "url": "http://127.0.0.1:4173/",
+      "score": 99,
+      "metrics": {
+        "first-contentful-paint": 1353.2551,
+        "largest-contentful-paint": 1878.2550999999999,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 1353.2551,
+        "total-byte-weight": 195620
+      },
+      "resources": [
+        {
+          "resourceType": "total",
+          "label": "Total",
+          "requestCount": 12,
+          "transferSize": 190202
+        },
+        {
+          "resourceType": "script",
+          "label": "Script",
+          "requestCount": 3,
+          "transferSize": 111334
+        },
+        {
+          "resourceType": "font",
+          "label": "Font",
+          "requestCount": 1,
+          "transferSize": 35480
+        },
+        {
+          "resourceType": "image",
+          "label": "Image",
+          "requestCount": 6,
+          "transferSize": 31622
+        },
+        {
+          "resourceType": "document",
+          "label": "Document",
+          "requestCount": 1,
+          "transferSize": 6996
+        },
+        {
+          "resourceType": "other",
+          "label": "Other",
+          "requestCount": 1,
+          "transferSize": 4770
+        },
+        {
+          "resourceType": "stylesheet",
+          "label": "Stylesheet",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "media",
+          "label": "Media",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "third-party",
+          "label": "Third-party",
+          "requestCount": 0,
+          "transferSize": 0
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "run": 1,
+      "lighthouseVersion": "13.4.1",
+      "fetchTime": "2026-09-15T21:16:03.360Z",
+      "url": "http://127.0.0.1:4173/",
+      "score": 100,
+      "metrics": {
+        "first-contentful-paint": 345.611,
+        "largest-contentful-paint": 566.7331999999999,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 345.611,
+        "total-byte-weight": 202495
+      },
+      "resources": [
+        {
+          "resourceType": "total",
+          "label": "Total",
+          "requestCount": 19,
+          "transferSize": 197077
+        },
+        {
+          "resourceType": "script",
+          "label": "Script",
+          "requestCount": 3,
+          "transferSize": 111334
+        },
+        {
+          "resourceType": "image",
+          "label": "Image",
+          "requestCount": 13,
+          "transferSize": 38497
+        },
+        {
+          "resourceType": "font",
+          "label": "Font",
+          "requestCount": 1,
+          "transferSize": 35480
+        },
+        {
+          "resourceType": "document",
+          "label": "Document",
+          "requestCount": 1,
+          "transferSize": 6996
+        },
+        {
+          "resourceType": "other",
+          "label": "Other",
+          "requestCount": 1,
+          "transferSize": 4770
+        },
+        {
+          "resourceType": "stylesheet",
+          "label": "Stylesheet",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "media",
+          "label": "Media",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "third-party",
+          "label": "Third-party",
+          "requestCount": 0,
+          "transferSize": 0
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "run": 2,
+      "lighthouseVersion": "13.4.1",
+      "fetchTime": "2026-09-15T21:16:14.303Z",
+      "url": "http://127.0.0.1:4173/",
+      "score": 100,
+      "metrics": {
+        "first-contentful-paint": 324.1743,
+        "largest-contentful-paint": 484.1743,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 324.1743,
+        "total-byte-weight": 202495
+      },
+      "resources": [
+        {
+          "resourceType": "total",
+          "label": "Total",
+          "requestCount": 19,
+          "transferSize": 197077
+        },
+        {
+          "resourceType": "script",
+          "label": "Script",
+          "requestCount": 3,
+          "transferSize": 111334
+        },
+        {
+          "resourceType": "image",
+          "label": "Image",
+          "requestCount": 13,
+          "transferSize": 38497
+        },
+        {
+          "resourceType": "font",
+          "label": "Font",
+          "requestCount": 1,
+          "transferSize": 35480
+        },
+        {
+          "resourceType": "document",
+          "label": "Document",
+          "requestCount": 1,
+          "transferSize": 6996
+        },
+        {
+          "resourceType": "other",
+          "label": "Other",
+          "requestCount": 1,
+          "transferSize": 4770
+        },
+        {
+          "resourceType": "stylesheet",
+          "label": "Stylesheet",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "media",
+          "label": "Media",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "third-party",
+          "label": "Third-party",
+          "requestCount": 0,
+          "transferSize": 0
+        }
+      ]
+    },
+    {
+      "device": "desktop",
+      "run": 3,
+      "lighthouseVersion": "13.4.1",
+      "fetchTime": "2026-09-15T21:16:25.236Z",
+      "url": "http://127.0.0.1:4173/",
+      "score": 100,
+      "metrics": {
+        "first-contentful-paint": 323.0681,
+        "largest-contentful-paint": 483.06809999999996,
+        "total-blocking-time": 0,
+        "cumulative-layout-shift": 0,
+        "speed-index": 323.0681,
+        "total-byte-weight": 202495
+      },
+      "resources": [
+        {
+          "resourceType": "total",
+          "label": "Total",
+          "requestCount": 19,
+          "transferSize": 197077
+        },
+        {
+          "resourceType": "script",
+          "label": "Script",
+          "requestCount": 3,
+          "transferSize": 111334
+        },
+        {
+          "resourceType": "image",
+          "label": "Image",
+          "requestCount": 13,
+          "transferSize": 38497
+        },
+        {
+          "resourceType": "font",
+          "label": "Font",
+          "requestCount": 1,
+          "transferSize": 35480
+        },
+        {
+          "resourceType": "document",
+          "label": "Document",
+          "requestCount": 1,
+          "transferSize": 6996
+        },
+        {
+          "resourceType": "other",
+          "label": "Other",
+          "requestCount": 1,
+          "transferSize": 4770
+        },
+        {
+          "resourceType": "stylesheet",
+          "label": "Stylesheet",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "media",
+          "label": "Media",
+          "requestCount": 0,
+          "transferSize": 0
+        },
+        {
+          "resourceType": "third-party",
+          "label": "Third-party",
+          "requestCount": 0,
+          "transferSize": 0
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "url": "http://127.0.0.1:4173/",
+    "measuredAt": "2026-09-15T21:16:33.078Z",
+    "results": [
+      {
+        "device": "mobile",
+        "run": 1,
+        "score": 98,
+        "fcpMs": 1293.383375,
+        "lcpMs": 2272.06005,
+        "tbtMs": 0,
+        "cls": 0,
+        "speedIndexMs": 1800.936419965286,
+        "bytes": 195620
+      },
+      {
+        "device": "mobile",
+        "run": 2,
+        "score": 99,
+        "fcpMs": 1354.6663,
+        "lcpMs": 2029.6662999999999,
+        "tbtMs": 0,
+        "cls": 0,
+        "speedIndexMs": 1354.6663,
+        "bytes": 195620
+      },
+      {
+        "device": "mobile",
+        "run": 3,
+        "score": 99,
+        "fcpMs": 1353.2551,
+        "lcpMs": 1878.2550999999999,
+        "tbtMs": 0,
+        "cls": 0,
+        "speedIndexMs": 1353.2551,
+        "bytes": 195620
+      },
+      {
+        "device": "desktop",
+        "run": 1,
+        "score": 100,
+        "fcpMs": 345.611,
+        "lcpMs": 566.7331999999999,
+        "tbtMs": 0,
+        "cls": 0,
+        "speedIndexMs": 345.611,
+        "bytes": 202495
+      },
+      {
+        "device": "desktop",
+        "run": 2,
+        "score": 100,
+        "fcpMs": 324.1743,
+        "lcpMs": 484.1743,
+        "tbtMs": 0,
+        "cls": 0,
+        "speedIndexMs": 324.1743,
+        "bytes": 202495
+      },
+      {
+        "device": "desktop",
+        "run": 3,
+        "score": 100,
+        "fcpMs": 323.0681,
+        "lcpMs": 483.06809999999996,
+        "tbtMs": 0,
+        "cls": 0,
+        "speedIndexMs": 323.0681,
+        "bytes": 202495
+      }
+    ]
+  }
+}

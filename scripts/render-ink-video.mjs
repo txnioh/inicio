@@ -74,29 +74,14 @@ function paper() {
   ctx.fillStyle = fade; ctx.fillRect(0, 0, W, H);
 }
 function chrome() {
-  text('txnio', 72, 82, 25, TEXT, 500);
-  text('a little svg experiment', 1008, 82, 23, MUTED, 400, 'right');
-  line(72, 940, 1008, 940, .16);
-  text('making svg feel like ink', 72, 992, 24, TEXT);
-  text('inspired by Anthropic', 1008, 992, 21, MUTED, 400, 'right');
+  return;
 }
 function title(label, sub) {
   text(label, 72, 187, 49, TEXT, 400);
   text(sub, 74, 232, 25, MUTED);
 }
 function choices(labels, selected, y = 818) {
-  ctx.font = '23px Geist';
-  const widths = labels.map(s => ctx.measureText(s).width + 44);
-  const total = widths.reduce((a,b) => a+b, 0) + (labels.length - 1) * 8;
-  let x = (W - total) / 2;
-  labels.forEach((label, i) => {
-    if (i === selected) {
-      ctx.fillStyle = TEXT;
-      ctx.fillRect(x + 22, y + 11, widths[i] - 44, 1.5);
-    }
-    text(label, x + widths[i] / 2, y, 23, i === selected ? TEXT : MUTED, 400, 'center');
-    x += widths[i] + 8;
-  });
+  return;
 }
 
 const fan = buildFan();

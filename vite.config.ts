@@ -14,7 +14,18 @@ function gitValue(format: string, fallback: string) {
 }
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), {
+    name: 'preview-client-routes',
+    configurePreviewServer(server) {
+      server.middlewares.use((request, _response, next) => {
+        const path = request.url?.split('?')[0];
+        if (request.headers.accept?.includes('text/html') && path !== '/' && path !== '/index.html') {
+          request.url = '/app.html';
+        }
+        next();
+      });
+    },
+  }],
   define: {
     __BUILD_INFO__: JSON.stringify({
       hash: gitValue('%h', 'local'),

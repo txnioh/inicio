@@ -90,7 +90,8 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
 
   useEffect(() => {
     const audio = new Audio();
-    audio.preload = 'metadata';
+    // No media request until a listener explicitly starts playback.
+    audio.preload = 'none';
     audioRef.current = audio;
 
     const handleLoadStart = () => {
@@ -142,8 +143,6 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('error', handleError);
 
-    loadTrack(0, false);
-
     return () => {
       audio.pause();
       audio.removeAttribute('src');
@@ -169,6 +168,10 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     if (!audio) return;
 
     if (audio.paused) {
+      if (!audio.getAttribute('src')) {
+        loadTrack(activeTrackIndexRef.current, true);
+        return;
+      }
       setLoadState('loading');
       setError(null);
       void audio.play().catch(() => {
@@ -180,7 +183,7 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     }
 
     audio.pause();
-  }, []);
+  }, [loadTrack]);
 
   const seekTo = useCallback((seconds: number) => {
     const audio = audioRef.current;
@@ -194,7 +197,7 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     if (!audioTracks[index]) return;
 
     const audio = audioRef.current;
-    if (index === activeTrackIndexRef.current && audio) {
+    if (index === activeTrackIndexRef.current && audio?.getAttribute('src')) {
       if (audio.paused) {
         setLoadState('loading');
         setError(null);

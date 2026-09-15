@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
-import { animate, stagger, useReducedMotion } from 'framer-motion';
 
 type PageEnterProps = {
   children: ReactNode;
@@ -12,7 +11,6 @@ type PageEnterProps = {
 
 export default function PageEnter({ children, className, skipAnimation = false }: PageEnterProps) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     const rootElement = rootRef.current;
@@ -22,29 +20,16 @@ export default function PageEnter({ children, className, skipAnimation = false }
       rootElement.querySelectorAll<HTMLElement>('.minimal-reveal-line'),
     );
 
-    if (shouldReduceMotion || skipAnimation) {
-      revealElements.forEach((element) => {
-        element.style.opacity = '1';
-        element.style.transform = 'none';
-      });
-      return;
-    }
+    if (skipAnimation || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const controls = animate(
-      revealElements,
-      {
-        opacity: 1,
-        transform: 'translateY(0)',
-      },
-      {
-        delay: stagger(0.034),
-        duration: 0.26,
-        ease: 'easeOut',
-      },
-    );
+    // Content is visible at first paint; entry motion never gates reading or LCP.
+    const animations = revealElements.map((element, index) => element.animate(
+      [{ transform: 'translateY(6px)' }, { transform: 'translateY(0)' }],
+      { delay: index * 34, duration: 260, easing: 'ease-out', fill: 'backwards' },
+    ));
 
-    return () => controls.stop();
-  }, [shouldReduceMotion, skipAnimation]);
+    return () => animations.forEach(animation => animation.cancel());
+  }, [skipAnimation]);
 
   return (
     <div ref={rootRef} className={`${className}${skipAnimation ? ' minimal-navigation-arrival' : ''}`}>

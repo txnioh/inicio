@@ -20,3 +20,34 @@ Regenerate them with `node --experimental-strip-types scripts/render-identity.mj
 npm install
 npm run dev
 ```
+
+## Production and performance
+
+`npm run build` renders the homepage into `dist/index.html`, including its small
+stylesheet. React hydrates that HTML in the browser. `dist/app.html` is the client
+shell for the article and unknown routes; the Vercel rewrites and Vite preview
+middleware select the appropriate document. A different static host needs the
+same fallback to `app.html` for non-home routes.
+
+Measure the production build with Chrome and Lighthouse:
+
+```bash
+npm run build
+npm run preview -- --host 127.0.0.1 --port 4173
+# In another terminal (Chrome must be installed):
+npm run perf
+```
+
+The audit pins Lighthouse 13.4.1 and runs three cold loads per device, sequentially.
+JSON reports and a summary go to `out/performance/`. Pass a URL to measure a
+deployed build: `npm run perf -- https://txnio.com/`.
+See [the measured results](docs/performance.md).
+
+Original artwork and the original WOFF font are retained for production scripts.
+Regenerate responsive covers, logos and textures with
+`node scripts/optimize-images.mjs`; it uses the same Sharp runtime and
+`INK_RENDER_NODE_MODULES` override as the identity renderer. The checked-in WOFF2
+fonts need no build dependency. The Latin subset retains all variable weights;
+the complete WOFF2 remains available for other characters. Track duration and
+vinyl-label color are stored in `src/app/music.ts` so neither audio metadata nor
+canvas image analysis is required on page load.

@@ -6,10 +6,19 @@
 
 @font-face {
   font-family: 'Geist';
-  src: url('/fonts/GeistVF.woff') format('woff');
+  src: url('/fonts/GeistVF.woff2') format('woff2');
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/GeistVF-latin.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0000-024F, U+1E00-1EFF, U+2000-206F, U+20A0-20CF, U+2100-214F, U+2190-21FF, U+2212, U+FEFF, U+FFFD;
 }
 
 * {
@@ -438,7 +447,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   inset: 0;
   z-index: 10;
   border-radius: inherit;
-  background-image: url('/textures/cover-grain.webp');
+  background-image: url('/textures/cover-grain-256.webp');
   background-size: 100% 100%;
   mix-blend-mode: screen;
   opacity: 0.5;
@@ -451,7 +460,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   inset: 0;
   z-index: 20;
   border-radius: inherit;
-  background-image: url('/textures/cover-texture.webp');
+  background-image: url('/textures/cover-texture-256.webp');
   background-size: 100% 100%;
   mix-blend-mode: screen;
   opacity: 0.2;
@@ -473,7 +482,9 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   height: 118px;
   border-radius: 50%;
   transform-origin: center;
-  translate: -64px 0;
+  /* Keep the record fully covered while idle. It should only emerge when
+     playback starts (see .is-playing below), never peek out behind the cover. */
+  translate: -72px 0;
   transition: translate 380ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -485,7 +496,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background-image: url('/textures/vinyl-disc.webp');
+  background-image: url('/textures/vinyl-disc-256.webp');
   background-size: cover;
   background-position: center;
   transform-origin: center;
@@ -964,8 +975,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 }
 
 .minimal-reveal-line {
-  opacity: 0;
-  transform: translateY(6px);
+  opacity: 1;
 }
 
 @keyframes minimalRobotBlink {
