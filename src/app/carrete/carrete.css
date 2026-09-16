@@ -49,12 +49,12 @@
   text-align: center;
   pointer-events: none;
 }
+.carrete-intro-center h1 { margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -.6px; }
+.carrete-entry-hint { margin: 10px 0 0; color: #646460; font-size: 11px; letter-spacing: .02em; }
 .carrete-intro-trigger { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .carrete-intro-trigger:disabled { cursor: wait; }
 .carrete-page .carrete-intro-trigger:focus-visible { outline-offset: -8px; }
 .carrete-text-button { padding: 0; border: 0; background: transparent; font: inherit; cursor: pointer; }
-.carrete-page:not(.has-entered) .carrete-heading { position: fixed; left: 50%; top: 13%; transform: translateX(-50%); }
-.carrete-page:not(.has-entered) .carrete-heading h1 { font-size: 22px; letter-spacing: -.6px; }
 .carrete-header-actions { margin-left: auto; }
 .carrete-load-error { position: absolute; top: calc(100% + 24px); left: -35px; right: -35px; color: #646460; font-size: 11px; line-height: 1.5; }
 .carrete-load-error p { margin: 0 0 8px; }
@@ -90,7 +90,7 @@
 .carrete-grid .carrete-tile[data-playing] { z-index: 100 !important; will-change: transform, opacity; }
 .carrete-tile[data-playing] .carrete-video-mark { visibility: hidden; }
 .has-viewer > .carrete-header { visibility: hidden; }
-.carrete-tile-content { position: relative; width: 100%; height: 100%; border-radius: inherit; animation: carrete-fade-in var(--fade-duration, 200ms) ease-out both; pointer-events: none; }
+.carrete-tile-content { position: relative; width: 100%; height: 100%; border-radius: inherit; animation: carrete-fade-in var(--fade-duration, 500ms) ease-out both; pointer-events: none; }
 @keyframes carrete-fade-in { from { opacity: 0; } to { opacity: 1; } }
 .carrete-tile :is(img, video) { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: inherit; pointer-events: none; -webkit-user-drag: none; }
 .carrete-video { background: #000; }
@@ -188,7 +188,7 @@
   .carrete-arrow { width: 32px; height: 40px; }
   .carrete-viewer-stage { inset: max(88px, calc(env(safe-area-inset-top) + 64px)) 24px max(112px, calc(env(safe-area-inset-bottom) + 88px)); }
   .carrete-viewer-footer > div { gap: 8px; }
-  .carrete-intro-center h1 { font-size: 16px; }
+  .carrete-intro-center h1 { font-size: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .has-entered .carrete-intro, .carrete-viewer { animation: none; }

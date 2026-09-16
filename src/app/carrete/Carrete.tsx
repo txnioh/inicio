@@ -4,8 +4,11 @@ import MediaViewer from './MediaViewer';
 import OrbitLens from './OrbitLens';
 import EffectSettings from './EffectSettings';
 import { collection, loadImage, loadMedia, type LoadedMedia } from './media';
-import { readSettings, SETTINGS_KEY } from './settings';
+import { defaultSettings, readSettings, SETTINGS_KEY } from './settings';
 import './carrete.css';
+
+const canConfigure = import.meta.env.DEV
+  && ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(() => matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -28,7 +31,7 @@ export default function Carrete() {
   const [introVisible, setIntroVisible] = useState(true);
   const [selected, setSelected] = useState<{ index: number; source: HTMLButtonElement } | null>(null);
   const videoPositions = useRef(new Map<string, number>()).current;
-  const [settings, setSettings] = useState(readSettings);
+  const [settings, setSettings] = useState(() => canConfigure ? readSettings() : { ...defaultSettings });
   const [orbitReplay, setOrbitReplay] = useState(0);
   const [gridReplay, setGridReplay] = useState(0);
   const open = useCallback((index: number, source: HTMLButtonElement) => setSelected({ index, source }), []);
@@ -59,6 +62,7 @@ export default function Carrete() {
   });
 
   useEffect(() => {
+    if (!canConfigure) return;
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
     catch { /* Effects remain adjustable when browser storage is unavailable. */ }
   }, [settings]);
@@ -110,12 +114,12 @@ export default function Carrete() {
 
   return <main className={`carrete-page${entered ? ' has-entered' : ''}${selected ? ' has-viewer' : ''}`} tabIndex={-1}>
     <header className="carrete-header">
-      <div className="carrete-heading">
+      {entered && <div className="carrete-heading">
         <h1 className="carrete-title">Carrete</h1>
-        {entered && <span className="carrete-count">{String(loaded.length).padStart(2, '0')}</span>}
-      </div>
+        <span className="carrete-count">{String(loaded.length).padStart(2, '0')}</span>
+      </div>}
       <nav className="carrete-header-actions" aria-label="Carrete">
-        <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-settings" aria-haspopup="dialog">Ajustes</button>
+        {canConfigure && <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-settings" aria-haspopup="dialog">Ajustes</button>}
         <a className="minimal-basic-link" href="/">Volver a inicio</a>
       </nav>
     </header>
@@ -128,9 +132,13 @@ export default function Carrete() {
 
     {introVisible && <section className="carrete-intro" aria-label="Cargar el carrete" inert={entered}>
       <OrbitLens key={orbitReplay} frames={frames} reducedMotion={reducedMotion} settings={settings} />
-      <button className="carrete-intro-trigger" aria-label="Abrir el carrete"
+      <button className="carrete-intro-trigger" aria-label="Abrir el carrete" aria-describedby="carrete-entry-hint"
         disabled={!settled || !loaded.length} onClick={() => setEntered(true)} />
       <div className="carrete-intro-center">
+        <h1>Carrete</h1>
+        <p id="carrete-entry-hint" className="carrete-entry-hint">
+          {!settled ? 'Preparando…' : loaded.length > 0 ? 'Pulsa para entrar' : 'Sin piezas disponibles'}
+        </p>
         {settled && failed > 0 && <div className="carrete-load-error" role="status">
           <p>{failed === 1 ? 'Una pieza no se ha podido cargar.' : `${failed} piezas no se han podido cargar.`}</p>
           <button className="minimal-basic-link carrete-text-button" onClick={() => setAttempt(value => value + 1)}>Reintentar</button>
@@ -147,9 +155,9 @@ export default function Carrete() {
       </footer>
     </section>}
 
-    <EffectSettings settings={settings} setSettings={setSettings} entered={entered}
+    {canConfigure && <EffectSettings settings={settings} setSettings={setSettings} entered={entered}
       canEnter={settled && loaded.length > 0} reducedMotion={reducedMotion}
-      onIntro={showIntro} onGrid={() => setEntered(true)} onReplay={replay} />
+      onIntro={showIntro} onGrid={() => setEntered(true)} onReplay={replay} />}
     {selected !== null && <MediaViewer media={ordered} index={selected.index}
       initialSource={selected.source} reducedMotion={reducedMotion} onClose={close}
       onNavigate={navigate} onSource={retainSource} videoPositions={videoPositions} />}

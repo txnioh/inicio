@@ -8,7 +8,7 @@ export const numericSettings = {
   ripple: { label: 'Ondulación', min: 0, max: 12, step: .5, initial: 12, unit: '%' },
   dispersion: { label: 'Aberración cromática', min: 0, max: 10, step: .5, initial: .5, unit: '%' },
   sideStart: { label: 'Inicio de los laterales', min: 40, max: 95, step: 1, initial: 77, unit: '%' },
-  fadeDuration: { label: 'Duración del fundido', min: 0, max: 600, step: 20, initial: 200, unit: 'ms' },
+  fadeDuration: { label: 'Duración del fundido', min: 0, max: 600, step: 20, initial: 500, unit: 'ms' },
 } as const;
 
 export type NumericSetting = keyof typeof numericSettings;
@@ -18,16 +18,19 @@ export const defaultSettings = Object.fromEntries(
   Object.entries(numericSettings).map(([key, value]) => [key, value.initial]),
 ) as CarreteSettings;
 
-export const SETTINGS_KEY = 'carrete-effects-v1';
+export const SETTINGS_KEY = 'carrete-effects-v2';
 
 export function readSettings(): CarreteSettings {
   const settings = { ...defaultSettings };
   try {
-    const saved: unknown = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+    const current = localStorage.getItem(SETTINGS_KEY);
+    const saved: unknown = JSON.parse(current ?? localStorage.getItem('carrete-effects-v1') ?? 'null');
     if (!saved || typeof saved !== 'object') return settings;
     const values = saved as Record<string, unknown>;
     for (const key of Object.keys(numericSettings) as NumericSetting[]) {
       const value = values[key];
+      // Adopt the new fade default without resetting other saved adjustments.
+      if (!current && key === 'fadeDuration' && value === 200) continue;
       const { min, max, step } = numericSettings[key];
       if (typeof value === 'number' && Number.isFinite(value)) {
         settings[key] = Math.max(min, Math.min(max, Math.round(value / step) * step));
