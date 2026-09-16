@@ -127,7 +127,12 @@ export default function MediaViewer({ media, index, initialSource: openingSource
     };
     const tile = findTile(grid, index, initialSource);
     source.current = tile;
-    if (tile) onSource(tile);
+    if (tile) {
+      // Keep the latest selection above its neighbours after the viewer closes.
+      grid?.querySelector('[data-front]')?.removeAttribute('data-front');
+      tile.setAttribute('data-front', 'true');
+      onSource(tile);
+    }
     const video = item.type === 'video' ? tile?.querySelector('video') ?? null : null;
     activeVideo.current = video;
     const surface = video && tile ? tile : element;

@@ -82,10 +82,11 @@
 .carrete-tile { position: absolute; top: 0; left: 0; display: block; margin: 0; padding: 0; border: 0; border-radius: 10px; background: transparent; cursor: inherit; touch-action: none; -webkit-tap-highlight-color: transparent; }
 .carrete-page .carrete-tile:focus,
 .carrete-viewer .carrete-viewer-surface:focus { outline: none; }
-.carrete-tile { transition: translate 460ms cubic-bezier(.22,.8,.2,1), opacity 320ms ease; }
-.carrete-grid.is-focused .carrete-tile { translate: var(--focus-x, 0px) var(--focus-y, 0px); opacity: .2; }
-.carrete-grid .carrete-tile:is([data-viewing], [data-playing]) { translate: 0 0; opacity: 1; transition: none; }
+.carrete-tile { transition: translate 460ms cubic-bezier(.22,.8,.2,1), filter 320ms ease; }
+.carrete-grid.is-focused .carrete-tile { translate: var(--focus-x, 0px) var(--focus-y, 0px); filter: blur(3px); }
+.carrete-grid .carrete-tile:is([data-viewing], [data-playing]) { translate: 0 0; opacity: 1; filter: none; transition: none; }
 .carrete-grid .carrete-tile[data-viewing] { visibility: hidden; }
+.carrete-grid .carrete-tile[data-front] { z-index: 99 !important; }
 .carrete-grid .carrete-tile[data-playing] { z-index: 100 !important; will-change: transform, opacity; }
 .carrete-tile[data-playing] .carrete-video-mark { visibility: hidden; }
 .has-viewer > .carrete-header { visibility: hidden; }
