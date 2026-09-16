@@ -138,7 +138,15 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
       if (event.key === 'Enter') {
         event.preventDefault();
         stop();
-        onOpen(mediaIndex(Math.floor((width / 2 - position.x) / cell), Math.floor((height / 2 - position.y) / cell), media.length));
+        const tiles = [...plane.querySelectorAll<HTMLButtonElement>('.carrete-tile')];
+        const nearest = tiles.reduce<HTMLButtonElement | null>((best, tile) => {
+          const distance = (candidate: HTMLButtonElement) => {
+            const rect = candidate.getBoundingClientRect();
+            return Math.hypot(rect.x + rect.width / 2 - width / 2, rect.y + rect.height / 2 - height / 2);
+          };
+          return !best || distance(tile) < distance(best) ? tile : best;
+        }, null);
+        if (nearest) onOpen(Number(nearest.dataset.mediaIndex));
       }
     };
     element.addEventListener('pointerdown', down);
@@ -174,13 +182,15 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
           const index = mediaIndex(column, row, media.length);
           const { item, image } = media[index];
           const ratio = item.width / item.height;
-          const size = view.cell * [0.7, 0.79, 0.67, 0.74][wrap(index, 4)];
+          // Coordinate-based variations stay fixed while the infinite plane is panned.
+          const variation = wrap(column * 7 + row * 11, 9);
+          const size = view.cell * [1.12, .56, .84, .68, 1.04, .61, .92, .74, 1.18][variation];
           const width = ratio >= 1 ? size : size * ratio;
           const height = width / ratio;
-          const x = column * view.cell + (view.cell - width) / 2;
-          const y = row * view.cell + (view.cell - height) / 2 + (wrap(column, 2) ? 24 : -24);
-          return <button type="button" key={`${column}:${row}`} className="carrete-tile" tabIndex={-1}
-            style={{ width, height, transform: `translate3d(${x}px, ${y}px, 0)` } as CSSProperties}
+          const x = column * view.cell + (view.cell - width) / 2 + Math.sin(column * 13 + row * 7) * view.cell * .25;
+          const y = row * view.cell + (view.cell - height) / 2 + Math.cos(column * 5 + row * 17) * view.cell * .27;
+          return <button type="button" key={`${column}:${row}`} className="carrete-tile" data-media-index={index} tabIndex={-1}
+            style={{ width, height, zIndex: variation, transform: `translate3d(${x}px, ${y}px, 0) rotate(${Math.sin(column * 3 + row * 5) * 3}deg)` } as CSSProperties}
             aria-label={`Ampliar: ${item.alt}`} onClick={() => { if (!suppressClick.current) onOpen(index); }}>
             <GhostReveal key={replay}>
               <img src={image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />

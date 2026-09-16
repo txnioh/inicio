@@ -34,7 +34,6 @@ export default function Carrete() {
   const open = useCallback((index: number) => setSelected(index), []);
   const close = useCallback(() => setSelected(null), []);
   const settled = loaded.length + failed === collection.length;
-  const percentage = collection.length ? Math.round(loaded.length / collection.length * 100) : 100;
   const showIntro = () => {
     setEntered(false);
     setIntroVisible(true);
@@ -114,8 +113,9 @@ export default function Carrete() {
   return <main className={`carrete-page${entered ? ' has-entered' : ''}`} tabIndex={-1}>
     {Object.values(ghostMasks).map(src => <link key={src} rel="preload" as="image" href={src} />)}
     <header className="carrete-header">
-      <div className="carrete-heading" aria-hidden={!entered}>
-        {entered && <><h1>Carrete</h1><span className="carrete-count">{String(loaded.length).padStart(2, '0')}</span></>}
+      <div className="carrete-heading">
+        <h1 className="carrete-title">Carrete</h1>
+        {entered && <span className="carrete-count">{String(loaded.length).padStart(2, '0')}</span>}
       </div>
       <nav className="carrete-header-actions" aria-label="Carrete">
         <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-settings" aria-haspopup="dialog">Ajustes</button>
@@ -131,15 +131,11 @@ export default function Carrete() {
     {introVisible && <section className="carrete-intro" aria-label="Cargar el carrete" inert={entered}>
       <OrbitLens key={orbitReplay} frames={frames} reducedMotion={reducedMotion} settings={settings} />
       <div className="carrete-intro-center">
-        <h1>Carrete</h1>
-        <div className="carrete-progress" role="progressbar" aria-label="Fotografías y vídeos cargados"
-          aria-valuenow={percentage} aria-valuemin={0} aria-valuemax={100}>
-          <span>{String(percentage).padStart(2, '0')}</span><span className="carrete-percent-sign">%</span>
-        </div>
         <div className="carrete-enter-slot">
-          <button className="minimal-basic-link carrete-text-button carrete-enter"
+          <button className="carrete-text-button carrete-enter"
             disabled={!settled || !loaded.length} onClick={() => setEntered(true)}>
-            Entrar <span aria-hidden="true">↗</span>
+            <span>{settled && loaded.length ? 'Enter' : 'Preparing…'}</span>
+            <span className="carrete-enter-arrow" aria-hidden="true">→</span>
           </button>
         </div>
         {settled && failed > 0 && <div className="carrete-load-error" role="status">

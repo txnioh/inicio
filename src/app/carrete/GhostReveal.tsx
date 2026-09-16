@@ -39,18 +39,23 @@ export default function GhostReveal({ children }: { children: ReactNode }) {
   useEffect(() => {
     const element = ref.current!;
     if (typeof IntersectionObserver === 'undefined') { element.dataset.visible = 'true'; return; }
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const observer = new IntersectionObserver(entries => {
       for (const entry of entries) {
-        if (entry.isIntersecting) element.dataset.visible = 'true';
+        if (entry.isIntersecting) {
+          clearTimeout(timer);
+          timer = setTimeout(() => { element.dataset.visible = 'true'; }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : delay * 1100);
+        }
         else {
+          clearTimeout(timer);
           delete element.dataset.visible;
           delete element.dataset.complete;
         }
       }
     }, { threshold: 0 });
     observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+    return () => { clearTimeout(timer); observer.disconnect(); };
+  }, [delay]);
   return <div ref={ref} className="carrete-ghost-reveal"
     style={{ '--ghost-order': delay, '--ghost-start': `${26 + delay * 5}%` } as CSSProperties}
     onAnimationEnd={event => {

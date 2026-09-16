@@ -1124,3 +1124,23 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
     cursor: url('/cursors/envelope.svg') 6 10, pointer;
   }
 }
+
+/* Project index */
+.project-list-heading { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #f2f2f2; }
+.project-list-heading h3 { padding: 0; border: 0; }
+.project-filters { display: flex; gap: 14px; }
+.project-filters button { padding: 0; border: 0; background: none; color: #999; font: inherit; font-size: 12px; cursor: pointer; }
+.project-filters button[aria-pressed='true'] { color: #111; text-decoration: underline; text-underline-offset: 4px; }
+.project-filters button:focus-visible { outline: 1px solid; outline-offset: 4px; }
+.project-name { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
+.project-wip { position: relative; color: #89877d; font: italic 12px 'Bradley Hand', 'Segoe Print', cursive; white-space: nowrap; transform: rotate(-3deg); }
+.project-wip svg { position: absolute; width: 100%; height: 9px; top: 100%; left: 0; fill: none; stroke: currentColor; stroke-width: .8; }
+.page-index .minimal-row-meta { width: auto; white-space: nowrap; }
+html[data-page-transition] .carrete-title { view-transition-name: carrete-title; }
+html[data-page-transition]::view-transition-group(carrete-title) { animation-duration: 650ms; animation-timing-function: cubic-bezier(.22,.8,.25,1); }
+html[data-page-transition]::view-transition-old(carrete-title),
+html[data-page-transition]::view-transition-new(carrete-title) { height: 100%; }
+@media (max-width: 480px) {
+  .project-name { flex-wrap: wrap; gap: 4px 8px; }
+  .project-wip { font-size: 10px; }
+}

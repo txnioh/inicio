@@ -47,7 +47,6 @@ export default function usePageNavigation() {
         document.querySelector<HTMLElement>('main')?.focus({ preventScroll: true });
       };
       if (!document.startViewTransition
-        || !matchMedia('(hover: hover) and (pointer: fine)').matches
         || matchMedia('(prefers-reduced-motion: reduce)').matches) {
         update();
         return;
