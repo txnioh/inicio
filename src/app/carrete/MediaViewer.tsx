@@ -80,11 +80,6 @@ export default function MediaViewer({ media, initialIndex, initialSource, reduce
     source.current?.removeAttribute('data-viewing');
     source.current = findTile(grid, index, initialSource);
     source.current?.setAttribute('data-viewing', 'true');
-    const reveal = source.current?.querySelector<HTMLElement>('.carrete-ghost-reveal');
-    if (reveal) {
-      reveal.dataset.visible = 'true';
-      reveal.dataset.complete = 'true';
-    }
     size();
     setReady(reducedMotion);
     const origin = source.current ? tilePose(source.current, element) : { transform: 'scale(.94)', opacity: 0 };

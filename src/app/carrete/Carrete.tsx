@@ -3,7 +3,6 @@ import InfiniteGrid from './InfiniteGrid';
 import MediaViewer from './MediaViewer';
 import OrbitLens from './OrbitLens';
 import EffectSettings from './EffectSettings';
-import { ghostMasks } from './GhostReveal';
 import { collection, loadImage, loadMedia, type LoadedMedia } from './media';
 import { readSettings, SETTINGS_KEY } from './settings';
 import './carrete.css';
@@ -111,7 +110,6 @@ export default function Carrete() {
   }, [entered, reducedMotion]);
 
   return <main className={`carrete-page${entered ? ' has-entered' : ''}${selected ? ' has-viewer' : ''}`} tabIndex={-1}>
-    {Object.values(ghostMasks).map(src => <link key={src} rel="preload" as="image" href={src} />)}
     <header className="carrete-header">
       <div className="carrete-heading">
         <h1 className="carrete-title">Carrete</h1>

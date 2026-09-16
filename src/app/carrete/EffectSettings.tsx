@@ -1,9 +1,9 @@
 import { useId, type Dispatch, type SetStateAction } from 'react';
-import { defaultSettings, ghostEasings, numericSettings, type CarreteSettings, type NumericSetting } from './settings';
+import { defaultSettings, numericSettings, type CarreteSettings, type NumericSetting } from './settings';
 
 const introControls: NumericSetting[] = ['introDuration', 'introStagger', 'orbitCount', 'circleScale', 'orbitSpeed'];
 const lensControls: NumericSetting[] = ['distortion', 'ripple', 'dispersion', 'sideStart'];
-const gridControls: NumericSetting[] = ['ghostDuration', 'ghostStagger', 'ghostSoftness'];
+const gridControls: NumericSetting[] = ['fadeDuration'];
 
 export default function EffectSettings({ settings, setSettings, entered, canEnter, reducedMotion, onIntro, onGrid, onReplay }: {
   settings: CarreteSettings;
@@ -42,31 +42,13 @@ export default function EffectSettings({ settings, setSettings, entered, canEnte
     </div>
     {reducedMotion && <p className="carrete-settings-note" role="status">Movimiento reducido activo: las animaciones se muestran sin movimiento.</p>}
     {entered ? <>
-      <fieldset><legend>Ghosty Reveal</legend>{sliders(gridControls)}
-        <label className="carrete-setting-select" htmlFor={`${id}-direction`}>Dirección
-          <select id={`${id}-direction`} value={settings.ghostDirection} onChange={event => {
-            const direction = event.currentTarget.value as CarreteSettings['ghostDirection'];
-            setSettings(current => ({ ...current, ghostDirection: direction }));
-          }}>
-            <option value="up">Hacia arriba</option><option value="down">Hacia abajo</option>
-            <option value="left">Hacia la izquierda</option><option value="right">Hacia la derecha</option>
-          </select>
-        </label>
-        <label className="carrete-setting-select" htmlFor={`${id}-easing`}>Movimiento
-          <select id={`${id}-easing`} value={settings.ghostEasing} onChange={event => {
-            const easing = event.currentTarget.value as CarreteSettings['ghostEasing'];
-            setSettings(current => ({ ...current, ghostEasing: easing }));
-          }}>
-            {Object.entries(ghostEasings).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
-          </select>
-        </label>
-      </fieldset>
+      <fieldset><legend>Entrada de imágenes</legend>{sliders(gridControls)}</fieldset>
     </> : <>
       <fieldset><legend>Círculos</legend>{sliders(introControls)}</fieldset>
       <fieldset><legend>Cristal · solo en los laterales</legend>{sliders(lensControls)}</fieldset>
     </>}
     <div className="carrete-settings-actions">
-      <button className="minimal-basic-link carrete-text-button" onClick={onReplay}>{entered ? 'Repetir revelado' : 'Repetir entrada'} <span aria-hidden="true">↻</span></button>
+      <button className="minimal-basic-link carrete-text-button" onClick={onReplay}>Repetir entrada <span aria-hidden="true">↻</span></button>
       <button className="minimal-basic-link carrete-text-button" onClick={() => setSettings({ ...defaultSettings })}>Restablecer</button>
     </div>
     <p className="carrete-settings-note">Los ajustes se guardan en este navegador.</p>

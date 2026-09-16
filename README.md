@@ -13,28 +13,20 @@ Drag with a mouse or touch, use a trackpad, or use the arrow controls. Keyboard
 arrows pan, Home recenters, and Enter opens the central photograph. The viewer
 supports left/right arrows and Escape.
 
-The circles fade and grow into their orbit in sequence. On entry, grid tiles use
-a cloudy Ghosty Reveal mask that starts immediately, with a small random
-variation in its initial progress and duration. The
-original PNG masks come from [Arlan's Ghosty reveal](https://www.arlan.me/vault/ghosty-reveal)
-(MIT; attribution in `public/carrete/GHOSTY-LICENSE.txt`). At full softness the
-mask size is 600%; the reference grid's `cubic-bezier(.33, 0, .2, 1)`
-curve is available alongside Glide and the other easing options. The reveal
-runs alongside the 180 ms intro exit. During exploration, photos use half the
-configured reveal duration plus 0–200 ms of random variation, and a separate
-random delay (0–400 ms by default). The initial mask already shows a soft edge,
-so this does not create an empty loading state. An observer starts the animation
-when each photo enters the viewport and resets it when it leaves, including
-cached tiles revisited by dragging back. Completed tiles release their mask.
-Two extra rings of decoded tiles are prepared,
-and large jumps commit the next tile set before moving the plane.
+The circles fade and grow into their orbit in sequence. Grid images use a short
+opacity fade, with no masks, staggered delays, or per-image visibility observers.
+Two extra rings of decoded tiles are prepared before the plane moves.
+Pointer capture belongs to the grid from the start of a gesture, so crossing or
+recycling a photograph cannot interrupt a touch drag. Taps open the viewer;
+drags never open a photograph. Movement uses requestAnimationFrame and elapsed-time
+inertia, following the display refresh rate rather than a fixed 60 Hz timer.
+Actual frame rate depends on the browser, device, and power settings.
 
-The grid and viewer have no glass effects or frame-rate monitor. Photographs
-open directly in the viewer. The
-**Ajustes** button is available in both views: switch between Entrada and Grid,
-tune the circle entrance, orbit and intro glass lens, or change the reveal duration,
-random delay, softness, direction and easing. Replay buttons preview the result
-without downloading the collection again or resetting the grid position.
+Photographs expand from their position while the surrounding grid recedes,
+and return to their original tile on close. The **Ajustes** button is available
+in both views: switch between Entrada and Grid, tune the circle entrance,
+orbit and intro glass lens, or change the grid fade duration. Replay previews
+the entrance without downloading the collection again or resetting the grid position.
 Settings persist locally in this browser and can be restored with Restablecer;
 defaults and slider limits live in `src/app/carrete/settings.ts`.
 

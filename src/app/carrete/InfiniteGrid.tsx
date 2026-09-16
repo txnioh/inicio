@@ -1,7 +1,6 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { flushSync } from 'react-dom';
 import type { LoadedMedia } from './media';
-import GhostReveal, { ghostStyle } from './GhostReveal';
 import type { CarreteSettings } from './settings';
 
 export const wrap = (value: number, size: number) => ((value % size) + size) % size;
@@ -9,6 +8,28 @@ export const mediaIndex = (column: number, row: number, count: number) => wrap(c
 
 type Position = { x: number; y: number };
 type View = { width: number; height: number; cell: number; column: number; row: number };
+
+// Crossing a cell only renders the new edge; retained photographs stay untouched.
+const GridTile = memo(function GridTile({ column, row, cell, media, index, replay }: {
+  column: number; row: number; cell: number; media: LoadedMedia; index: number; replay: number;
+}) {
+  const { item, image } = media;
+  const ratio = item.width / item.height;
+  const variation = wrap(column * 7 + row * 11, 9);
+  const size = cell * [1.12, .56, .84, .68, 1.04, .61, .92, .74, 1.18][variation];
+  const width = ratio >= 1 ? size : size * ratio;
+  const height = width / ratio;
+  const x = column * cell + (cell - width) / 2 + Math.sin(column * 13 + row * 7) * cell * .25;
+  const y = row * cell + (cell - height) / 2 + Math.cos(column * 5 + row * 17) * cell * .27;
+  return <button type="button" className="carrete-tile" data-media-index={index} tabIndex={-1}
+    style={{ width, height, zIndex: variation, transform: `translate3d(${x}px, ${y}px, 0) rotate(${Math.sin(column * 3 + row * 5) * 3}deg)` }}
+    aria-label={`Ampliar: ${item.alt}`}>
+    <div key={replay} className="carrete-tile-content">
+      <img src={image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />
+      {item.type === 'video' && <span className="carrete-video-mark" aria-label="Vídeo">↗ film</span>}
+    </div>
+  </button>;
+});
 
 export default function InfiniteGrid({ media, reducedMotion, settings, replay, onOpen }: {
   media: LoadedMedia[];
@@ -21,11 +42,8 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
   const world = useRef<HTMLDivElement>(null);
   const pan = useRef<(x: number, y: number, reset?: boolean) => void>(() => {});
   const openTile = useRef<(tile: HTMLButtonElement) => void>(() => {});
-  const suppressClick = useRef(false);
+  const tappedTile = useRef<HTMLButtonElement | null>(null);
   const [view, setView] = useState<View>({ width: 0, height: 0, cell: 300, column: 0, row: 0 });
-  const revealStyle = useMemo(() => ghostStyle(settings), [settings]);
-
-  useLayoutEffect(() => { viewport.current?.classList.remove('is-exploring'); }, [replay]);
 
   useEffect(() => {
     const element = viewport.current!;
@@ -38,16 +56,20 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
     let origin = '';
     let position: Position = { x: 0, y: 0 };
     let velocity: Position = { x: 0, y: 0 };
-    let pointer: { id: number; x: number; y: number; startX: number; startY: number; time: number } | null = null;
+    let pointer: { id: number; x: number; y: number; startX: number; startY: number; time: number;
+      dragging: boolean; tile: HTMLButtonElement | null } | null = null;
     const update = (now: number) => {
       frame = 0;
-      const delta = Math.min(lastFrame ? (now - lastFrame) / 16.667 : 1, 2);
+      const elapsed = Math.min(lastFrame ? now - lastFrame : 0, 32);
       lastFrame = now;
       if (!pointer && !reducedMotion) {
-        position.x += velocity.x * delta;
-        position.y += velocity.y * delta;
-        velocity.x *= Math.pow(.92, delta);
-        velocity.y *= Math.pow(.92, delta);
+        // Velocity is px/ms. Integrating exponential decay keeps the same
+        // distance and feel at 60, 90, 120 Hz, or variable refresh rates.
+        const decay = Math.exp(-elapsed / 190);
+        position.x += velocity.x * 190 * (1 - decay);
+        position.y += velocity.y * 190 * (1 - decay);
+        velocity.x *= decay;
+        velocity.y *= decay;
       }
       const column = Math.floor(-position.x / cell) - 2;
       const row = Math.floor(-position.y / cell) - 2;
@@ -59,13 +81,14 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
         flushSync(() => setView({ width, height, cell, column, row }));
       }
       plane.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
-      if (!pointer && Math.hypot(velocity.x, velocity.y) > .1 && !reducedMotion) frame = requestAnimationFrame(update);
+      if (!pointer && Math.hypot(velocity.x, velocity.y) > .01 && !reducedMotion) frame = requestAnimationFrame(update);
       else lastFrame = 0;
     };
     const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
     const cancelDrag = () => {
-      if (pointer && element.hasPointerCapture(pointer.id)) element.releasePointerCapture(pointer.id);
+      const id = pointer?.id;
       pointer = null;
+      if (id !== undefined && element.hasPointerCapture(id)) element.releasePointerCapture(id);
       element.classList.remove('is-dragging');
     };
     const observer = new ResizeObserver(([entry]) => {
@@ -83,35 +106,50 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
     observer.observe(element);
 
     const down = (event: PointerEvent) => {
-      if (event.button !== 0 || !event.isPrimary) return;
+      if (event.button !== 0 || !event.isPrimary || pointer) return;
+      cancelAnimationFrame(frame);
+      frame = 0;
+      lastFrame = 0;
       velocity = { x: 0, y: 0 };
-      suppressClick.current = false;
+      tappedTile.current = null;
       pointer = { id: event.pointerId, x: event.clientX, y: event.clientY,
-        startX: event.clientX, startY: event.clientY, time: event.timeStamp };
+        startX: event.clientX, startY: event.clientY, time: event.timeStamp, dragging: false,
+        tile: event.target instanceof Element ? event.target.closest<HTMLButtonElement>('.carrete-tile') : null };
+      // Capture on the stable viewport immediately, never on recycled tiles.
+      element.setPointerCapture(event.pointerId);
       element.focus({ preventScroll: true });
     };
     const move = (event: PointerEvent) => {
       if (!pointer || event.pointerId !== pointer.id) return;
       const dx = event.clientX - pointer.x;
       const dy = event.clientY - pointer.y;
-      const delta = Math.max(event.timeStamp - pointer.time, 8);
-      if (Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) > 5) {
-        suppressClick.current = true;
-        element.setPointerCapture(event.pointerId);
+      const elapsed = Math.max(event.timeStamp - pointer.time, 1);
+      const wasDragging = pointer.dragging;
+      if (!wasDragging && Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) > 5) {
+        pointer.dragging = true;
         element.classList.add('is-dragging');
-        element.classList.add('is-exploring');
       }
-      position.x += dx;
-      position.y += dy;
-      velocity = { x: Math.max(-50, Math.min(50, dx / delta * 16.667)), y: Math.max(-50, Math.min(50, dy / delta * 16.667)) };
-      pointer = { ...pointer, x: event.clientX, y: event.clientY, time: event.timeStamp };
-      schedule();
+      if (pointer.dragging) {
+        position.x += wasDragging ? dx : event.clientX - pointer.startX;
+        position.y += wasDragging ? dy : event.clientY - pointer.startY;
+        const weight = 1 - Math.exp(-elapsed / 24);
+        velocity.x += (Math.max(-3, Math.min(3, dx / elapsed)) - velocity.x) * weight;
+        velocity.y += (Math.max(-3, Math.min(3, dy / elapsed)) - velocity.y) * weight;
+        schedule();
+      }
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      pointer.time = event.timeStamp;
     };
     const up = (event: PointerEvent) => {
       if (!pointer || event.pointerId !== pointer.id) return;
+      const tap = event.type === 'pointerup' && !pointer.dragging ? pointer.tile : null;
       if (event.type === 'pointercancel' || event.timeStamp - pointer.time > 80 || reducedMotion) velocity = { x: 0, y: 0 };
       cancelDrag();
-      schedule();
+      // Wait for the native click before opening: opening on pointerup would
+      // send the same tap's click into the new viewer and immediately close it.
+      tappedTile.current = tap;
+      if (!tap) { lastFrame = performance.now(); schedule(); }
     };
     const stop = () => { cancelDrag(); velocity = { x: 0, y: 0 }; };
     openTile.current = tile => {
@@ -120,11 +158,15 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
       frame = 0;
       onOpen(Number(tile.dataset.mediaIndex), tile);
     };
-    const lostCapture = () => { if (pointer) stop(); };
+    const lostCapture = (event: PointerEvent) => {
+      // A child's implicit touch capture can be transferred to the grid.
+      // Its bubbling lostpointercapture must not cancel the grid's gesture.
+      if (event.target === element && event.pointerId === pointer?.id) stop();
+    };
+    const preventNativeDrag = (event: Event) => event.preventDefault();
     const wheel = (event: WheelEvent) => {
       if (event.ctrlKey || event.metaKey) return;
       event.preventDefault();
-      element.classList.add('is-exploring');
       velocity = { x: 0, y: 0 };
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? height : 1;
       position.x -= (event.shiftKey ? event.deltaY : event.deltaX) * unit;
@@ -132,7 +174,6 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
       schedule();
     };
     pan.current = (x, y, reset) => {
-      element.classList.add('is-exploring');
       velocity = { x: 0, y: 0 };
       position = reset ? { x: width / 2 - cell * 1.5, y: height / 2 - cell * 1.5 }
         : { x: position.x + x * cell * .8, y: position.y + y * cell * .8 };
@@ -161,17 +202,22 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
     element.addEventListener('pointerup', up);
     element.addEventListener('pointercancel', up);
     element.addEventListener('lostpointercapture', lostCapture);
+    element.addEventListener('dragstart', preventNativeDrag);
+    element.addEventListener('contextmenu', preventNativeDrag);
     element.addEventListener('wheel', wheel, { passive: false });
     element.addEventListener('keydown', key);
     window.addEventListener('blur', stop);
     return () => {
       cancelAnimationFrame(frame);
+      cancelDrag();
       observer.disconnect();
       element.removeEventListener('pointerdown', down);
       element.removeEventListener('pointermove', move);
       element.removeEventListener('pointerup', up);
       element.removeEventListener('pointercancel', up);
       element.removeEventListener('lostpointercapture', lostCapture);
+      element.removeEventListener('dragstart', preventNativeDrag);
+      element.removeEventListener('contextmenu', preventNativeDrag);
       element.removeEventListener('wheel', wheel);
       element.removeEventListener('keydown', key);
       window.removeEventListener('blur', stop);
@@ -181,29 +227,21 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
   const columns = Math.ceil(view.width / view.cell) + 5;
   const rows = Math.ceil(view.height / view.cell) + 5;
   return <>
-    <div ref={viewport} className="carrete-grid" style={revealStyle} tabIndex={0} role="region" aria-label="Carrete. Arrastra o usa las flechas para explorar. Pulsa Intro para ampliar la imagen central.">
+    <div ref={viewport} className="carrete-grid" style={{ '--fade-duration': `${settings.fadeDuration}ms` } as CSSProperties}
+      onClick={event => {
+        const tile = event.detail === 0 && event.target instanceof Element
+          ? event.target.closest<HTMLButtonElement>('.carrete-tile') : tappedTile.current;
+        tappedTile.current = null;
+        if (tile?.isConnected) openTile.current(tile);
+      }}
+      tabIndex={0} role="region" aria-label="Carrete. Arrastra o usa las flechas para explorar. Pulsa Intro para ampliar la imagen central.">
       <div ref={world} className="carrete-world">
         {view.width > 0 && Array.from({ length: columns * rows }, (_, slot) => {
           const column = view.column + slot % columns;
           const row = view.row + Math.floor(slot / columns);
           const index = mediaIndex(column, row, media.length);
-          const { item, image } = media[index];
-          const ratio = item.width / item.height;
-          // Coordinate-based variations stay fixed while the infinite plane is panned.
-          const variation = wrap(column * 7 + row * 11, 9);
-          const size = view.cell * [1.12, .56, .84, .68, 1.04, .61, .92, .74, 1.18][variation];
-          const width = ratio >= 1 ? size : size * ratio;
-          const height = width / ratio;
-          const x = column * view.cell + (view.cell - width) / 2 + Math.sin(column * 13 + row * 7) * view.cell * .25;
-          const y = row * view.cell + (view.cell - height) / 2 + Math.cos(column * 5 + row * 17) * view.cell * .27;
-          return <button type="button" key={`${column}:${row}`} className="carrete-tile" data-media-index={index} tabIndex={-1}
-            style={{ width, height, zIndex: variation, transform: `translate3d(${x}px, ${y}px, 0) rotate(${Math.sin(column * 3 + row * 5) * 3}deg)` } as CSSProperties}
-            aria-label={`Ampliar: ${item.alt}`} onClick={event => { if (!suppressClick.current) openTile.current(event.currentTarget); }}>
-            <GhostReveal key={replay}>
-              <img src={image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />
-              {item.type === 'video' && <span className="carrete-video-mark" aria-label="Vídeo">↗ film</span>}
-            </GhostReveal>
-          </button>;
+          return <GridTile key={`${column}:${row}`} column={column} row={row} cell={view.cell}
+            media={media[index]} index={index} replay={replay} />;
         })}
       </div>
     </div>
