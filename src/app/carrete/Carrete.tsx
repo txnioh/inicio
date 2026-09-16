@@ -27,11 +27,11 @@ export default function Carrete() {
   const [failed, setFailed] = useState(0);
   const [entered, setEntered] = useState(false);
   const [introVisible, setIntroVisible] = useState(true);
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<{ index: number; source: HTMLButtonElement } | null>(null);
   const [settings, setSettings] = useState(readSettings);
   const [orbitReplay, setOrbitReplay] = useState(0);
   const [gridReplay, setGridReplay] = useState(0);
-  const open = useCallback((index: number) => setSelected(index), []);
+  const open = useCallback((index: number, source: HTMLButtonElement) => setSelected({ index, source }), []);
   const close = useCallback(() => setSelected(null), []);
   const settled = loaded.length + failed === collection.length;
   const showIntro = () => {
@@ -110,7 +110,7 @@ export default function Carrete() {
     return () => clearTimeout(timer);
   }, [entered, reducedMotion]);
 
-  return <main className={`carrete-page${entered ? ' has-entered' : ''}`} tabIndex={-1}>
+  return <main className={`carrete-page${entered ? ' has-entered' : ''}${selected ? ' has-viewer' : ''}`} tabIndex={-1}>
     {Object.values(ghostMasks).map(src => <link key={src} rel="preload" as="image" href={src} />)}
     <header className="carrete-header">
       <div className="carrete-heading">
@@ -157,6 +157,7 @@ export default function Carrete() {
     <EffectSettings settings={settings} setSettings={setSettings} entered={entered}
       canEnter={settled && loaded.length > 0} reducedMotion={reducedMotion}
       onIntro={showIntro} onGrid={() => setEntered(true)} onReplay={replay} />
-    {selected !== null && <MediaViewer media={ordered} initialIndex={selected} onClose={close} />}
+    {selected !== null && <MediaViewer media={ordered} initialIndex={selected.index}
+      initialSource={selected.source} reducedMotion={reducedMotion} onClose={close} />}
   </main>;
 }

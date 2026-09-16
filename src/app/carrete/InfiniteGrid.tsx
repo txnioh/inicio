@@ -15,11 +15,12 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
   reducedMotion: boolean;
   settings: CarreteSettings;
   replay: number;
-  onOpen: (index: number) => void;
+  onOpen: (index: number, source: HTMLButtonElement) => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
   const pan = useRef<(x: number, y: number, reset?: boolean) => void>(() => {});
+  const openTile = useRef<(tile: HTMLButtonElement) => void>(() => {});
   const suppressClick = useRef(false);
   const [view, setView] = useState<View>({ width: 0, height: 0, cell: 300, column: 0, row: 0 });
   const revealStyle = useMemo(() => ghostStyle(settings), [settings]);
@@ -113,6 +114,12 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
       schedule();
     };
     const stop = () => { cancelDrag(); velocity = { x: 0, y: 0 }; };
+    openTile.current = tile => {
+      stop();
+      cancelAnimationFrame(frame);
+      frame = 0;
+      onOpen(Number(tile.dataset.mediaIndex), tile);
+    };
     const lostCapture = () => { if (pointer) stop(); };
     const wheel = (event: WheelEvent) => {
       if (event.ctrlKey || event.metaKey) return;
@@ -146,7 +153,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
           };
           return !best || distance(tile) < distance(best) ? tile : best;
         }, null);
-        if (nearest) onOpen(Number(nearest.dataset.mediaIndex));
+        if (nearest) openTile.current(nearest);
       }
     };
     element.addEventListener('pointerdown', down);
@@ -191,7 +198,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
           const y = row * view.cell + (view.cell - height) / 2 + Math.cos(column * 5 + row * 17) * view.cell * .27;
           return <button type="button" key={`${column}:${row}`} className="carrete-tile" data-media-index={index} tabIndex={-1}
             style={{ width, height, zIndex: variation, transform: `translate3d(${x}px, ${y}px, 0) rotate(${Math.sin(column * 3 + row * 5) * 3}deg)` } as CSSProperties}
-            aria-label={`Ampliar: ${item.alt}`} onClick={() => { if (!suppressClick.current) onOpen(index); }}>
+            aria-label={`Ampliar: ${item.alt}`} onClick={event => { if (!suppressClick.current) openTile.current(event.currentTarget); }}>
             <GhostReveal key={replay}>
               <img src={image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />
               {item.type === 'video' && <span className="carrete-video-mark" aria-label="Vídeo">↗ film</span>}
