@@ -387,15 +387,6 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   mix-blend-mode: normal;
 }
 
-.minimal-inline-player.is-dj-mode {
-  height: 470px;
-  min-height: 470px;
-}
-
-.minimal-inline-player.is-dj-mode .minimal-player-screen {
-  height: 440px;
-}
-
 .minimal-player-screen {
   display: grid;
   width: 100%;
@@ -589,7 +580,10 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 }
 
 .minimal-inline-track strong {
+  min-width: 0;
+  overflow: hidden;
   font-weight: 500;
+  text-overflow: ellipsis;
 }
 
 .minimal-inline-track span:last-child {
@@ -1090,6 +1084,234 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.minimal-player-size-toggle {
+  position: absolute;
+  top: 6px;
+  right: 0;
+  z-index: 30;
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #858580;
+  cursor: pointer;
+}
+
+.minimal-player-size-toggle:hover {
+  background: #f0f0ee;
+  color: #111111;
+}
+
+.minimal-player-size-toggle:focus-visible,
+.minimal-record-option:focus-visible {
+  outline: 1px solid #111111;
+  outline-offset: 2px;
+}
+
+.minimal-inline-player.is-lite {
+  display: grid;
+  height: 54px;
+  min-height: 54px;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  gap: 6px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 8px 0;
+}
+
+.is-lite .minimal-player-size-toggle {
+  position: static;
+}
+
+.is-lite .minimal-player-screen,
+.is-lite .minimal-library-screen {
+  display: flex;
+  min-width: 0;
+  height: 36px;
+  min-height: 0;
+  gap: 8px;
+  align-items: center;
+}
+
+.is-lite .minimal-release-picker,
+.is-lite .minimal-release-trigger {
+  width: 46px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.is-lite .minimal-release-cover {
+  width: 32px;
+}
+
+.is-lite .minimal-release-vinyl {
+  top: 1px;
+  width: 30px;
+  height: 30px;
+  translate: -14px 0;
+}
+
+.is-lite .minimal-release-trigger.is-playing .minimal-release-vinyl {
+  translate: 0 0;
+}
+
+.is-lite .minimal-inline-player-content,
+.is-lite .minimal-inline-controls {
+  display: contents;
+}
+
+.is-lite .minimal-inline-track {
+  display: block;
+  flex: 1;
+  order: 1;
+  font-size: 11px;
+  line-height: 20px;
+}
+
+.is-lite .minimal-inline-track strong {
+  font-weight: 500;
+}
+
+.is-lite .minimal-inline-track span:first-of-type {
+  margin: 0 5px;
+  color: #a1a19b;
+}
+
+.is-lite .minimal-transport {
+  flex: 0 0 auto;
+  order: 2;
+  gap: 0;
+}
+
+.is-lite .minimal-transport button {
+  width: 28px;
+  height: 32px;
+}
+
+.is-lite .minimal-play-button {
+  color: #111111;
+}
+
+.is-lite .minimal-timeline {
+  height: 28px;
+  flex: 0 0 58px;
+  order: 3;
+}
+
+.is-lite .minimal-timeline > span {
+  top: calc(50% - 1px);
+  height: 2px;
+}
+
+.is-lite .minimal-inline-time {
+  flex: 0 0 28px;
+  order: 4;
+  font-size: 10px;
+  text-align: right;
+}
+
+.is-lite .minimal-player-links,
+.is-lite .minimal-audio-status,
+.is-lite.has-error .minimal-inline-track {
+  display: none;
+}
+
+.is-lite .minimal-audio-status.is-error {
+  display: block;
+  min-width: 0;
+  height: auto;
+  flex: 1;
+  order: 1;
+  margin: 0;
+}
+
+.is-lite .minimal-library-back {
+  position: static;
+  display: inline-flex;
+  width: 28px;
+  height: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.minimal-record-count {
+  margin-right: auto;
+  color: #858580;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.minimal-record-strip {
+  display: flex;
+  min-width: 0;
+  gap: 8px;
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.minimal-record-option {
+  display: block;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: #ecece9;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 160ms;
+}
+
+.minimal-record-option img {
+  display: block;
+  object-fit: cover;
+}
+
+.minimal-record-option:is(:hover, :focus-visible, .is-active-record) {
+  opacity: 1;
+}
+
+.minimal-record-option.is-active-record {
+  outline: 1px solid #a1a19b;
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .is-lite .minimal-player-screen,
+  .is-lite .minimal-library-screen {
+    gap: 5px;
+  }
+
+  .is-lite .minimal-timeline {
+    flex-basis: 36px;
+  }
+
+  .is-lite .minimal-inline-time,
+  .minimal-record-count {
+    display: none;
+  }
+
+  .minimal-record-strip {
+    gap: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .minimal-release-vinyl,
+  .minimal-record-option {
+    transition: none;
+  }
 }
 
 /* 16–18px artwork in a 28px canvas: 4px padding keeps the cursor shadow intact.

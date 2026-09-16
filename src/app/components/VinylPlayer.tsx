@@ -56,6 +56,20 @@ function formatTime(seconds: number) {
   return `${minutes}:${remainingSeconds}`;
 }
 
+function PlayerIcon({ name }: { name: 'previous' | 'next' | 'play' | 'pause' | 'expand' | 'collapse' | 'back' }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {name === 'previous' && <><path d="M11.5 3.5 5.5 8l6 4.5Z" fill="currentColor" stroke="none" /><path d="M4 4v8" /></>}
+      {name === 'next' && <><path d="m4.5 3.5 6 4.5-6 4.5Z" fill="currentColor" stroke="none" /><path d="M12 4v8" /></>}
+      {name === 'play' && <path d="m5 3 7 5-7 5Z" fill="currentColor" stroke="none" />}
+      {name === 'pause' && <><path d="M5.5 4v8M10.5 4v8" strokeWidth="2.5" /></>}
+      {name === 'expand' && <path d="M9.5 2.5h4v4m0-4L9 7M6.5 13.5h-4v-4m0 4L7 9" />}
+      {name === 'collapse' && <path d="M13.5 2.5 9 7m0-4v4h4M2.5 13.5 7 9m-4 0h4v4" />}
+      {name === 'back' && <path d="m7 3-5 5 5 5M2 8h12" />}
+    </svg>
+  );
+}
+
 function getCoverPose(position: number) {
   if (position === 0) {
     return {
@@ -124,12 +138,15 @@ function useVinylRotation(visibleTime: number, isPlaying: boolean, isSeeking: bo
 }
 
 export function VinylPlayer() {
+  const [isLite, setIsLite] = useState(true);
   const [screen, setScreen] = useState<'player' | 'library'>('player');
   const [collectionPosition, setCollectionPosition] = useState(0);
   const [previewPercent, setPreviewPercent] = useState<number | null>(null);
   const [seekPercent, setSeekPercent] = useState<number | null>(null);
   const [isSeeking, setIsSeeking] = useState(false);
   const libraryRef = useRef<HTMLDivElement>(null);
+  const releaseTriggerRef = useRef<HTMLButtonElement>(null);
+  const previousScreenRef = useRef(screen);
   const timelineRef = useRef<HTMLDivElement>(null);
   const lastPanXRef = useRef<number | null>(null);
   const isDraggingCollectionRef = useRef(false);
@@ -296,9 +313,14 @@ export function VinylPlayer() {
   }, [currentTime, duration, isReady, seekTo]);
 
   useEffect(() => {
-    if (screen !== 'library') return;
+    const previousScreen = previousScreenRef.current;
+    previousScreenRef.current = screen;
+    if (screen === previousScreen) return;
 
-    const frame = window.requestAnimationFrame(() => libraryRef.current?.focus());
+    const frame = window.requestAnimationFrame(() => {
+      const target = screen === 'library' ? libraryRef.current : releaseTriggerRef.current;
+      target?.focus({ preventScroll: true });
+    });
     return () => window.cancelAnimationFrame(frame);
   }, [screen]);
 
@@ -339,6 +361,17 @@ export function VinylPlayer() {
   const handleLibraryKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.target instanceof HTMLInputElement) return;
 
+    if (isLite && event.key !== 'Escape') {
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        const records = Array.from(libraryRef.current?.querySelectorAll<HTMLButtonElement>('.minimal-record-option') ?? []);
+        const focusedIndex = records.indexOf(event.target as HTMLButtonElement);
+        const nextIndex = focusedIndex < 0 ? activeTrackIndex : focusedIndex + (event.key === 'ArrowRight' ? 1 : -1);
+        records[Math.min(Math.max(nextIndex, 0), records.length - 1)]?.focus();
+      }
+      return;
+    }
+
     if (event.key === 'ArrowLeft') {
       event.preventDefault();
       navigateBy(-1);
@@ -346,17 +379,18 @@ export function VinylPlayer() {
       event.preventDefault();
       navigateBy(1);
     } else if (event.key === 'Enter' || event.key === ' ') {
+      if (event.target instanceof HTMLButtonElement && !event.target.classList.contains('minimal-coverflow-card')) return;
       event.preventDefault();
       chooseTrack(selectedIndex);
     } else if (event.key === 'Escape') {
       event.preventDefault();
       changeScreen('player');
     }
-  }, [changeScreen, chooseTrack, navigateBy, selectedIndex]);
+  }, [activeTrackIndex, changeScreen, chooseTrack, isLite, navigateBy, selectedIndex]);
 
   return (
     <section
-      className="minimal-inline-player minimal-reveal-line"
+      className={`minimal-inline-player minimal-reveal-line${isLite ? ' is-lite' : ' is-expanded'}${error ? ' has-error' : ''}`}
       aria-label={screen === 'player' ? 'Now playing' : 'Choose a record'}
     >
       {screen === 'player' ? (
@@ -365,10 +399,12 @@ export function VinylPlayer() {
           >
             <div className="minimal-release-picker">
               <button
+                ref={releaseTriggerRef}
                 type="button"
                 className={`minimal-release-trigger${isPlaying ? ' is-playing' : ''}`}
                 onClick={openLibrary}
                 aria-label="Browse record collection"
+                title="Browse record collection"
               >
                 <span className="minimal-release-cover">
                   <Image
@@ -376,7 +412,7 @@ export function VinylPlayer() {
                     srcSet={`${activeTrack.cover.replace('.webp', '-144.webp')} 144w, ${activeTrack.cover} 256w`}
                     alt=""
                     fill
-                    sizes="(max-width: 640px) 72px, 128px"
+                    sizes={isLite ? '32px' : '(max-width: 640px) 72px, 128px'}
                     draggable={false}
                     className="minimal-vinyl-cover"
                   />
@@ -399,7 +435,7 @@ export function VinylPlayer() {
                         srcSet={`${activeTrack.cover.replace('.webp', '-144.webp')} 144w, ${activeTrack.cover} 256w`}
                         alt=""
                         fill
-                        sizes="(max-width: 640px) 72px, 128px"
+                        sizes={isLite ? '12px' : '(max-width: 640px) 24px, 42px'}
                         draggable={false}
                         className="minimal-vinyl-cover"
                       />
@@ -410,7 +446,7 @@ export function VinylPlayer() {
             </div>
 
             <div className="minimal-inline-player-content">
-              <p className="minimal-inline-track">
+              <p className="minimal-inline-track" title={`${activeTrack.title} — ${activeTrack.artist}`}>
                 <strong>{activeTrack.title}</strong>
                 <span aria-hidden="true">—</span>
                 <span>{activeTrack.artist}</span>
@@ -423,22 +459,23 @@ export function VinylPlayer() {
                     onClick={selectPrevTrack}
                     aria-label="Previous track"
                   >
-                    prev
+                    {isLite ? <PlayerIcon name="previous" /> : 'prev'}
                   </button>
                   <button
                     type="button"
                     onClick={togglePlayback}
                     aria-label={isPlaying ? `Pause ${activeTrack.title}` : `Play ${activeTrack.title}`}
                     aria-busy={loadState === 'loading'}
+                    className="minimal-play-button"
                   >
-                    {loadState === 'loading' && !isPlaying ? 'wait' : isPlaying ? 'pause' : 'play'}
+                    {loadState === 'loading' && !isPlaying ? (isLite ? '···' : 'wait') : isLite ? <PlayerIcon name={isPlaying ? 'pause' : 'play'} /> : isPlaying ? 'pause' : 'play'}
                   </button>
                   <button
                     type="button"
                     onClick={selectNextTrack}
                     aria-label="Next track"
                   >
-                    next
+                    {isLite ? <PlayerIcon name="next" /> : 'next'}
                   </button>
                 </div>
                 <div
@@ -494,9 +531,11 @@ export function VinylPlayer() {
                     transition={timelineTransition}
                   />
                 </div>
-                <span className="minimal-inline-time">
+                <span className="minimal-inline-time" title={`${formatTime(currentTime)} / ${formatTime(isReady ? duration : activeTrack.duration)}`}>
                   {loadState === 'loading' && !isReady
-                    ? 'loading…'
+                    ? (isLite ? '···' : 'loading…')
+                    : isLite
+                    ? formatTime(currentTime)
                     : isReady
                     ? `${formatTime(currentTime)} / ${formatTime(duration)}`
                     : `0:00 / ${formatTime(activeTrack.duration)}`}
@@ -533,87 +572,122 @@ export function VinylPlayer() {
               type="button"
               className="minimal-library-back"
               onClick={() => changeScreen('player')}
+              aria-label="Back to player"
             >
-              ← Playing
+              {isLite ? <PlayerIcon name="back" /> : '← Playing'}
             </button>
 
-            <motion.div
-              className="minimal-coverflow-stage"
-              onPanStart={handlePanStart}
-              onPan={handlePan}
-              onPanEnd={handlePanEnd}
-              style={{ touchAction: 'none' }}
-            >
-              {tracks.map((track, index) => {
-                const position = index - collectionPosition;
-                if (Math.abs(position) > 3) return null;
+            {isLite ? (
+              <>
+                <span className="minimal-record-count">{tracks.length} records</span>
+                <div className="minimal-record-strip">
+                  {tracks.map((track, index) => (
+                    <button
+                      key={track.id}
+                      type="button"
+                      className={`minimal-record-option${index === activeTrackIndex ? ' is-active-record' : ''}`}
+                      aria-label={`Play ${track.title} by ${track.artist}`}
+                      aria-current={index === activeTrackIndex ? 'true' : undefined}
+                      title={`${track.title} — ${track.artist}`}
+                      onFocus={() => setCollectionPosition(index)}
+                      onClick={() => chooseTrack(index)}
+                    >
+                      <Image src={track.cover.replace('.webp', '-144.webp')} alt="" width="32" height="32" draggable={false} />
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <motion.div
+                  className="minimal-coverflow-stage"
+                  onPanStart={handlePanStart}
+                  onPan={handlePan}
+                  onPanEnd={handlePanEnd}
+                  style={{ touchAction: 'none' }}
+                >
+                  {tracks.map((track, index) => {
+                    const position = index - collectionPosition;
+                    if (Math.abs(position) > 3) return null;
 
-                const pose = getCoverPose(position);
-                const revealOrder = getCoverRevealOrder(
-                  position,
-                  selectedIndex,
-                  tracks.length,
-                );
-                return (
-                  <motion.button
-                    type="button"
-                    key={track.id}
-                    className={`minimal-coverflow-card${position === 0 ? ' is-active-album' : ''}`}
-                    style={{
-                      viewTransitionName: position === 0 ? 'active-album-cover' : undefined,
-                      '--coverflow-reveal-delay': `${40 + revealOrder * 75}ms`,
-                      '--coverflow-reflection-delay': `${150 + revealOrder * 90}ms`,
-                    } as CSSProperties}
-                    onClick={() => {
-                      if (isDraggingCollectionRef.current) return;
-                      if (position === 0) {
-                        chooseTrack(index);
-                      } else {
-                        setCollectionPosition(index);
-                      }
-                    }}
-                    aria-label={position === 0
-                      ? `Play ${track.title} by ${track.artist}`
-                      : `Focus ${track.title} by ${track.artist}`}
-                    tabIndex={position === 0 ? 0 : -1}
-                    initial={false}
-                    animate={pose}
-                    transition={shouldReduceMotion ? { duration: 0 } : COVER_SPRING}
-                  >
-                    <span className="minimal-coverflow-artwork">
-                      <Image
-                        src={track.cover}
-                        srcSet={`${track.cover.replace('.webp', '-144.webp')} 144w, ${track.cover} 256w`}
-                        alt={`${track.album} cover`}
-                        fill
-                        sizes="96px"
-                        draggable={false}
-                        className="minimal-vinyl-cover"
-                      />
-                    </span>
-                    <span className="minimal-coverflow-reflection" aria-hidden="true">
-                      <Image
-                        src={track.cover}
-                        srcSet={`${track.cover.replace('.webp', '-144.webp')} 144w, ${track.cover} 256w`}
-                        alt=""
-                        fill
-                        sizes="96px"
-                        draggable={false}
-                        className="minimal-vinyl-cover"
-                      />
-                    </span>
-                  </motion.button>
-                );
-              })}
-            </motion.div>
+                    const pose = getCoverPose(position);
+                    const revealOrder = getCoverRevealOrder(
+                      position,
+                      selectedIndex,
+                      tracks.length,
+                    );
+                    return (
+                      <motion.button
+                        type="button"
+                        key={track.id}
+                        className={`minimal-coverflow-card${position === 0 ? ' is-active-album' : ''}`}
+                        style={{
+                          viewTransitionName: position === 0 ? 'active-album-cover' : undefined,
+                          '--coverflow-reveal-delay': `${40 + revealOrder * 75}ms`,
+                          '--coverflow-reflection-delay': `${150 + revealOrder * 90}ms`,
+                        } as CSSProperties}
+                        onClick={() => {
+                          if (isDraggingCollectionRef.current) return;
+                          if (position === 0) {
+                            chooseTrack(index);
+                          } else {
+                            setCollectionPosition(index);
+                          }
+                        }}
+                        aria-label={position === 0
+                          ? `Play ${track.title} by ${track.artist}`
+                          : `Focus ${track.title} by ${track.artist}`}
+                        tabIndex={position === 0 ? 0 : -1}
+                        initial={false}
+                        animate={pose}
+                        transition={shouldReduceMotion ? { duration: 0 } : COVER_SPRING}
+                      >
+                        <span className="minimal-coverflow-artwork">
+                          <Image
+                            src={track.cover}
+                            srcSet={`${track.cover.replace('.webp', '-144.webp')} 144w, ${track.cover} 256w`}
+                            alt={`${track.album} cover`}
+                            fill
+                            sizes="96px"
+                            draggable={false}
+                            className="minimal-vinyl-cover"
+                          />
+                        </span>
+                        <span className="minimal-coverflow-reflection" aria-hidden="true">
+                          <Image
+                            src={track.cover}
+                            srcSet={`${track.cover.replace('.webp', '-144.webp')} 144w, ${track.cover} 256w`}
+                            alt=""
+                            fill
+                            sizes="96px"
+                            draggable={false}
+                            className="minimal-vinyl-cover"
+                          />
+                        </span>
+                      </motion.button>
+                    );
+                  })}
+                </motion.div>
 
-            <div className="minimal-coverflow-meta" aria-live="polite">
-              <strong>{selectedTrack.title}</strong>
-              <span>{selectedTrack.artist} · {selectedTrack.album}</span>
-            </div>
+                <div className="minimal-coverflow-meta" aria-live="polite">
+                  <strong>{selectedTrack.title}</strong>
+                  <span>{selectedTrack.artist} · {selectedTrack.album}</span>
+                </div>
+              </>
+            )}
 
           </div>
         )}
+      <button
+        type="button"
+        className="minimal-player-size-toggle"
+        onClick={() => setIsLite((current) => !current)}
+        aria-label={isLite ? 'Expand player' : 'Use lite player'}
+        aria-expanded={!isLite}
+        title={isLite ? 'Expand player' : 'Use lite player'}
+      >
+        <PlayerIcon name={isLite ? 'expand' : 'collapse'} />
+      </button>
     </section>
   );
 }
