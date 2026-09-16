@@ -28,13 +28,25 @@ function tilePose(tile: HTMLButtonElement, frame: HTMLElement) {
   };
 }
 
-function expandedVideoPose(tile: HTMLButtonElement, frame: HTMLElement) {
+function expandedVideoPose(tile: HTMLButtonElement, frame: HTMLElement, zoom = 1) {
   const target = frame.getBoundingClientRect();
   const plane = tile.parentElement!.getBoundingClientRect();
-  const scale = frame.offsetWidth / tile.offsetWidth;
+  const scale = frame.offsetWidth / tile.offsetWidth * zoom;
   const x = target.x + target.width / 2 - plane.x - tile.offsetWidth / 2;
   const y = target.y + target.height / 2 - plane.y - tile.offsetHeight / 2;
   return { transform: `translate(${x}px, ${y}px) rotate(0deg) scale(${scale})`, borderRadius: `${10 / scale}px` };
+}
+
+function tileMotion(tile: HTMLButtonElement | null, frame: HTMLElement) {
+  if (!tile) return { visible: false, duration: 240 };
+  const from = tile.getBoundingClientRect();
+  const viewport = tile.closest('.carrete-grid')!.getBoundingClientRect();
+  const visible = from.right > viewport.left && from.left < viewport.right
+    && from.bottom > viewport.top && from.top < viewport.bottom;
+  const to = frame.getBoundingClientRect();
+  const distance = Math.hypot(from.x + from.width / 2 - to.x - to.width / 2,
+    from.y + from.height / 2 - to.y - to.height / 2);
+  return { visible, duration: visible ? Math.min(560, 360 + distance * .25) : 240 };
 }
 
 function pauseVideo(video: HTMLVideoElement | null, grid: HTMLElement | null, positions: Map<string, number>) {
@@ -123,12 +135,15 @@ export default function MediaViewer({ media, index, initialSource: openingSource
     tile?.setAttribute(video ? 'data-playing' : 'data-viewing', 'true');
     size();
     setReady(reducedMotion);
-    const destination = video && tile ? expandedVideoPose(tile, element)
+    const motion = tileMotion(tile, element);
+    const destination = video && tile ? { ...expandedVideoPose(tile, element), opacity: 1 }
       : { transform: 'none', borderRadius: '10px', opacity: 1 };
-    const origin = video && tile ? { transform: tile.style.transform, borderRadius: '10px' }
-      : tile ? tilePose(tile, element) : { transform: 'scale(.94)', opacity: 0 };
+    // Offscreen pieces enter near the viewer instead of flying across the grid.
+    const origin = motion.visible && tile
+      ? video ? { transform: tile.style.transform, borderRadius: '10px', opacity: 1 } : { ...tilePose(tile, element), opacity: 1 }
+      : { ...(video && tile ? expandedVideoPose(tile, element, .97) : { transform: 'scale(.97)' }), opacity: 0 };
     animation.current = surface.animate([origin, destination], {
-      duration: reducedMotion ? 0 : 620, easing, fill: 'both',
+      duration: reducedMotion ? 0 : motion.duration, easing, fill: 'both',
     });
     animation.current.onfinish = () => setReady(true);
     if (video && tile) playVideo(video, tile);
@@ -173,12 +188,17 @@ export default function MediaViewer({ media, index, initialSource: openingSource
     const surface = animated.current!;
     const current = getComputedStyle(surface);
     const from = { transform: current.transform, borderRadius: current.borderRadius, opacity: current.opacity };
+    const progress = Number(animation.current?.effect?.getComputedTiming().progress ?? 1);
     animation.current?.cancel();
     const tile = source.current;
-    const destination = activeVideo.current && tile
-      ? { transform: tile.style.transform, borderRadius: '10px', opacity: 1 }
-      : tile ? tilePose(tile, frame.current!) : { transform: 'scale(.94)', opacity: 0 };
-    animation.current = surface.animate([from, destination], { duration: 460, easing, fill: 'both' });
+    const element = frame.current!;
+    const motion = tileMotion(tile, element);
+    const destination = motion.visible && tile
+      ? activeVideo.current ? { transform: tile.style.transform, borderRadius: '10px', opacity: 1 }
+        : { ...tilePose(tile, element), opacity: 1 }
+      : { ...(activeVideo.current && tile ? expandedVideoPose(tile, element, .97) : { transform: 'scale(.97)' }), opacity: 0 };
+    const duration = Math.max(160, motion.duration * .8 * Math.sqrt(progress));
+    animation.current = surface.animate([from, destination], { duration, easing, fill: 'both' });
     animation.current.onfinish = onClose;
   };
   const move = (direction: number) => {
@@ -198,15 +218,14 @@ export default function MediaViewer({ media, index, initialSource: openingSource
     </header>
     <div ref={stage} className="carrete-viewer-stage" onClick={event => { if (event.target === event.currentTarget) close(); }}>
       <div ref={frame} className="carrete-viewer-media">
-        {item.type === 'image' && <button className="carrete-viewer-photo" aria-label="Cerrar imagen" onClick={close}>
-          <img key={item.id} src={image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />
-        </button>}
+        <button className="carrete-viewer-surface" aria-label={item.type === 'video' ? 'Cerrar vídeo' : 'Cerrar imagen'} onClick={close}>
+          {item.type === 'image' && <img key={item.id} src={image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />}
+        </button>
       </div>
     </div>
     <footer className="carrete-viewer-footer">
-      <span className="carrete-viewer-caption" aria-live="polite">{item.title || item.alt}</span>
       <div>
-        <span className="carrete-counter">{String(index + 1).padStart(2, '0')} <span>/ {String(media.length).padStart(2, '0')}</span></span>
+        <span className="carrete-counter" aria-live="polite">{String(index + 1).padStart(2, '0')} <span>/ {String(media.length).padStart(2, '0')}</span></span>
         <button className="carrete-arrow" aria-label="Imagen anterior" onClick={() => move(-1)}>←</button>
         <button className="carrete-arrow" aria-label="Imagen siguiente" onClick={() => move(1)}>→</button>
       </div>
