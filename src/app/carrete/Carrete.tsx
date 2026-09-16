@@ -3,6 +3,7 @@ import InfiniteGrid from './InfiniteGrid';
 import MediaViewer from './MediaViewer';
 import OrbitLens from './OrbitLens';
 import EffectSettings from './EffectSettings';
+import NowPlaying from '../components/NowPlaying';
 import { collection, loadImage, loadMedia, type LoadedMedia } from './media';
 import { defaultSettings, readSettings, SETTINGS_KEY } from './settings';
 import './carrete.css';
@@ -158,6 +159,7 @@ export default function Carrete() {
     {canConfigure && <EffectSettings settings={settings} setSettings={setSettings} entered={entered}
       canEnter={settled && loaded.length > 0} reducedMotion={reducedMotion}
       onIntro={showIntro} onGrid={() => setEntered(true)} onReplay={replay} />}
+    {selected === null && <NowPlaying lang="es" />}
     {selected !== null && <MediaViewer media={ordered} index={selected.index}
       initialSource={selected.source} reducedMotion={reducedMotion} onClose={close}
       onNavigate={navigate} onSource={retainSource} videoPositions={videoPositions} />}

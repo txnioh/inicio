@@ -1,4 +1,5 @@
 .ink-shell { max-width: 598px; padding: 80px 24px 56px; }
+.ink-page:has(> .minimal-now-playing) { padding-bottom: 80px; }
 .ink-article { font-size: 14px; line-height: 20px; letter-spacing: -.09px; }
 .ink-article a { color: inherit; text-decoration: underline; text-decoration-color: #d1d1cc; text-underline-offset: 3px; }
 .ink-article strong { font-weight: 560; }

@@ -15,6 +15,8 @@
 }
 
 .carrete-page:focus { outline: none; }
+.carrete-page:not(.has-entered) > .minimal-now-playing { bottom: calc(76px + env(safe-area-inset-bottom)); }
+.carrete-viewer[data-closing='true'] > .minimal-now-playing { opacity: 0; pointer-events: none; }
 .carrete-page button { color: inherit; }
 .carrete-page :is(button, a):focus-visible,
 .carrete-viewer :is(button, a):focus-visible { outline: 1px solid #111; outline-offset: 6px; }
@@ -178,6 +180,10 @@
 .carrete-settings-note { margin: 16px 0 0; font-size: 10px; color: #858580; }
 .carrete-settings-views + .carrete-settings-note { margin: 0 0 18px; }
 @keyframes carrete-depart { to { opacity: 0; transform: scale(1.16); filter: blur(8px); } }
+@media (max-width: 640px) {
+  .carrete-viewer > .minimal-now-playing { bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .carrete-viewer:has(> .minimal-now-playing) .carrete-viewer-stage { bottom: calc(152px + env(safe-area-inset-bottom)); }
+}
 @media (max-width: 600px) {
   .carrete-header { padding: max(24px, env(safe-area-inset-top)) 24px 28px; font-size: 12px; }
   .carrete-header-actions { gap: 14px; }

@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import NowPlaying from '../components/NowPlaying';
 import type { LoadedMedia } from './media';
 import { wrap } from './InfiniteGrid';
 
@@ -235,5 +236,6 @@ export default function MediaViewer({ media, index, initialSource: openingSource
         <button className="carrete-arrow" aria-label="Imagen siguiente" onClick={() => move(1)}>→</button>
       </div>
     </footer>
+    <NowPlaying lang="es" />
   </dialog>;
 }

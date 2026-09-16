@@ -1080,6 +1080,71 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   }
 }
 
+.minimal-now-playing {
+  position: fixed;
+  z-index: 8;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 32px;
+  display: flex;
+  width: 320px;
+  max-width: calc(100vw - 48px);
+  height: 48px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #e8e8e3;
+  border-radius: 6px;
+  background: rgba(253, 253, 252, 0.96);
+  color: #111;
+  box-shadow: 0 3px 16px #00000008;
+  font: 460 11px/20px var(--font-geist-sans), sans-serif;
+}
+
+.minimal-now-playing > img {
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.minimal-now-playing-track {
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.minimal-now-playing-track strong { font-weight: 500; }
+.minimal-now-playing-track span { color: #858580; }
+.minimal-now-playing-track.is-error { color: #9e2d22; }
+
+.minimal-now-playing button {
+  display: inline-flex;
+  width: 28px;
+  height: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.minimal-now-playing button:hover { background: #f0f0ee; }
+.minimal-now-playing button:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
+
+@media (max-width: 640px) {
+  .minimal-now-playing {
+    right: 24px;
+    left: 24px;
+    width: auto;
+    max-width: none;
+  }
+}
+
 .minimal-player-links {
   display: flex;
   align-items: center;

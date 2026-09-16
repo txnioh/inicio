@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import RobotHomeLink from '../components/RobotHomeLink';
 import FooterRobotMark from '../components/FooterRobotMark';
+import NowPlaying from '../components/NowPlaying';
 import { ExampleDemo, FanDemo, LayersDemo, RevealDemo, ShapeDemo, TextureDemo, WobbleDemo } from './InkDemos';
 import './writing.css';
 
@@ -130,5 +131,6 @@ export default function InkArticle() {
         <footer className="ink-article-footer"><RobotHomeLink /><span>Antonio J. Gonzalez</span></footer>
       </article>
     </div>
+    <NowPlaying />
   </main>;
 }
