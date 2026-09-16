@@ -1,6 +1,8 @@
 /node_modules
 /dist
 /out
+/output/playwright
+/.playwright-cli
 /build
 /.vercel
 .DS_Store

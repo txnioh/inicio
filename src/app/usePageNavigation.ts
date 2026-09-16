@@ -3,11 +3,13 @@ import { flushSync } from 'react-dom';
 
 const loadArticle = () => import('./writing/InkArticle');
 const LazyArticle = lazy(loadArticle);
+const loadCarrete = () => import('./carrete/Carrete');
+const LazyCarrete = lazy(loadCarrete);
 const pathname = (url: URL) => url.pathname.replace(/\/+$/, '') || '/';
 
 export default function usePageNavigation() {
-  const [page, setPage] = useState<{ path: string; Article: ComponentType; arrived: boolean }>(() => ({
-    path: pathname(new URL(location.href)), Article: LazyArticle, arrived: false,
+  const [page, setPage] = useState<{ path: string; Article: ComponentType; Carrete: ComponentType; arrived: boolean }>(() => ({
+    path: pathname(new URL(location.href)), Article: LazyArticle, Carrete: LazyCarrete, arrived: false,
   }));
   const currentPath = useRef(page.path);
 
@@ -23,9 +25,11 @@ export default function usePageNavigation() {
       const navigation = ++request;
       scrollPositions.set(currentPath.current, scrollY);
       let Article: ComponentType = LazyArticle;
+      let Carrete: ComponentType = LazyCarrete;
       try {
         // Load before taking the snapshot so the transition never captures a loading screen.
         if (nextPath === '/writing/ink') Article = (await loadArticle()).default;
+        if (nextPath === '/carrete') Carrete = (await loadCarrete()).default;
       } catch {
         location.assign(url.href);
         return;
@@ -36,7 +40,7 @@ export default function usePageNavigation() {
         if (navigation !== request) return;
         if (!fromHistory) history.pushState(null, '', url);
         currentPath.current = nextPath;
-        flushSync(() => setPage({ path: nextPath, Article, arrived: true }));
+        flushSync(() => setPage({ path: nextPath, Article, Carrete, arrived: true }));
         const target = url.hash && document.getElementById(decodeURIComponent(url.hash.slice(1)));
         if (target) target.scrollIntoView({ behavior: 'instant' });
         else window.scrollTo({ top: nextPath === '/' || fromHistory ? scrollPositions.get(nextPath) ?? 0 : 0, behavior: 'instant' });
@@ -64,7 +68,7 @@ export default function usePageNavigation() {
       const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
       if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
       const url = new URL(link.href);
-      if (url.origin !== location.origin || !['/', '/writing/ink'].includes(pathname(url)) || pathname(url) === currentPath.current) return;
+      if (url.origin !== location.origin || !['/', '/writing/ink', '/carrete'].includes(pathname(url)) || pathname(url) === currentPath.current) return;
       event.preventDefault();
       void navigate(url);
     }
