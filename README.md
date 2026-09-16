@@ -30,10 +30,20 @@ the entrance without downloading the collection again or resetting the grid posi
 Settings persist locally in this browser and can be restored with Restablecer;
 defaults and slider limits live in `src/app/carrete/settings.ts`.
 
-The initial collection contains **12 temporary Unsplash images**, not Antonio's
-photographs. Source URLs and embedded tiny previews are recorded in
-`src/app/carrete/samples.json`; optimized files live in `public/carrete/`.
-Replace `collection` in `src/app/carrete/media.ts` with the final selection:
+Videos start automatically on opening (muted if the browser blocks audible
+autoplay). Closing a film or navigating away pauses it and captures its current
+frame as the grid thumbnail. Reopening resumes from that position; a finished
+film starts again. Frames and positions remain in memory while Carrete is open,
+and only the selected video is mounted.
+
+The collection contains **47 photos and 12 videos from [@txnioh](https://www.instagram.com/txnioh/)**:
+all slides of the 22 profile publications, including six reels and six videos
+inside carousels. Post permalinks, slide positions, dimensions, descriptions and embedded tiny previews are recorded
+in `src/app/carrete/instagram.json`; optimized WebP files live in
+`public/carrete/instagram/`, alongside MP4 clips and their WebP covers. Images retain their original aspect ratio, are at
+most 1600 px on the longest edge, and load entirely from this site. There is no
+Instagram embed, login requirement, or dependency on expiring Instagram CDN URLs.
+To add more media, update `collection` in `src/app/carrete/media.ts`:
 
 ```ts
 { id: 'photo-01', type: 'image', src: '/carrete/photo-01.webp',
@@ -46,11 +56,12 @@ Replace `collection` in `src/app/carrete/media.ts` with the final selection:
 ```
 
 Use the real dimensions: the grid and viewer preserve their aspect ratio.
-The loader downloads and decodes each image before enabling entry; videos are
-fully buffered, so use short, compressed clips. Progress counts successful
+The loader downloads and decodes each image and video cover before enabling entry.
+Videos load only when opened in the viewer; the grid never mounts video players
+or downloads the entire film archive. MP4 files use H.264, preserve available audio,
+and put metadata first for progressive playback. Progress counts successful
 pieces, not elapsed time. Tiny previews make the orbit available while the
 full collection loads. Failed files can be retried or skipped explicitly.
-Change the intro's “Archivo de muestra” label when adding the real selection.
 
 The effect uses WebGL without an extra dependency, falls back to a 2D orbit
 when unavailable, pauses in background tabs, and stops after entry. Reduced

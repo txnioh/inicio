@@ -25,7 +25,7 @@ const GridTile = memo(function GridTile({ column, row, cell, media, index, repla
     style={{ width, height, zIndex: variation, transform: `translate3d(${x}px, ${y}px, 0) rotate(${Math.sin(column * 3 + row * 5) * 3}deg)` }}
     aria-label={`Ampliar: ${item.alt}`}>
     <div key={replay} className="carrete-tile-content">
-      <img src={image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />
+      <img src={media.videoPoster ?? image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />
       {item.type === 'video' && <span className="carrete-video-mark" aria-label="Vídeo">↗ film</span>}
     </div>
   </button>;

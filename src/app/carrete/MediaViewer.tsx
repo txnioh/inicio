@@ -28,12 +28,13 @@ function tilePose(tile: HTMLButtonElement, frame: HTMLElement) {
   };
 }
 
-export default function MediaViewer({ media, initialIndex, initialSource, reducedMotion, onClose }: {
+export default function MediaViewer({ media, initialIndex, initialSource, reducedMotion, onClose, onVideoSnapshot }: {
   media: LoadedMedia[];
   initialIndex: number;
   initialSource: HTMLButtonElement;
   reducedMotion: boolean;
   onClose: () => void;
+  onVideoSnapshot: (id: string, time: number, poster: string) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -43,7 +44,7 @@ export default function MediaViewer({ media, initialIndex, initialSource, reduce
   const closing = useRef(false);
   const [index, setIndex] = useState(initialIndex);
   const [ready, setReady] = useState(reducedMotion);
-  const { item, image, videoUrl } = media[index];
+  const { item, image, videoUrl, videoTime, videoPoster } = media[index];
   const grid = useRef(initialSource.closest<HTMLElement>('.carrete-grid')).current;
 
   useLayoutEffect(() => {
@@ -102,11 +103,36 @@ export default function MediaViewer({ media, initialIndex, initialSource, reduce
     return () => { observer.disconnect(); animation.current?.cancel(); };
   }, [index, reducedMotion, item.width, item.height, grid, initialSource, onClose]);
 
+  const rememberVideo = () => {
+    const video = frame.current?.querySelector('video');
+    if (!video) return;
+    video.pause();
+    if (video.readyState < 2 || video.seeking) return;
+    // Capture once on leaving the film, never during playback or grid movement.
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(1, 720 / Math.max(video.videoWidth, video.videoHeight));
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    onVideoSnapshot(item.id, video.currentTime, canvas.toDataURL('image/webp', .84));
+  };
+  const startVideo = (video: HTMLVideoElement) => {
+    if (closing.current) return;
+    if (videoTime && videoTime < video.duration - .05) video.currentTime = videoTime;
+    void video.play().catch(() => {
+      if (closing.current || !video.isConnected) return;
+      // Browsers that block audible autoplay can still start inline, muted.
+      video.muted = true;
+      void video.play().catch(() => { /* Native controls remain available. */ });
+    });
+  };
   const close = () => {
     if (closing.current) return;
     closing.current = true;
     const element = frame.current!;
-    element.querySelector('video')?.pause();
+    rememberVideo();
     setReady(false);
     dialog.current!.dataset.closing = 'true';
     grid?.classList.remove('is-focused');
@@ -123,7 +149,9 @@ export default function MediaViewer({ media, initialIndex, initialSource, reduce
     animation.current.onfinish = onClose;
   };
   const move = (direction: number) => {
-    if (!closing.current) setIndex(current => wrap(current + direction, media.length));
+    if (closing.current) return;
+    rememberVideo();
+    setIndex(current => wrap(current + direction, media.length));
   };
 
   return <dialog ref={dialog} className="carrete-viewer" aria-label={item.alt} data-ready={ready}
@@ -141,7 +169,9 @@ export default function MediaViewer({ media, initialIndex, initialSource, reduce
     <div ref={stage} className="carrete-viewer-stage" onClick={event => { if (event.target === event.currentTarget) close(); }}>
       <div ref={frame} className="carrete-viewer-media">
         {item.type === 'video'
-          ? <video key={item.id} src={videoUrl} poster={image.src} controls={ready} playsInline preload="auto" aria-label={item.alt} />
+          ? <video key={item.id} src={videoUrl} poster={videoPoster ?? image.src} controls={ready}
+              autoPlay playsInline preload="auto" aria-label={item.alt}
+              onLoadedMetadata={event => startVideo(event.currentTarget)} />
           : <button className="carrete-viewer-photo" aria-label="Cerrar imagen" onClick={close}>
             <img key={item.id} src={image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />
           </button>}

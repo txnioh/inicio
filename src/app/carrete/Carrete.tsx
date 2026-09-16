@@ -32,6 +32,10 @@ export default function Carrete() {
   const [gridReplay, setGridReplay] = useState(0);
   const open = useCallback((index: number, source: HTMLButtonElement) => setSelected({ index, source }), []);
   const close = useCallback(() => setSelected(null), []);
+  const rememberVideo = useCallback((id: string, time: number, poster: string) => {
+    setLoaded(current => current.map(media => media.item.id === id
+      ? { ...media, videoTime: time, videoPoster: poster } : media));
+  }, []);
   const settled = loaded.length + failed === collection.length;
   const showIntro = () => {
     setEntered(false);
@@ -66,7 +70,6 @@ export default function Carrete() {
 
   useEffect(() => {
     const controller = new AbortController();
-    const resources: LoadedMedia[] = [];
     setLoaded([]);
     setFailed(0);
     void Promise.all(collection.map(async item => {
@@ -82,11 +85,7 @@ export default function Carrete() {
         const item = collection[cursor++];
         try {
           const media = await loadMedia(item, controller.signal);
-          if (controller.signal.aborted) {
-            if (media.videoUrl) URL.revokeObjectURL(media.videoUrl);
-            return;
-          }
-          resources.push(media);
+          if (controller.signal.aborted) return;
           setLoaded(current => [...current, media]);
         } catch {
           if (!controller.signal.aborted) setFailed(current => current + 1);
@@ -94,10 +93,7 @@ export default function Carrete() {
       }
     }
     for (let index = 0; index < Math.min(4, collection.length); index++) void worker();
-    return () => {
-      controller.abort();
-      resources.forEach(media => { if (media.videoUrl) URL.revokeObjectURL(media.videoUrl); });
-    };
+    return () => controller.abort();
   }, [attempt]);
 
   useEffect(() => {
@@ -148,7 +144,7 @@ export default function Carrete() {
       </div>
       <footer className="carrete-intro-footer">
         <span>Fotografía & vídeo</span>
-        <span>Archivo de muestra · {String(collection.length).padStart(2, '0')}</span>
+        <span>@txnioh · {String(collection.length).padStart(2, '0')}</span>
       </footer>
     </section>}
 
@@ -156,6 +152,7 @@ export default function Carrete() {
       canEnter={settled && loaded.length > 0} reducedMotion={reducedMotion}
       onIntro={showIntro} onGrid={() => setEntered(true)} onReplay={replay} />
     {selected !== null && <MediaViewer media={ordered} initialIndex={selected.index}
-      initialSource={selected.source} reducedMotion={reducedMotion} onClose={close} />}
+      initialSource={selected.source} reducedMotion={reducedMotion} onClose={close}
+      onVideoSnapshot={rememberVideo} />}
   </main>;
 }
