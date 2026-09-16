@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import InfiniteGrid from './InfiniteGrid';
 import MediaViewer from './MediaViewer';
 import OrbitLens from './OrbitLens';
@@ -23,6 +24,13 @@ function useReducedMotion() {
 }
 
 export default function Carrete() {
+  const playerSlot = useRef<HTMLDivElement>(null);
+  const [playerHost] = useState(() => document.createElement('div'));
+  useLayoutEffect(() => {
+    playerSlot.current!.append(playerHost);
+    return () => playerHost.remove();
+  }, [playerHost]);
+
   const reducedMotion = useReducedMotion();
   const [attempt, setAttempt] = useState(0);
   const [loaded, setLoaded] = useState<LoadedMedia[]>([]);
@@ -159,9 +167,10 @@ export default function Carrete() {
     {canConfigure && <EffectSettings settings={settings} setSettings={setSettings} entered={entered}
       canEnter={settled && loaded.length > 0} reducedMotion={reducedMotion}
       onIntro={showIntro} onGrid={() => setEntered(true)} onReplay={replay} />}
-    {selected === null && <NowPlaying lang="es" />}
+    <div ref={playerSlot} />
+    {createPortal(<NowPlaying lang="es" />, playerHost)}
     {selected !== null && <MediaViewer media={ordered} index={selected.index}
       initialSource={selected.source} reducedMotion={reducedMotion} onClose={close}
-      onNavigate={navigate} onSource={retainSource} videoPositions={videoPositions} />}
+      onNavigate={navigate} onSource={retainSource} videoPositions={videoPositions} playerHost={playerHost} />}
   </main>;
 }

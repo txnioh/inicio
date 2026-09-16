@@ -25,6 +25,8 @@ interface GlobalAudioPlayerContextValue {
   tracks: readonly AudioTrack[];
   activeTrack: AudioTrack;
   activeTrackIndex: number;
+  miniPlayerDismissed: boolean;
+  dismissMiniPlayer: () => void;
   togglePlayback: () => void;
   seekTo: (seconds: number) => void;
   selectTrack: (index: number) => void;
@@ -55,6 +57,8 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
   const [loadState, setLoadState] = useState<AudioLoadState>('idle');
   const [bufferedPercent, setBufferedPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [miniPlayerDismissed, setMiniPlayerDismissed] = useState(false);
+  const dismissMiniPlayer = useCallback(() => setMiniPlayerDismissed(true), []);
 
   const activeTrack = audioTracks[activeTrackIndex] ?? audioTracks[0];
 
@@ -68,6 +72,7 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     if (!track || !audio) return;
 
     activeTrackIndexRef.current = index;
+    setMiniPlayerDismissed(false);
     setActiveTrackIndex(index);
     setCurrentTime(0);
     setDuration(0);
@@ -168,6 +173,7 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     if (!audio) return;
 
     if (audio.paused) {
+      setMiniPlayerDismissed(false);
       if (!audio.getAttribute('src')) {
         loadTrack(activeTrackIndexRef.current, true);
         return;
@@ -195,6 +201,7 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
 
   const selectTrack = useCallback((index: number) => {
     if (!audioTracks[index]) return;
+    setMiniPlayerDismissed(false);
 
     const audio = audioRef.current;
     if (index === activeTrackIndexRef.current && audio?.getAttribute('src')) {
@@ -223,12 +230,16 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     tracks: audioTracks,
     activeTrack,
     activeTrackIndex,
+    miniPlayerDismissed,
+    dismissMiniPlayer,
     togglePlayback,
     seekTo,
     selectTrack,
   }), [
     activeTrack,
     activeTrackIndex,
+    miniPlayerDismissed,
+    dismissMiniPlayer,
     bufferedPercent,
     currentTime,
     duration,

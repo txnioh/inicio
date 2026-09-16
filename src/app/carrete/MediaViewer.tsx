@@ -1,5 +1,4 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import NowPlaying from '../components/NowPlaying';
 import type { LoadedMedia } from './media';
 import { wrap } from './InfiniteGrid';
 
@@ -76,7 +75,7 @@ function playVideo(video: HTMLVideoElement, tile: HTMLButtonElement) {
 }
 
 export default function MediaViewer({ media, index, initialSource: openingSource, reducedMotion, onClose,
-  onNavigate, onSource, videoPositions }: {
+  onNavigate, onSource, videoPositions, playerHost }: {
   media: LoadedMedia[];
   index: number;
   initialSource: HTMLButtonElement;
@@ -85,6 +84,7 @@ export default function MediaViewer({ media, index, initialSource: openingSource
   onNavigate: (index: number) => void;
   onSource: (source: HTMLButtonElement) => void;
   videoPositions: Map<string, number>;
+  playerHost: HTMLDivElement;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -102,6 +102,10 @@ export default function MediaViewer({ media, index, initialSource: openingSource
   useLayoutEffect(() => {
     const element = dialog.current!;
     const previousFocus = document.activeElement as HTMLElement | null;
+    const playerParent = playerHost.parentElement!;
+    // Move the same portal host into the modal so the player stays interactive
+    // without remounting or disappearing during the closing animation.
+    element.append(playerHost);
     element.showModal();
     grid?.querySelectorAll<HTMLElement>('.carrete-tile').forEach(tile => {
       const rect = tile.getBoundingClientRect();
@@ -111,11 +115,12 @@ export default function MediaViewer({ media, index, initialSource: openingSource
     grid?.classList.add('is-focused');
     return () => {
       grid?.classList.remove('is-focused');
+      playerParent.append(playerHost);
       element.close();
       const returnFocus = previousFocus?.closest('.carrete-tile') ? grid : previousFocus;
       returnFocus?.focus({ preventScroll: true });
     };
-  }, [grid]);
+  }, [grid, playerHost]);
 
   useLayoutEffect(() => {
     if (closing.current) { onClose(); return; }
@@ -236,6 +241,5 @@ export default function MediaViewer({ media, index, initialSource: openingSource
         <button className="carrete-arrow" aria-label="Imagen siguiente" onClick={() => move(1)}>→</button>
       </div>
     </footer>
-    <NowPlaying lang="es" />
   </dialog>;
 }

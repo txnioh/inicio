@@ -910,8 +910,12 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 }
 
 .minimal-footer-robot-gallery {
+  position: relative;
   display: flex;
   align-items: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 21px;
   color: rgba(0, 0, 0, 0.4);
 }
 
@@ -922,12 +926,32 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   width: 28px;
   align-items: center;
   color: rgba(0, 0, 0, 0.42);
-  cursor: grab;
-  touch-action: none;
 }
 
-.minimal-robot-option:active {
+.minimal-robot-button {
+  position: absolute;
+  left: -8px;
+  top: -11.5px;
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.minimal-robot-button:active {
   cursor: grabbing;
+}
+
+.minimal-robot-button:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
 }
 
 .minimal-robot-option svg {
@@ -943,7 +967,9 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 }
 
 .minimal-robot-head-follow,
-.minimal-robot-eyes {
+.minimal-robot-eyes,
+.minimal-robot-expression,
+.minimal-robot-blink {
   transform-box: fill-box;
   transform-origin: center center;
 }
@@ -959,11 +985,68 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 }
 
 .minimal-robot-eyes rect {
-  animation: minimalRobotBlink 5.4s ease-in-out infinite;
   fill: #fdfdfc;
   stroke: none;
   transform-box: fill-box;
   transform-origin: center center;
+  transition: transform 180ms ease;
+}
+
+.minimal-robot-expression {
+  transition: transform 220ms ease;
+}
+
+.minimal-robot-blink {
+  animation: minimalRobotBlink 5.4s ease-in-out infinite;
+}
+
+.minimal-footer-robot-gallery[data-expression='wink'] .minimal-robot-expression {
+  transform: rotate(-7deg);
+}
+
+.minimal-footer-robot-gallery[data-expression='wink'] .minimal-robot-eyes rect:first-child {
+  transform: scaleY(0.08);
+}
+
+.minimal-footer-robot-gallery[data-expression='happy'] .minimal-robot-expression {
+  transform: translateY(-2px) rotate(5deg);
+}
+
+.minimal-footer-robot-gallery[data-expression='happy'] .minimal-robot-eyes rect:first-child {
+  transform: rotate(-12deg) scaleY(0.35);
+}
+
+.minimal-footer-robot-gallery[data-expression='happy'] .minimal-robot-eyes rect:last-child {
+  transform: rotate(12deg) scaleY(0.35);
+}
+
+.minimal-footer-robot-gallery:is([data-expression='surprised'], [data-expression='carried']) .minimal-robot-expression {
+  transform: translateY(-1px) rotate(-5deg) scale(1.08);
+}
+
+.minimal-footer-robot-gallery:is([data-expression='surprised'], [data-expression='carried']) .minimal-robot-eyes rect {
+  transform: scale(1.2);
+}
+
+.minimal-footer-robot-gallery[data-expression='sleeping'] .minimal-robot-expression {
+  transform: translateY(2px) rotate(-4deg);
+}
+
+.minimal-footer-robot-gallery[data-expression='sleeping'] .minimal-robot-eyes rect {
+  transform: scaleY(0.18);
+}
+
+.minimal-footer-robot-gallery[data-expression='music'] .minimal-robot-expression {
+  animation: minimalRobotSway 1.6s ease-in-out infinite;
+}
+
+.minimal-footer-robot-gallery:not([data-expression='idle']):not([data-expression='music']) .minimal-robot-blink {
+  animation: none;
+}
+
+.minimal-footer-robot-gallery[data-active='false'] * {
+  animation-play-state: paused;
+  transition: none;
 }
 
 .minimal-hidden-nav {
@@ -987,6 +1070,11 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   90% {
     transform: scaleY(0.08);
   }
+}
+
+@keyframes minimalRobotSway {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: translateY(-1.5px) rotate(5deg); }
 }
 
 @media (max-width: 640px) {
@@ -1062,8 +1150,19 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
     transform: none;
   }
 
-  .minimal-robot-eyes rect {
-    animation: none;
+  .minimal-footer-robot-gallery * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .minimal-robot-button,
+  .minimal-robot-button:active {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .minimal-footer-robot-gallery .minimal-robot-expression {
+    transform: none;
   }
 
   ::view-transition-group(active-album-cover),
@@ -1086,22 +1185,23 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   bottom: max(24px, env(safe-area-inset-bottom));
   left: 32px;
   display: flex;
-  width: 320px;
+  width: 260px;
   max-width: calc(100vw - 48px);
-  height: 48px;
-  gap: 8px;
+  height: 40px;
+  gap: 4px;
   align-items: center;
-  padding: 8px;
-  border: 1px solid #e8e8e3;
-  border-radius: 6px;
-  background: rgba(253, 253, 252, 0.96);
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(245, 245, 241, 0.96);
   color: #111;
-  box-shadow: 0 3px 16px #00000008;
   font: 460 11px/20px var(--font-geist-sans), sans-serif;
 }
 
 .minimal-now-playing > img {
   flex-shrink: 0;
+  margin-right: 4px;
+  border-radius: 50%;
   object-fit: cover;
 }
 
@@ -1115,7 +1215,6 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 }
 
 .minimal-now-playing-track strong { font-weight: 500; }
-.minimal-now-playing-track span { color: #858580; }
 .minimal-now-playing-track.is-error { color: #9e2d22; }
 
 .minimal-now-playing button {
@@ -1127,21 +1226,19 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   justify-content: center;
   padding: 0;
   border: 0;
-  border-radius: 3px;
+  border-radius: 50%;
   background: transparent;
   color: inherit;
   cursor: pointer;
 }
 
 .minimal-now-playing button:hover { background: #f0f0ee; }
+.minimal-now-playing .minimal-now-playing-dismiss { color: #858580; }
 .minimal-now-playing button:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
 
 @media (max-width: 640px) {
   .minimal-now-playing {
-    right: 24px;
     left: 24px;
-    width: auto;
-    max-width: none;
   }
 }
 
