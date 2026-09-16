@@ -10,8 +10,10 @@ type Position = { x: number; y: number };
 type View = { width: number; height: number; cell: number; column: number; row: number };
 
 // Crossing a cell only renders the new edge; retained photographs stay untouched.
-const GridTile = memo(function GridTile({ column, row, cell, media, index, replay }: {
+const GridTile = memo(function GridTile({ tileKey, column, row, cell, media, index, replay, videoPositions }: {
+  tileKey: string;
   column: number; row: number; cell: number; media: LoadedMedia; index: number; replay: number;
+  videoPositions: Map<string, number>;
 }) {
   const { item, image } = media;
   const ratio = item.width / item.height;
@@ -22,21 +24,33 @@ const GridTile = memo(function GridTile({ column, row, cell, media, index, repla
   const x = column * cell + (cell - width) / 2 + Math.sin(column * 13 + row * 7) * cell * .25;
   const y = row * cell + (cell - height) / 2 + Math.cos(column * 5 + row * 17) * cell * .27;
   return <button type="button" className="carrete-tile" data-media-index={index} tabIndex={-1}
+    data-grid-key={tileKey} data-column={column} data-row={row}
     style={{ width, height, zIndex: variation, transform: `translate3d(${x}px, ${y}px, 0) rotate(${Math.sin(column * 3 + row * 5) * 3}deg)` }}
     aria-label={`Ampliar: ${item.alt}`}>
-    <div key={replay} className="carrete-tile-content">
-      <img src={media.videoPoster ?? image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />
+    <div key={item.type === 'image' ? replay : undefined} className="carrete-tile-content">
+      {item.type === 'video'
+        ? <video className="carrete-video" data-media-id={item.id} src={item.src}
+            width={item.width} height={item.height} muted playsInline preload="metadata"
+            controls={false} disablePictureInPicture disableRemotePlayback aria-label={item.alt}
+            onLoadedMetadata={event => {
+              const video = event.currentTarget;
+              // Decode the actual first frame on mobile, without playing or using a poster.
+              video.currentTime = Math.min(videoPositions.get(item.id) ?? .001, video.duration);
+            }} />
+        : <img src={image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />}
       {item.type === 'video' && <span className="carrete-video-mark" aria-label="Vídeo">film</span>}
     </div>
   </button>;
 });
 
-export default function InfiniteGrid({ media, reducedMotion, settings, replay, onOpen }: {
+export default function InfiniteGrid({ media, reducedMotion, settings, replay, onOpen, selection, videoPositions }: {
   media: LoadedMedia[];
   reducedMotion: boolean;
   settings: CarreteSettings;
   replay: number;
   onOpen: (index: number, source: HTMLButtonElement) => void;
+  selection: { index: number; source: HTMLButtonElement } | null;
+  videoPositions: Map<string, number>;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
@@ -225,6 +239,22 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
 
   const columns = Math.ceil(view.width / view.cell) + 5;
   const rows = Math.ceil(view.height / view.cell) + 5;
+  const tiles = view.width > 0 ? Array.from({ length: columns * rows }, (_, slot) => {
+    const column = view.column + slot % columns;
+    const row = view.row + Math.floor(slot / columns);
+    return { key: `${column}:${row}`, column, row, index: mediaIndex(column, row, media.length) };
+  }) : [];
+  // Keep the actual selected node alive across viewport changes. Viewer navigation
+  // can also reach a piece outside the virtual ring, so give it a temporary tile.
+  if (selection && view.width > 0) {
+    const held = selection.source.dataset;
+    if (held.gridKey && !tiles.some(tile => tile.key === held.gridKey)) {
+      tiles.push({ key: held.gridKey, column: Number(held.column), row: Number(held.row), index: Number(held.mediaIndex) });
+    }
+    if (!tiles.some(tile => tile.index === selection.index)) {
+      tiles.push({ key: `viewer:${selection.index}`, column: view.column - 1, row: view.row - 1, index: selection.index });
+    }
+  }
   return <div ref={viewport} className="carrete-grid" style={{ '--fade-duration': `${settings.fadeDuration}ms` } as CSSProperties}
       onClick={event => {
         const tile = event.detail === 0 && event.target instanceof Element
@@ -234,13 +264,9 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
       }}
       tabIndex={0} role="region" aria-label="Carrete. Arrastra o usa las flechas para explorar. Pulsa Intro para ampliar la imagen central.">
       <div ref={world} className="carrete-world">
-        {view.width > 0 && Array.from({ length: columns * rows }, (_, slot) => {
-          const column = view.column + slot % columns;
-          const row = view.row + Math.floor(slot / columns);
-          const index = mediaIndex(column, row, media.length);
-          return <GridTile key={`${column}:${row}`} column={column} row={row} cell={view.cell}
-            media={media[index]} index={index} replay={replay} />;
-        })}
+        {tiles.map(({ key, column, row, index }) => <GridTile key={key} tileKey={key}
+          column={column} row={row} cell={view.cell} media={media[index]} index={index}
+          replay={replay} videoPositions={videoPositions} />)}
       </div>
     </div>;
 }

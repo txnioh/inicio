@@ -14,9 +14,6 @@ export type Media = MediaBase & ({ type: 'image' } | { type: 'video'; poster: st
 export type LoadedMedia = {
   item: Media;
   image: HTMLImageElement;
-  videoUrl?: string;
-  videoTime?: number;
-  videoPoster?: string;
 };
 
 // All posts and carousel slides from @txnioh, with permanent local media files.
@@ -58,9 +55,9 @@ export async function loadMedia(item: Media, signal: AbortSignal): Promise<Loade
   const timeout = window.setTimeout(abort, 30_000);
   try {
     if (item.type === 'image') return { item, image: await loadImage(item.src, controller.signal) };
-    // The grid only needs a decoded cover. Download each film when its viewer
-    // opens instead of buffering the entire video archive on mobile at entry.
-    return { item, image: await loadImage(item.poster, controller.signal), videoUrl: item.src };
+    // Covers are only used by the decorative intro orbit. Grid tiles display
+    // native, paused videos and keep their own player when expanded.
+    return { item, image: await loadImage(item.poster, controller.signal) };
   } finally {
     controller.abort();
     clearTimeout(timeout);

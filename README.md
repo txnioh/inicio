@@ -32,12 +32,14 @@ the entrance without downloading the collection again or resetting the grid posi
 Settings persist locally in this browser and can be restored with Restablecer;
 defaults and slider limits live in `src/app/carrete/settings.ts`.
 
-Videos start automatically on opening (muted if the browser blocks audible
-autoplay), without native player controls on mobile or desktop. Closing a film or navigating away pauses it and captures its current
-frame as the grid thumbnail. Reopening resumes from that position; a finished
-film starts again. Frames and positions remain in memory while Carrete is open,
-and only the selected video is mounted. The return animation uses a frozen canvas
-frame and waits for the grid thumbnail to decode before removing the viewer.
+Video tiles contain real, paused players with no poster image. Opening expands
+the same tile and starts its existing player (muted if the browser blocks audible
+playback). Closing pauses and returns that same element, preserving its decoded
+frame and playback position. There is no player replacement, frame capture, or
+thumbnail swap. Original black opening frames are left intact. Native controls
+remain hidden on mobile and desktop; only the selected player runs.
+The selected tile stays mounted during viewport changes. Repeated tiles and
+tiles recycled by the virtual grid restore the saved playback position.
 Focus returns to the grid without outlining the tapped photograph.
 
 The collection contains **47 photos and 12 videos from [@txnioh](https://www.instagram.com/txnioh/)**:
@@ -60,10 +62,12 @@ To add more media, update `collection` in `src/app/carrete/media.ts`:
 ```
 
 Use the real dimensions: the grid and viewer preserve their aspect ratio.
-The loader downloads and decodes each image and video cover before enabling entry.
-Videos load only when opened in the viewer; the grid never mounts video players
-or downloads the entire film archive. MP4 files use H.264, preserve available audio,
-and put metadata first for progressive playback. Progress counts successful
+The loader downloads and decodes photographs and the decorative orbit's covers
+before enabling entry. Mounted video tiles preload metadata and decode their
+initial paused frame; opening reuses the player without assigning a new source.
+The orbit's covers are never used as grid or viewer video posters.
+MP4 files use H.264, preserve available audio, and put metadata first for
+progressive playback. Progress counts successful
 pieces, not elapsed time. Tiny previews make the orbit available while the
 full collection loads. Failed files can be retried or skipped explicitly.
 

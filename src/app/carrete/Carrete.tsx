@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import InfiniteGrid from './InfiniteGrid';
 import MediaViewer from './MediaViewer';
 import OrbitLens from './OrbitLens';
@@ -27,14 +27,17 @@ export default function Carrete() {
   const [entered, setEntered] = useState(false);
   const [introVisible, setIntroVisible] = useState(true);
   const [selected, setSelected] = useState<{ index: number; source: HTMLButtonElement } | null>(null);
+  const videoPositions = useRef(new Map<string, number>()).current;
   const [settings, setSettings] = useState(readSettings);
   const [orbitReplay, setOrbitReplay] = useState(0);
   const [gridReplay, setGridReplay] = useState(0);
   const open = useCallback((index: number, source: HTMLButtonElement) => setSelected({ index, source }), []);
   const close = useCallback(() => setSelected(null), []);
-  const rememberVideo = useCallback((id: string, time: number, poster: string) => {
-    setLoaded(current => current.map(media => media.item.id === id
-      ? { ...media, videoTime: time, videoPoster: poster } : media));
+  const navigate = useCallback((index: number) => {
+    setSelected(current => current ? { ...current, index } : current);
+  }, []);
+  const retainSource = useCallback((source: HTMLButtonElement) => {
+    setSelected(current => current && current.source !== source ? { ...current, source } : current);
   }, []);
   const settled = loaded.length + failed === collection.length;
   const showIntro = () => {
@@ -119,7 +122,8 @@ export default function Carrete() {
 
     {entered && <div className="carrete-explore">
       <InfiniteGrid media={ordered} reducedMotion={reducedMotion}
-        settings={settings} replay={gridReplay} onOpen={open} />
+        settings={settings} replay={gridReplay} onOpen={open}
+        selection={selected} videoPositions={videoPositions} />
     </div>}
 
     {introVisible && <section className="carrete-intro" aria-label="Cargar el carrete" inert={entered}>
@@ -146,8 +150,8 @@ export default function Carrete() {
     <EffectSettings settings={settings} setSettings={setSettings} entered={entered}
       canEnter={settled && loaded.length > 0} reducedMotion={reducedMotion}
       onIntro={showIntro} onGrid={() => setEntered(true)} onReplay={replay} />
-    {selected !== null && <MediaViewer media={ordered} initialIndex={selected.index}
+    {selected !== null && <MediaViewer media={ordered} index={selected.index}
       initialSource={selected.source} reducedMotion={reducedMotion} onClose={close}
-      onVideoSnapshot={rememberVideo} />}
+      onNavigate={navigate} onSource={retainSource} videoPositions={videoPositions} />}
   </main>;
 }
