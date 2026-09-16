@@ -124,14 +124,9 @@ export default function Carrete() {
 
     {introVisible && <section className="carrete-intro" aria-label="Cargar el carrete" inert={entered}>
       <OrbitLens key={orbitReplay} frames={frames} reducedMotion={reducedMotion} settings={settings} />
+      <button className="carrete-intro-trigger" aria-label="Abrir el carrete"
+        disabled={!settled || !loaded.length} onClick={() => setEntered(true)} />
       <div className="carrete-intro-center">
-        <div className="carrete-enter-slot">
-          <button className="carrete-text-button carrete-enter"
-            disabled={!settled || !loaded.length} onClick={() => setEntered(true)}>
-            <span>{settled && loaded.length ? 'Enter' : 'Preparing…'}</span>
-            <span className="carrete-enter-arrow" aria-hidden="true">→</span>
-          </button>
-        </div>
         {settled && failed > 0 && <div className="carrete-load-error" role="status">
           <p>{failed === 1 ? 'Una pieza no se ha podido cargar.' : `${failed} piezas no se han podido cargar.`}</p>
           <button className="minimal-basic-link carrete-text-button" onClick={() => setAttempt(value => value + 1)}>Reintentar</button>

@@ -26,7 +26,7 @@ const GridTile = memo(function GridTile({ column, row, cell, media, index, repla
     aria-label={`Ampliar: ${item.alt}`}>
     <div key={replay} className="carrete-tile-content">
       <img src={media.videoPoster ?? image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />
-      {item.type === 'video' && <span className="carrete-video-mark" aria-label="Vídeo">↗ film</span>}
+      {item.type === 'video' && <span className="carrete-video-mark" aria-label="Vídeo">film</span>}
     </div>
   </button>;
 });
@@ -40,7 +40,6 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
-  const pan = useRef<(x: number, y: number, reset?: boolean) => void>(() => {});
   const openTile = useRef<(tile: HTMLButtonElement) => void>(() => {});
   const tappedTile = useRef<HTMLButtonElement | null>(null);
   const [view, setView] = useState<View>({ width: 0, height: 0, cell: 300, column: 0, row: 0 });
@@ -173,7 +172,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
       position.y -= (event.shiftKey ? 0 : event.deltaY) * unit;
       schedule();
     };
-    pan.current = (x, y, reset) => {
+    const pan = (x: number, y: number, reset = false) => {
       velocity = { x: 0, y: 0 };
       position = reset ? { x: width / 2 - cell * 1.5, y: height / 2 - cell * 1.5 }
         : { x: position.x + x * cell * .8, y: position.y + y * cell * .8 };
@@ -181,8 +180,8 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
     };
     const key = (event: KeyboardEvent) => {
       const directions: Record<string, [number, number]> = { ArrowLeft: [1, 0], ArrowRight: [-1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] };
-      if (directions[event.key]) { event.preventDefault(); pan.current(...directions[event.key]); }
-      if (event.key === 'Home') { event.preventDefault(); pan.current(0, 0, true); }
+      if (directions[event.key]) { event.preventDefault(); pan(...directions[event.key]); }
+      if (event.key === 'Home') { event.preventDefault(); pan(0, 0, true); }
       if (event.key === 'Enter') {
         event.preventDefault();
         stop();
@@ -226,8 +225,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
 
   const columns = Math.ceil(view.width / view.cell) + 5;
   const rows = Math.ceil(view.height / view.cell) + 5;
-  return <>
-    <div ref={viewport} className="carrete-grid" style={{ '--fade-duration': `${settings.fadeDuration}ms` } as CSSProperties}
+  return <div ref={viewport} className="carrete-grid" style={{ '--fade-duration': `${settings.fadeDuration}ms` } as CSSProperties}
       onClick={event => {
         const tile = event.detail === 0 && event.target instanceof Element
           ? event.target.closest<HTMLButtonElement>('.carrete-tile') : tappedTile.current;
@@ -244,16 +242,5 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
             media={media[index]} index={index} replay={replay} />;
         })}
       </div>
-    </div>
-    <footer className="carrete-grid-footer">
-      <span className="carrete-drag-hint">Arrastra para explorar</span>
-      <div className="carrete-pan-controls" aria-label="Mover el carrete">
-        <button className="minimal-basic-link carrete-text-button" onClick={() => pan.current(0, 0, true)}>Centrar</button>
-        <button className="carrete-arrow" aria-label="Explorar a la izquierda" onClick={() => pan.current(1, 0)}>←</button>
-        <button className="carrete-arrow" aria-label="Explorar hacia arriba" onClick={() => pan.current(0, 1)}>↑</button>
-        <button className="carrete-arrow" aria-label="Explorar hacia abajo" onClick={() => pan.current(0, -1)}>↓</button>
-        <button className="carrete-arrow" aria-label="Explorar a la derecha" onClick={() => pan.current(-1, 0)}>→</button>
-      </div>
-    </footer>
-  </>;
+    </div>;
 }

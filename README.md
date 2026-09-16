@@ -9,7 +9,9 @@ intro adapts the radial lens and RGB dispersion from VGPU Lab's `ripple-12`
 study to an orbit of circular photographs, with deformation and RGB dispersion
 limited to the left and right sides. The grid repeats the
 collection in both directions and only mounts the tiles around the viewport.
-Drag with a mouse or touch, use a trackpad, or use the arrow controls. Keyboard
+Tap or click the intro composition to enter once loading completes. There is
+no visible entry label, drag hint, or grid navigation footer on either screen size.
+Drag with a mouse or touch, or use a trackpad. Keyboard
 arrows pan, Home recenters, and Enter opens the central photograph. The viewer
 supports left/right arrows and Escape.
 
@@ -31,10 +33,12 @@ Settings persist locally in this browser and can be restored with Restablecer;
 defaults and slider limits live in `src/app/carrete/settings.ts`.
 
 Videos start automatically on opening (muted if the browser blocks audible
-autoplay). Closing a film or navigating away pauses it and captures its current
+autoplay), without native player controls on mobile or desktop. Closing a film or navigating away pauses it and captures its current
 frame as the grid thumbnail. Reopening resumes from that position; a finished
 film starts again. Frames and positions remain in memory while Carrete is open,
-and only the selected video is mounted.
+and only the selected video is mounted. The return animation uses a frozen canvas
+frame and waits for the grid thumbnail to decode before removing the viewer.
+Focus returns to the grid without outlining the tapped photograph.
 
 The collection contains **47 photos and 12 videos from [@txnioh](https://www.instagram.com/txnioh/)**:
 all slides of the 22 profile publications, including six reels and six videos
