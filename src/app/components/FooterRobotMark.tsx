@@ -1,46 +1,206 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import * as motion from 'framer-motion/m';
-import { useDragControls, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useDragControls, useMotionValue } from 'framer-motion';
 import { useGlobalAudioPlayer } from './GlobalAudioPlayer';
+import useRobotGuide from './useRobotGuide';
 
 const gestures = ['wink', 'happy', 'surprised'] as const;
 type Gesture = typeof gestures[number];
 
-function clamp(value: number) {
-  return Math.max(-1, Math.min(1, value));
+const lines = {
+  hello: ['oh, hi.', 'hola, ¿qué tal?', 'me encontraste.'],
+  wink: ['just between us.', 'queda entre nosotros.', 'beep. that means hello.'],
+  happy: ['that tickles.', 'qué bien que estés aquí.', 'small robot, good company.'],
+  surprised: ['oh!', 'uy, qué susto.', 'you have my attention.'],
+  carried: ['con cuidadito.', 'a little field trip?', 'así que esto es volar.'],
+  sleeping: ['just resting my pixels.', 'una siestecita.'],
+  wake: ['oh, hi again.', 'yo no estaba durmiendo.'],
+  music: ['esta me gusta.', 'tiny dance break.', 'un temita y seguimos.'],
+} as const;
+type SpeechCue = keyof typeof lines;
+type Speech = { text: string; announce: boolean; context?: boolean };
+
+function SpeechLetters({ text }: { text: string }) {
+  let letterIndex = 0;
+  return text.split(/(\s+)/).map((word, wordIndex) => /^\s+$/.test(word) ? word : (
+    <span className="minimal-robot-word" key={wordIndex}>
+      {Array.from(word).map(letter => {
+        const index = letterIndex++;
+        return <span className="minimal-robot-letter" key={index} style={{ animationDelay: `${index * 24}ms` }}>{letter}</span>;
+      })}
+    </span>
+  ));
+}
+
+function RobotEffects({ mode }: { mode: string }) {
+  if (mode === 'sleeping') return <span className="minimal-robot-effects robot-sleep" aria-hidden="true">
+    <i className="robot-sleep-halo" />
+    <span>z</span><span>z</span><span>Z</span>
+  </span>;
+  if (mode === 'music') return <span className="minimal-robot-effects robot-music" aria-hidden="true">
+    <i className="robot-music-ring" />
+    <span>♪</span><span>♫</span><span>✦</span><span>♪</span>
+  </span>;
+  if (mode === 'carried') return <span className="minimal-robot-effects robot-sweat" aria-hidden="true">
+    {[0, 1, 2, 3, 4, 5].map(index => <svg key={index} viewBox="0 0 8 12">
+      <path d="M4 .5C3 3 0 6 0 8a4 4 0 0 0 8 0C8 6 5 3 4 .5Z" />
+    </svg>)}
+  </span>;
+  return null;
 }
 
 export default function FooterRobotMark({ draggable = true }: { draggable?: boolean }) {
   const rootRef = useRef<HTMLSpanElement>(null);
+  const stageRef = useRef<HTMLSpanElement>(null);
+  const entranceRef = useRef<HTMLSpanElement>(null);
+  const holeRef = useRef<HTMLSpanElement>(null);
+  const previousAnchor = useRef('home');
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const bubbleRef = useRef<HTMLSpanElement>(null);
+  const phraseIndexes = useRef<Partial<Record<SpeechCue, number>>>({});
+  const lastSpoken = useRef(0);
+  const previousMood = useRef({ active: false, sleeping: false, isPlaying: false });
   const nextGesture = useRef(0);
   const suppressClick = useRef(false);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const { isPlaying } = useGlobalAudioPlayer();
-  const [active, setActive] = useState(false);
+  const { isPlaying, playbackRequested } = useGlobalAudioPlayer();
+  const [heardMusic, setHeardMusic] = useState(false);
+  const musicActive = isPlaying || (playbackRequested && heardMusic);
   const [attentive, setAttentive] = useState(false);
   const [focused, setFocused] = useState(false);
   const [sleeping, setSleeping] = useState(false);
   const [gesture, setGesture] = useState<Gesture | null>(null);
   const [carried, setCarried] = useState(false);
+  const [held, setHeld] = useState(false);
+  const [speech, setSpeech] = useState<Speech | null>(null);
+  const [visibleSpeech, setVisibleSpeech] = useState<Speech | null>(null);
   const [constraints, setConstraints] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
   const dragControls = useDragControls();
   const dragX = useMotionValue(0);
   const dragY = useMotionValue(0);
-  const pointerX = useMotionValue(0);
-  const pointerY = useMotionValue(0);
-  const attention = useMotionValue(0);
-  const smoothX = useSpring(pointerX, { stiffness: 240, damping: 24 });
-  const smoothY = useSpring(pointerY, { stiffness: 240, damping: 24 });
-  const smoothAttention = useSpring(attention, { stiffness: 220, damping: 26 });
-  const headX = useTransform(smoothX, [-1, 1], [-4, 4]);
-  const headY = useTransform(smoothY, [-1, 1], [-2.8, 2.8]);
-  const headRotate = useTransform(smoothX, [-1, 1], [-5.5, 5.5]);
-  const eyeX = useTransform(smoothX, [-1, 1], [-1.4, 1.4]);
-  const eyeY = useTransform(smoothY, [-1, 1], [-1, 1]);
-  const opacity = useTransform(smoothAttention, [0, 1], [0.82, 1]);
+  const explain = useCallback((text: string | null, announce = false) => {
+    setSpeech(previous => text ? { text: text.toLocaleLowerCase(), announce, context: true } : previous?.context ? null : previous);
+  }, []);
+  const { x: positionX, y: positionY, mounted, active, anchor, departing, departureMs } = useRobotGuide({
+    home: rootRef, stage: stageRef, enabled: draggable, grabbed: held || carried, playing: musicActive,
+    reducedMotion, explain,
+  });
+  const shownSpeech = !departing && visibleSpeech === speech ? visibleSpeech : null;
+
+  useLayoutEffect(() => {
+    const changed = previousAnchor.current !== anchor;
+    previousAnchor.current = anchor;
+    const entrance = entranceRef.current;
+    const hole = holeRef.current;
+    if ((!changed && !departing) || !active || reducedMotion || held || carried || !entrance || !hole) return;
+
+    // Leave through the upper hole before changing perches; emerge from below.
+    // The button stays mounted so keyboard focus survives both animations.
+    const emerge = entrance.animate(departing ? [
+      { opacity: 1, transform: 'none', clipPath: 'inset(-40px -40px -40px -40px)' },
+      { opacity: 0, transform: 'translateY(-15px) scale(.55)', clipPath: 'inset(21px -40px -40px -40px)' },
+    ] : [
+      { opacity: 0, transform: 'translateY(12px) scale(.65)', clipPath: 'inset(-40px -40px 21px -40px)' },
+      { opacity: 1, transform: 'none', clipPath: 'inset(-40px -40px -40px -40px)' },
+    ], { duration: departing ? departureMs : 260, easing: 'cubic-bezier(.2, .7, .3, 1)', fill: departing ? 'forwards' : 'none' });
+    const opening = hole.animate([
+      { opacity: 0, transform: 'scaleX(.2)' },
+      { opacity: .7, transform: 'scaleX(1)', offset: .2 },
+      { opacity: .7, transform: 'scaleX(1)', offset: .55 },
+      { opacity: 0, transform: 'scaleX(.2)' },
+    ], { duration: departing ? departureMs : 380, easing: 'ease-out' });
+    return () => { emerge.cancel(); opening.cancel(); };
+  }, [anchor, active, reducedMotion, held, carried, departing, departureMs]);
+
+  useEffect(() => {
+    if (isPlaying) setHeardMusic(true);
+    else if (!playbackRequested) setHeardMusic(false);
+  }, [isPlaying, playbackRequested]);
+
+  const say = useCallback((cue: SpeechCue, announce = false) => {
+    if (!draggable || !active) return;
+    // Ambient remarks leave a little quiet between them; direct play always responds.
+    const now = Date.now();
+    if (!announce && cue !== 'wake' && now - lastSpoken.current < 8_000) return;
+    const index = phraseIndexes.current[cue] ?? 0;
+    phraseIndexes.current[cue] = index + 1;
+    lastSpoken.current = now;
+    setSpeech({ text: lines[cue][index % lines[cue].length], announce });
+  }, [active, draggable]);
+
+  useEffect(() => {
+    setVisibleSpeech(null);
+    if (!active) {
+      setSpeech(null);
+      return;
+    }
+    if (!speech || departing) return;
+    const delay = speech.context ? 160 : 650;
+    const reveal = window.setTimeout(() => setVisibleSpeech(speech), delay);
+    const dismiss = speech.context ? undefined : window.setTimeout(
+      () => setSpeech(null), delay + Math.max(3_600, speech.text.length * 55),
+    );
+    return () => { window.clearTimeout(reveal); window.clearTimeout(dismiss); };
+  }, [active, speech, departing]);
+
+  useEffect(() => {
+    const previous = previousMood.current;
+    previousMood.current = { active, sleeping, isPlaying: musicActive };
+    if (!active || carried || gesture) return;
+    if (sleeping && !previous.sleeping) say('sleeping');
+    else if (!sleeping && previous.sleeping) say('wake');
+    else if (musicActive && !previous.isPlaying) say('music');
+  }, [active, sleeping, musicActive, carried, gesture, say]);
+
+  useLayoutEffect(() => {
+    const bubble = bubbleRef.current;
+    const root = stageRef.current;
+    const button = buttonRef.current;
+    if (!shownSpeech || !bubble || !root || !button) return;
+
+    let frame = 0;
+    const position = () => {
+      frame = 0;
+      const anchor = button.getBoundingClientRect();
+      const face = button.querySelector('svg')?.getBoundingClientRect() ?? anchor;
+      const origin = root.getBoundingClientRect();
+      const { width, height } = bubble.getBoundingClientRect();
+      const center = anchor.left + anchor.width / 2;
+      // Beside the mobile music perch, keep the bubble above the transport controls.
+      if (root.dataset.anchor === 'music' && face.top < height + 16 && face.left > width + 20) {
+        const top = Math.max(8, face.top + face.height / 2 - height / 2);
+        bubble.style.left = `${face.left - width - 12 - origin.left}px`;
+        bubble.style.top = `${top - origin.top}px`;
+        bubble.style.setProperty('--robot-speech-tail', `${Math.max(12, Math.min(face.top + face.height / 2 - top, height - 12))}px`);
+        bubble.dataset.side = 'left';
+        return;
+      }
+      const left = Math.max(8, Math.min(center - width / 2, window.innerWidth - width - 8));
+      const below = face.top < height + 16;
+      bubble.style.left = `${left - origin.left}px`;
+      bubble.style.top = `${(below ? face.bottom + 8 : face.top - height - 8) - origin.top}px`;
+      bubble.style.setProperty('--robot-speech-tail', `${Math.max(12, Math.min(center - left, width - 12))}px`);
+      bubble.dataset.side = below ? 'below' : 'above';
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(position);
+    };
+    position();
+    const unsubscribeX = dragX.on('change', schedule);
+    const unsubscribeY = dragY.on('change', schedule);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      unsubscribeX();
+      unsubscribeY();
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+    };
+  }, [shownSpeech, dragX, dragY, positionX, positionY]);
 
   useEffect(() => {
     const preference = matchMedia('(prefers-reduced-motion: reduce)');
@@ -51,36 +211,24 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
   }, []);
 
   useEffect(() => {
-    const rootElement = rootRef.current;
-    if (!rootElement) return;
-
-    let inView = false;
-    let windowFocused = true;
-    const update = () => setActive(inView && windowFocused && !document.hidden);
-    const blur = () => { windowFocused = false; update(); };
-    const focus = () => { windowFocused = true; update(); };
-    const observer = new IntersectionObserver(([entry]) => {
-      inView = entry.isIntersecting;
-      update();
-    });
-    observer.observe(rootElement);
-    document.addEventListener('visibilitychange', update);
-    window.addEventListener('blur', blur);
-    window.addEventListener('focus', focus);
-    return () => {
-      observer.disconnect();
-      document.removeEventListener('visibilitychange', update);
-      window.removeEventListener('blur', blur);
-      window.removeEventListener('focus', focus);
-    };
-  }, []);
-
-  useEffect(() => {
     setSleeping(false);
-    if (!draggable || !active || attentive || focused || carried || gesture || isPlaying) return;
+    if (!draggable || !active || attentive || focused || held || carried || gesture || musicActive || anchor === 'guide') return;
     const timer = window.setTimeout(() => setSleeping(true), 12_000);
     return () => window.clearTimeout(timer);
-  }, [draggable, active, attentive, focused, carried, gesture, isPlaying]);
+  }, [draggable, active, attentive, focused, held, carried, gesture, musicActive, anchor]);
+
+  useEffect(() => {
+    if (!held) return;
+    const release = () => setHeld(false);
+    const timer = window.setTimeout(() => { if (!carried) say('carried', true); }, 250);
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('pointerup', release);
+      window.removeEventListener('pointercancel', release);
+    };
+  }, [held, carried, say]);
 
   useEffect(() => {
     if (!active || !gesture) return;
@@ -95,160 +243,118 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
     dragX.jump(0);
     dragY.jump(0);
     setCarried(false);
+    setHeld(false);
   }, [active, reducedMotion, dragControls, dragX, dragY]);
 
-  useEffect(() => {
-    if (!active || !matchMedia('(any-hover: hover) and (any-pointer: fine)').matches) return;
 
-    let frame = 0;
-    let latestEvent: PointerEvent | undefined;
-
-    const updatePointer = () => {
-      frame = 0;
-      const event = latestEvent;
-      // Read the moving button, so the eyes follow from its actual position.
-      const element = buttonRef.current ?? rootRef.current;
-      if (!event || !element) return;
-      const bounds = element.getBoundingClientRect();
-      if (!bounds.width || !bounds.height) return;
-      const centerX = bounds.left + bounds.width / 2;
-      const centerY = bounds.top + bounds.height / 2;
-      const deltaX = event.clientX - centerX;
-      const deltaY = event.clientY - centerY;
-      const distance = Math.hypot(deltaX, deltaY);
-      const projectHover = Boolean(
-        (event.target as Element | null)?.closest?.('.minimal-row-link'),
-      );
-      const proximity = Math.max(0, 1 - distance / 360);
-      const nextAttention = projectHover ? Math.max(0.78, proximity) : proximity;
-      const nextX = projectHover && proximity < 0.12
-        ? clamp((event.clientX - window.innerWidth / 2) / (window.innerWidth * 0.42))
-        : clamp(deltaX / 135);
-      const nextY = projectHover && proximity < 0.12 ? -0.9 : clamp(deltaY / 120);
-
-      setAttentive(nextAttention > 0);
-      if (!reducedMotion) {
-        pointerX.set(nextX * nextAttention);
-        pointerY.set(nextY * nextAttention);
-        attention.set(nextAttention);
-      }
-    };
-
-    const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(updatePointer);
-    };
-    const handlePointerMove = (event: PointerEvent) => {
-      if (event.pointerType !== 'mouse') return;
-      latestEvent = event;
-      schedule();
-    };
-
-    const reset = () => {
-      cancelAnimationFrame(frame);
-      frame = 0;
-      latestEvent = undefined;
-      setAttentive(false);
-      pointerX.set(0);
-      pointerY.set(0);
-      attention.set(0);
-      smoothX.jump(0);
-      smoothY.jump(0);
-      smoothAttention.jump(0);
-    };
-
-    const unsubscribeX = dragX.on('change', schedule);
-    const unsubscribeY = dragY.on('change', schedule);
-    window.addEventListener('pointermove', handlePointerMove, { passive: true });
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-    document.documentElement.addEventListener('pointerleave', reset);
-
-    return () => {
-      unsubscribeX();
-      unsubscribeY();
-      reset();
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-      document.documentElement.removeEventListener('pointerleave', reset);
-    };
-  }, [active, attention, pointerX, pointerY, smoothX, smoothY, smoothAttention, dragX, dragY, reducedMotion]);
-
-  const expression = !active || !draggable ? 'idle'
-    : carried ? 'carried'
-    : gesture ?? (isPlaying ? 'music' : sleeping ? 'sleeping' : 'idle');
+  const expression = !active || !draggable || departing ? 'idle'
+    : held || carried ? 'carried'
+    : gesture ?? (anchor === 'guide' ? 'idle' : musicActive ? 'music' : sleeping ? 'sleeping' : 'idle');
 
   const face = (
     <svg viewBox="0 0 48 36" focusable="false" aria-hidden="true">
-      <motion.g
-        className="minimal-robot-head-follow"
-        style={reducedMotion ? undefined : { x: headX, y: headY, rotate: headRotate }}
-      >
+      <g className="minimal-robot-head-follow">
         <g className="minimal-robot-expression">
           <rect className="minimal-robot-shell" x="7" y="8" width="34" height="23" rx="10" />
           <rect className="minimal-robot-screen" x="12" y="12" width="24" height="14" rx="6" />
-          <motion.g className="minimal-robot-eyes" style={reducedMotion ? undefined : { x: eyeX, y: eyeY }}>
+          <g className="minimal-robot-eyes">
             <g className="minimal-robot-blink">
               <rect x="18" y="16" width="3.6" height="6.8" rx="1.8" />
               <rect x="26.4" y="16" width="3.6" height="6.8" rx="1.8" />
             </g>
-          </motion.g>
+          </g>
         </g>
-      </motion.g>
+      </g>
     </svg>
   );
 
-  return (
-    <span ref={rootRef} className="minimal-footer-robot-gallery" data-active={active}
+  const robot = (
+    <span ref={stageRef}
+      className={`minimal-footer-robot-gallery${draggable && mounted ? ' minimal-robot-companion' : ''}`}
+      data-active={active} data-anchor={anchor} data-departing={departing}
+      style={draggable && mounted ? { left: positionX, top: positionY } : undefined}
       data-expression={expression} aria-hidden={draggable ? undefined : true}>
+      {draggable && <span ref={holeRef} className="minimal-robot-hole" aria-hidden="true" />}
       {draggable ? (
-        <motion.button
-          ref={buttonRef}
-          type="button"
-          className="minimal-robot-option minimal-robot-button"
-          aria-label="Play with the robot"
-          drag={active && !reducedMotion}
-          dragControls={dragControls}
-          dragConstraints={constraints}
-          dragElastic={0}
-          dragMomentum={false}
-          dragSnapToOrigin
-          dragTransition={{ bounceStiffness: 260, bounceDamping: 26, restDelta: 0.1, restSpeed: 1 }}
-          style={{ x: dragX, y: dragY, opacity: reducedMotion ? 1 : opacity }}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          onPointerDown={(event) => {
-            suppressClick.current = false;
-            setSleeping(false);
-            const bounds = event.currentTarget.getBoundingClientRect();
-            // Keep the whole hit target inside the viewport, including near its edges.
-            setConstraints({
-              left: 8 - bounds.left + dragX.get(),
-              right: window.innerWidth - 8 - bounds.right + dragX.get(),
-              top: 8 - bounds.top + dragY.get(),
-              bottom: window.innerHeight - 8 - bounds.bottom + dragY.get(),
-            });
-          }}
-          onPointerCancel={() => { suppressClick.current = true; }}
-          onDragStart={() => {
-            suppressClick.current = true;
-            setGesture(null);
-            setCarried(true);
-          }}
-          onDragTransitionEnd={() => setCarried(false)}
-          onClick={(event) => {
-            if (event.detail > 0 && suppressClick.current) return;
-            setGesture(gestures[nextGesture.current % gestures.length]);
-            nextGesture.current += 1;
-          }}
-        >
-          {face}
-        </motion.button>
+        <span ref={entranceRef} className="minimal-robot-entrance">
+          <motion.button
+            ref={buttonRef}
+            type="button"
+            className="minimal-robot-option minimal-robot-button"
+            aria-label="Play with the robot"
+            drag={active && !reducedMotion}
+            dragControls={dragControls}
+            dragConstraints={constraints}
+            dragElastic={0}
+            dragMomentum={false}
+            dragSnapToOrigin
+            dragTransition={{ bounceStiffness: 260, bounceDamping: 26, restDelta: 0.1, restSpeed: 1 }}
+            style={{ x: dragX, y: dragY }}
+            onFocus={() => {
+              if (!active) rootRef.current?.scrollIntoView({ block: 'center', behavior: 'instant' });
+              setFocused(true);
+              if (!speech?.context) say('hello');
+            }}
+            onBlur={() => setFocused(false)}
+            onPointerEnter={(event) => {
+              if (event.pointerType !== 'mouse') return;
+              setAttentive(true);
+              if (!speech?.context) say('hello');
+            }}
+            onPointerLeave={() => setAttentive(false)}
+            onKeyDown={(event) => { if (event.key === 'Escape') setSpeech(null); }}
+            onPointerDown={(event) => {
+              if (event.button !== 0 || !event.isPrimary) return;
+              suppressClick.current = false;
+              if (!reducedMotion) setHeld(true);
+              setSleeping(false);
+              const bounds = event.currentTarget.getBoundingClientRect();
+              // Keep the whole hit target inside the viewport, including near its edges.
+              setConstraints({
+                left: 8 - bounds.left + dragX.get(),
+                right: window.innerWidth - 8 - bounds.right + dragX.get(),
+                top: 8 - bounds.top + dragY.get(),
+                bottom: window.innerHeight - 8 - bounds.bottom + dragY.get(),
+              });
+            }}
+            onPointerCancel={() => { suppressClick.current = true; setHeld(false); }}
+            onDragStart={() => {
+              suppressClick.current = true;
+              setGesture(null);
+              setCarried(true);
+              say('carried', true);
+            }}
+            onDragTransitionEnd={() => setCarried(false)}
+            onClick={(event) => {
+              if (event.detail > 0 && suppressClick.current) return;
+              const next = gestures[nextGesture.current % gestures.length];
+              setGesture(next);
+              say(next, true);
+              nextGesture.current += 1;
+            }}
+          >
+            {face}
+            <RobotEffects mode={expression} />
+          </motion.button>
+        </span>
       ) : (
-        <motion.span className="minimal-robot-option" style={reducedMotion ? undefined : { opacity }}>
+        <span className="minimal-robot-option">
           {face}
-        </motion.span>
+        </span>
       )}
+      {draggable && <>
+        {active && shownSpeech && (
+          <span key={shownSpeech.text} ref={bubbleRef} className="minimal-robot-speech" aria-hidden="true">
+            <SpeechLetters text={shownSpeech.text} />
+          </span>
+        )}
+        <span className="minimal-hidden-nav" role="status" aria-live="polite" aria-atomic="true">
+          {active && shownSpeech?.announce ? shownSpeech.text : ''}
+        </span>
+      </>}
     </span>
   );
+  return <span ref={rootRef} className="minimal-robot-home">
+    {draggable && mounted ? createPortal(robot, document.body) : robot}
+  </span>;
 }

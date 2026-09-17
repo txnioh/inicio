@@ -43,13 +43,15 @@ export function Home({ arrived }: { arrived: boolean }) {
                 automate everyday tasks, and experiment with how interfaces look and feel.
               </p>
 
-              <p className="minimal-reveal-line">
+              <p className="minimal-reveal-line" data-robot-companies="">
                 I&apos;ve worked as a fullstack engineer at{' '}
-                <span className="minimal-inline-label minimal-company-label">
+                <span className="minimal-inline-label minimal-company-label" tabIndex={0} data-robot-company="ntt-data"
+                  data-robot-note="antonio trabajó aquí como ingeniero fullstack.">
                   <img className="minimal-ntt-logo" src="/logos/ntt-data-48.webp" width="16" height="16" alt="" />
                   ntt data
                 </span> and{' '}
-                <span className="minimal-inline-label minimal-company-label">
+                <span className="minimal-inline-label minimal-company-label" tabIndex={0} data-robot-company="cemosa"
+                  data-robot-note="another stop in antonio's fullstack journey.">
                   <img src="/logos/cemosa-48.webp" width="16" height="16" alt="" />
                   cemosa
                 </span>.

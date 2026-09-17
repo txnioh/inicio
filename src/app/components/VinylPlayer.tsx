@@ -378,6 +378,7 @@ export function VinylPlayer() {
   return (
     <section
       className={`minimal-inline-player minimal-reveal-line${isLite ? ' is-lite' : ' is-expanded'}${error ? ' has-error' : ''}`}
+      data-robot-player=""
       aria-label={screen === 'player' ? 'Now playing' : 'Choose a record'}
     >
       {screen === 'player' ? (

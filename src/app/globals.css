@@ -130,6 +130,12 @@ input {
   font: inherit;
   line-height: inherit;
   vertical-align: baseline;
+  cursor: help;
+}
+
+.minimal-company-label:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
 }
 
 .minimal-company-label img {
@@ -909,6 +915,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   line-height: normal;
 }
 
+.minimal-robot-home,
 .minimal-footer-robot-gallery {
   position: relative;
   display: flex;
@@ -917,6 +924,41 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   width: 28px;
   height: 21px;
   color: rgba(0, 0, 0, 0.4);
+}
+
+.minimal-robot-companion {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.minimal-robot-entrance {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
+}
+
+.minimal-robot-hole {
+  position: absolute;
+  left: -1px;
+  top: 19px;
+  width: 30px;
+  height: 5px;
+  border-radius: 50%;
+  background: #555551;
+  box-shadow: inset 0 2px 2px rgb(0 0 0 / .2), 0 0 0 2px rgb(0 0 0 / .035);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.minimal-robot-companion[data-departing='true'] .minimal-robot-hole {
+  top: -6px;
+}
+
+.minimal-robot-companion .minimal-robot-button {
+  pointer-events: auto;
 }
 
 .minimal-robot-option {
@@ -954,7 +996,67 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   outline-offset: 2px;
 }
 
-.minimal-robot-option svg {
+.minimal-robot-speech {
+  position: absolute;
+  z-index: 3;
+  width: max-content;
+  max-width: min(176px, calc(100vw - 16px));
+  padding: 7px 11px;
+  border: 1px solid #e7e7e3;
+  border-radius: 20px;
+  background: #fdfdfc;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 0.04);
+  color: #666;
+  font: 460 11px/1.4 var(--font-geist-sans), sans-serif;
+  text-align: center;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  animation: minimalRobotSpeak 160ms ease-out both;
+}
+
+.minimal-robot-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.minimal-robot-letter {
+  display: inline-block;
+  animation: minimalRobotLetter 240ms ease-out both;
+}
+
+@keyframes minimalRobotLetter {
+  from { opacity: 0; filter: blur(3px); transform: translateY(2px); }
+  to { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+
+.minimal-robot-speech::after {
+  content: '';
+  position: absolute;
+  left: var(--robot-speech-tail);
+  bottom: -4px;
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid #e7e7e3;
+  border-bottom: 1px solid #e7e7e3;
+  background: #fdfdfc;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.minimal-robot-speech[data-side='below']::after {
+  top: -4px;
+  bottom: auto;
+  transform: translateX(-50%) rotate(225deg);
+}
+
+.minimal-robot-speech[data-side='left']::after {
+  top: var(--robot-speech-tail);
+  right: -4px;
+  bottom: auto;
+  left: auto;
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+.minimal-robot-option > svg {
   display: block;
   width: 28px;
   height: 21px;
@@ -1020,7 +1122,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   transform: rotate(12deg) scaleY(0.35);
 }
 
-.minimal-footer-robot-gallery:is([data-expression='surprised'], [data-expression='carried']) .minimal-robot-expression {
+.minimal-footer-robot-gallery[data-expression='surprised'] .minimal-robot-expression {
   transform: translateY(-1px) rotate(-5deg) scale(1.08);
 }
 
@@ -1029,7 +1131,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 }
 
 .minimal-footer-robot-gallery[data-expression='sleeping'] .minimal-robot-expression {
-  transform: translateY(2px) rotate(-4deg);
+  animation: minimalRobotBreathe 2.6s ease-in-out infinite;
 }
 
 .minimal-footer-robot-gallery[data-expression='sleeping'] .minimal-robot-eyes rect {
@@ -1037,7 +1139,122 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 }
 
 .minimal-footer-robot-gallery[data-expression='music'] .minimal-robot-expression {
-  animation: minimalRobotSway 1.6s ease-in-out infinite;
+  animation: minimalRobotDance 900ms ease-in-out infinite;
+}
+
+.minimal-footer-robot-gallery[data-expression='carried'] .minimal-robot-expression {
+  animation: minimalRobotShake 180ms ease-in-out infinite;
+}
+
+.minimal-robot-effects {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font: 500 12px/1 var(--font-geist-sans), sans-serif;
+}
+
+.robot-sleep > span {
+  position: absolute;
+  top: 5px;
+  left: 32px;
+  color: #8e8e91;
+  opacity: 0;
+  animation: minimalRobotDream 2.6s ease-out infinite;
+}
+
+.robot-sleep > span:nth-of-type(2) { animation-delay: 850ms; }
+.robot-sleep > span:nth-of-type(3) { animation-delay: 1700ms; }
+
+.robot-sleep-halo,
+.robot-music-ring {
+  position: absolute;
+  left: 8px;
+  bottom: 5px;
+  width: 28px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgb(145 139 214 / .1);
+  animation: minimalRobotHalo 2.6s ease-in-out infinite;
+}
+
+.robot-music-ring {
+  border: 1px solid rgb(145 139 214 / .4);
+  background: transparent;
+  animation: minimalRobotBeat 900ms ease-out infinite;
+}
+
+.robot-music > span {
+  position: absolute;
+  top: 7px;
+  left: 2px;
+  color: #918bd6;
+  font-size: 14px;
+  opacity: 0;
+  --note-x: -10px;
+  animation: minimalRobotNote 1.8s ease-out infinite;
+}
+
+.robot-music > span:nth-of-type(2) { left: 33px; --note-x: 12px; animation-delay: 450ms; }
+.robot-music > span:nth-of-type(3) { left: 30px; --note-x: 7px; font-size: 10px; animation-delay: 900ms; }
+.robot-music > span:nth-of-type(4) { left: 5px; --note-x: -14px; animation-delay: 1350ms; }
+
+.robot-sweat svg {
+  position: absolute;
+  top: 12px;
+  left: 5px;
+  width: 5px;
+  height: 8px;
+  fill: #91b4cc;
+  stroke: none;
+  opacity: 0;
+  --drop-x: -13px;
+  --drop-y: -10px;
+  --drop-angle: -45deg;
+  animation: minimalRobotSweat 650ms ease-out infinite;
+}
+
+.robot-sweat svg:nth-child(2) { top: 20px; --drop-y: 0px; --drop-angle: -70deg; animation-delay: 130ms; }
+.robot-sweat svg:nth-child(3) { top: 25px; --drop-y: 9px; --drop-angle: -100deg; animation-delay: 260ms; }
+.robot-sweat svg:nth-child(n+4) { left: 34px; --drop-x: 13px; --drop-angle: 45deg; animation-delay: 65ms; }
+.robot-sweat svg:nth-child(5) { top: 20px; --drop-y: 0px; --drop-angle: 70deg; animation-delay: 195ms; }
+.robot-sweat svg:nth-child(6) { top: 25px; --drop-y: 9px; --drop-angle: 100deg; animation-delay: 325ms; }
+
+@keyframes minimalRobotSweat {
+  0% { opacity: 0; transform: rotate(var(--drop-angle)) scale(.3); }
+  20% { opacity: .9; }
+  100% { opacity: 0; transform: translate(var(--drop-x), var(--drop-y)) rotate(var(--drop-angle)) scale(.8); }
+}
+
+@keyframes minimalRobotShake {
+  0%, 100% { transform: translateX(-1px) rotate(-7deg) scale(1.06); }
+  50% { transform: translateX(1px) rotate(7deg) scale(1.06); }
+}
+
+@keyframes minimalRobotDream {
+  0% { opacity: 0; transform: translate(0, 0) scale(.65); }
+  25% { opacity: .7; }
+  100% { opacity: 0; transform: translate(13px, -22px) scale(1.1); }
+}
+
+@keyframes minimalRobotBreathe {
+  0%, 100% { transform: translateY(2px) rotate(-4deg) scale(.98); }
+  50% { transform: translateY(1px) rotate(-4deg) scale(1.03); }
+}
+
+@keyframes minimalRobotHalo {
+  0%, 100% { opacity: .4; transform: scaleX(.8); }
+  50% { opacity: .8; transform: scaleX(1.05); }
+}
+
+@keyframes minimalRobotBeat {
+  from { opacity: .6; transform: scale(.6); }
+  to { opacity: 0; transform: scale(1.5); }
+}
+
+@keyframes minimalRobotNote {
+  0% { opacity: 0; transform: translate(0, 0) rotate(-10deg) scale(.6); }
+  20% { opacity: .8; }
+  100% { opacity: 0; transform: translate(var(--note-x), -24px) rotate(12deg) scale(1); }
 }
 
 .minimal-footer-robot-gallery:not([data-expression='idle']):not([data-expression='music']) .minimal-robot-blink {
@@ -1072,9 +1289,16 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   }
 }
 
-@keyframes minimalRobotSway {
-  0%, 100% { transform: rotate(-5deg); }
-  50% { transform: translateY(-1.5px) rotate(5deg); }
+@keyframes minimalRobotDance {
+  0%, 100% { transform: translate(-1px, 0) rotate(-10deg); }
+  25% { transform: translate(0, -3px) rotate(0) scale(1.04, .97); }
+  50% { transform: translate(1px, 0) rotate(10deg); }
+  75% { transform: translate(0, -2px) rotate(0) scale(.97, 1.04); }
+}
+
+@keyframes minimalRobotSpeak {
+  from { opacity: 0; translate: 0 3px; }
+  to { opacity: 1; translate: 0 0; }
 }
 
 @media (max-width: 640px) {
@@ -1164,6 +1388,14 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   .minimal-footer-robot-gallery .minimal-robot-expression {
     transform: none;
   }
+
+  .minimal-robot-effects > span,
+  .robot-sweat svg {
+    opacity: .65;
+  }
+
+  .robot-sleep > span:nth-of-type(2) { translate: 5px -7px; }
+  .robot-sleep > span:nth-of-type(3) { translate: 10px -14px; }
 
   ::view-transition-group(active-album-cover),
   ::view-transition-old(active-album-cover),

@@ -16,6 +16,7 @@ type AudioLoadState = 'idle' | 'loading' | 'ready' | 'error';
 
 interface GlobalAudioPlayerContextValue {
   isPlaying: boolean;
+  playbackRequested: boolean;
   currentTime: number;
   duration: number;
   isReady: boolean;
@@ -49,9 +50,11 @@ function getBufferedPercent(audio: HTMLAudioElement) {
 
 export function GlobalAudioPlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playAttemptRef = useRef(0);
   const activeTrackIndexRef = useRef(0);
   const [activeTrackIndex, setActiveTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackRequested, setPlaybackRequested] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [loadState, setLoadState] = useState<AudioLoadState>('idle');
@@ -70,6 +73,7 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     const track = audioTracks[index];
     const audio = audioRef.current;
     if (!track || !audio) return;
+    const attempt = ++playAttemptRef.current;
 
     activeTrackIndexRef.current = index;
     setMiniPlayerDismissed(false);
@@ -80,12 +84,16 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     setError(null);
     setLoadState('loading');
 
+    setPlaybackRequested(autoplay);
     audio.pause();
     audio.src = track.src;
     audio.load();
 
     if (autoplay) {
       void audio.play().catch(() => {
+        // A track change or pause can cancel an older play request.
+        if (attempt !== playAttemptRef.current) return;
+        setPlaybackRequested(false);
         setIsPlaying(false);
         setLoadState('error');
         setError('Playback could not start. Try pressing play again.');
@@ -126,10 +134,12 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
       if (!audio.paused) setLoadState('loading');
     };
     const handleEnded = () => {
+      setPlaybackRequested(false);
       setIsPlaying(false);
       setCurrentTime(audio.duration);
     };
     const handleError = () => {
+      setPlaybackRequested(false);
       setIsPlaying(false);
       setLoadState('error');
       setError('This track could not be loaded.');
@@ -149,6 +159,7 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     audio.addEventListener('error', handleError);
 
     return () => {
+      playAttemptRef.current += 1;
       audio.pause();
       audio.removeAttribute('src');
       audio.load();
@@ -173,6 +184,7 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     if (!audio) return;
 
     if (audio.paused) {
+      setPlaybackRequested(true);
       setMiniPlayerDismissed(false);
       if (!audio.getAttribute('src')) {
         loadTrack(activeTrackIndexRef.current, true);
@@ -180,7 +192,10 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
       }
       setLoadState('loading');
       setError(null);
+      const attempt = ++playAttemptRef.current;
       void audio.play().catch(() => {
+        if (attempt !== playAttemptRef.current) return;
+        setPlaybackRequested(false);
         setIsPlaying(false);
         setLoadState('error');
         setError('Playback could not start. Try pressing play again.');
@@ -188,6 +203,8 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
       return;
     }
 
+    playAttemptRef.current += 1;
+    setPlaybackRequested(false);
     audio.pause();
   }, [loadTrack]);
 
@@ -206,9 +223,13 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     const audio = audioRef.current;
     if (index === activeTrackIndexRef.current && audio?.getAttribute('src')) {
       if (audio.paused) {
+        setPlaybackRequested(true);
         setLoadState('loading');
         setError(null);
+        const attempt = ++playAttemptRef.current;
         void audio.play().catch(() => {
+          if (attempt !== playAttemptRef.current) return;
+          setPlaybackRequested(false);
           setLoadState('error');
           setError('Playback could not start. Try pressing play again.');
         });
@@ -221,6 +242,7 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
 
   const contextValue = useMemo(() => ({
     isPlaying,
+    playbackRequested,
     currentTime,
     duration,
     isReady: Number.isFinite(duration) && duration > 0,
@@ -245,6 +267,7 @@ export function GlobalAudioPlayerProvider({ children }: { children: ReactNode })
     duration,
     error,
     isPlaying,
+    playbackRequested,
     loadState,
     seekTo,
     selectTrack,
