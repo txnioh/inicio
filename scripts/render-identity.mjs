@@ -20,24 +20,43 @@ await fs.mkdir(out, { recursive: true });
 
 const ink = '#000000';
 const paper = '#fdfdfc';
-const passes = [
-  { seed: 7, radius: 86, width: 37, x: 128, y: 128, start: -.32, opacity: .74 },
-  { seed: 23, radius: 89, width: 31, x: 127, y: 126, start: -.17, opacity: .58 },
-  { seed: 41, radius: 83, width: 29, x: 130, y: 130, start: -.46, opacity: .46 },
-];
-const paths = passes.map(({ radius, x, y, start, ...options }) => {
-  const points = Array.from({ length: 181 }, (_, i) => {
-    const angle = start + i / 180 * Math.PI * 2.06;
-    const r = radius + 1.8 * Math.sin(angle * 3 + options.seed) + 1.1 * Math.sin(angle * 5);
-    return [x + Math.cos(angle) * r, y + Math.sin(angle) * r * .97];
-  });
-  return markerStroke(points, {
-    ...options, color: ink, core: false, samples: 140, wobble: .07,
-    edge: 1.15, taperIn: .045, taperOut: .055, startWidth: .18, endWidth: .26, chisel: .13,
-  }).map(p => `<path d="${p.d}" fill="currentColor" fill-opacity="${p.opacity}"/>`).join('');
+const silhouettePoints = Array.from({ length: 96 }, (_, i) => {
+  const angle = i / 96 * Math.PI * 2;
+  const radius = 101 + 2.5 * Math.sin(angle * 3 + .8) + 1.6 * Math.sin(angle * 7 + 2.1);
+  return [128 + Math.cos(angle) * radius, 128 + Math.sin(angle) * radius * .98];
 });
+const silhouette = `${silhouettePoints.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join('')}Z`;
+const fillPasses = [
+  { y: 48, bend: -5, width: 54, seed: 17, opacity: .16 },
+  { y: 82, bend: 4, width: 52, seed: 31, opacity: .14 },
+  { y: 116, bend: -3, width: 53, seed: 47, opacity: .13 },
+  { y: 150, bend: 5, width: 52, seed: 67, opacity: .14 },
+  { y: 184, bend: -4, width: 54, seed: 89, opacity: .16 },
+  { y: 214, bend: 3, width: 49, seed: 109, opacity: .12 },
+].map(pass => {
+  const points = [[18, pass.y + 2], [62, pass.y - pass.bend], [110, pass.y], [158, pass.y + pass.bend], [207, pass.y - 2], [240, pass.y]];
+  return markerStroke(points, {
+    width: pass.width, seed: pass.seed, color: ink, opacity: pass.opacity, core: false, samples: 110,
+    wobble: .07, edge: 1.12, taperIn: .025, taperOut: .025,
+    startWidth: .7, endWidth: .7, chisel: .12,
+  }).map(path => `<path d="${path.d}" fill="currentColor" fill-opacity="${pass.opacity}"/>`).join('');
+}).join('');
+const outlinePasses = [-1.5, 1.2, 3].map((offset, i) => {
+  const points = silhouettePoints.map(([x, y]) => {
+    const dx = x - 128;
+    const dy = y - 128;
+    const length = Math.hypot(dx, dy) || 1;
+    return [x + dx / length * offset, y + dy / length * offset];
+  });
+  const opacity = [.42, .3, .2][i];
+  return markerStroke([...points, ...points.slice(0, 4)], {
+    width: [9, 7, 6][i], seed: [127, 149, 173][i], color: ink, opacity, core: false, samples: 150,
+    wobble: .06, edge: 1.08, taperIn: .02, taperOut: .03,
+    startWidth: .7, endWidth: .5, chisel: .08,
+  }).map(path => `<path d="${path.d}" fill="currentColor" fill-opacity="${opacity}"/>`).join('');
+}).join('');
 // The same grain and displaced edge as the article, at the mark's own scale.
-const texture = `<defs><filter id="ink" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
+const texture = `<defs><clipPath id="mark-shape"><path d="${silhouette}"/></clipPath><filter id="ink" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
   <feTurbulence type="fractalNoise" baseFrequency=".55" numOctaves="2" seed="7" result="grain"/>
   <feColorMatrix in="grain" type="luminanceToAlpha" result="alpha"/>
   <feComposite in="SourceGraphic" in2="alpha" operator="arithmetic" k1="0" k2="1" k3="-.22" k4="0" result="ink"/>
@@ -46,14 +65,21 @@ const texture = `<defs><filter id="ink" x="-8%" y="-8%" width="116%" height="116
 </filter></defs>`;
 const holes = `<mask id="ink-holes">
   <rect width="256" height="256" fill="white"/>
-  <circle cx="97" cy="91" r="3.2" fill="black"/>
-  <circle cx="151" cy="76" r="2.1" fill="black"/>
-  <circle cx="177" cy="116" r="3.8" fill="black"/>
-  <circle cx="116" cy="133" r="2.5" fill="black"/>
-  <circle cx="157" cy="153" r="2.8" fill="black"/>
-  <circle cx="91" cy="167" r="3.5" fill="black"/>
+  <path d="M82 151L104 132L122 145L145 119L165 133L184 105M104 132L93 103L119 87L145 119L154 82" fill="none" stroke="black" stroke-opacity=".13" stroke-width="1" stroke-linecap="round"/>
+  <circle cx="82" cy="151" r="2.2" fill="black"/>
+  <circle cx="93" cy="103" r="3.1" fill="black"/>
+  <circle cx="104" cy="132" r="1.6" fill="black"/>
+  <circle cx="119" cy="87" r="2.1" fill="black"/>
+  <circle cx="122" cy="145" r="3.6" fill="black"/>
+  <circle cx="145" cy="119" r="2.4" fill="black"/>
+  <circle cx="154" cy="82" r="1.5" fill="black"/>
+  <circle cx="165" cy="133" r="1.8" fill="black"/>
+  <circle cx="184" cy="105" r="3.2" fill="black"/>
+  <circle cx="173" cy="164" r="2.3" fill="black"/>
+  <circle cx="109" cy="178" r="1.4" fill="black"/>
+  <circle cx="69" cy="119" r="1.2" fill="black"/>
 </mask>`;
-const body = `${texture}${holes}<g mask="url(#ink-holes)"><circle cx="128" cy="128" r="82" fill="currentColor"/><g>${paths.map(p => `<g filter="url(#ink)">${p}</g>`).join('')}</g></g>`;
+const body = `${texture}${holes}<g mask="url(#ink-holes)" filter="url(#ink)"><path d="${silhouette}" fill="currentColor" fill-opacity=".62"/><g clip-path="url(#mark-shape)">${fillPasses}</g>${outlinePasses}</g>`;
 const svg = size => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 256 256"><title>txnio — ink circle</title><style>:root{color:${ink}}@media(prefers-color-scheme:dark){:root{color:#fff}}</style>${body}</svg>\n`;
 await fs.writeFile(path.join(publicDir, 'identity/ink-circle.svg'), svg(256));
 await fs.writeFile(path.join(publicDir, 'favicon.svg'), svg(32));
@@ -125,6 +151,6 @@ for (const [i, size] of [16, 32, 48].entries()) {
 }
 p.font = '400 13px Geist';
 p.fillStyle = '#77736e';
-p.fillText('Solid fill + three marker passes · #000000', 49, 331);
+p.fillText('Layered marker passes · constellation gaps', 49, 331);
 await fs.writeFile(path.join(out, 'identity-proof.png'), proof.toBuffer('image/png'));
 console.log('Generated the ink mark, SVG/ICO/PNG favicons, touch icon and 1200 × 630 social preview.');

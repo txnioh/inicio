@@ -83,7 +83,7 @@ The first article, **Making SVG feel like ink**, lives at `/writing/ink`. It exp
 
 ## Identity
 
-The ink circle combines a filled core, a few small natural gaps, and three overlapping marker passes generated with the article’s drawing geometry. Its SVG is black in light mode and white in dark mode. The master lives in `public/identity/ink-circle.svg`. Favicon SVG/ICO/PNG files, the Apple touch icon and `public/social-preview.webp` are linked in `index.html`.
+The ink circle uses broad, layered marker passes spread evenly across one organic silhouette, with no separate center shape or visible spiral line. Several loose outline passes finish the edge. Varied pinholes and very faint connecting lines form a small constellation in the ink. Its SVG is black in light mode and white in dark mode. The master lives in `public/identity/ink-circle.svg`. Favicon SVG/ICO/PNG files, the Apple touch icon and `public/social-preview.webp` are linked in `index.html`.
 
 Regenerate them with `node --experimental-strip-types scripts/render-identity.mjs` (verified with Node 24). The script uses Sharp and Canvas from the workspace runtime; `INK_RENDER_NODE_MODULES` can point to another installation. These packages are not added to the website bundle.
 
