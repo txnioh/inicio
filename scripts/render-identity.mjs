@@ -34,7 +34,7 @@ const paths = passes.map(({ radius, x, y, start, ...options }) => {
   return markerStroke(points, {
     ...options, color: ink, core: false, samples: 140, wobble: .07,
     edge: 1.15, taperIn: .045, taperOut: .055, startWidth: .18, endWidth: .26, chisel: .13,
-  }).map(p => `<path d="${p.d}" fill="${p.fill}" fill-opacity="${p.opacity}"/>`).join('');
+  }).map(p => `<path d="${p.d}" fill="currentColor" fill-opacity="${p.opacity}"/>`).join('');
 });
 // The same grain and displaced edge as the article, at the mark's own scale.
 const texture = `<defs><filter id="ink" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
@@ -44,8 +44,17 @@ const texture = `<defs><filter id="ink" x="-8%" y="-8%" width="116%" height="116
   <feTurbulence type="fractalNoise" baseFrequency=".11" numOctaves="2" seed="11" result="warp"/>
   <feDisplacementMap in="ink" in2="warp" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
 </filter></defs>`;
-const body = `${texture}<circle cx="128" cy="128" r="82" fill="${ink}"/><g>${paths.map(p => `<g filter="url(#ink)">${p}</g>`).join('')}</g>`;
-const svg = size => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 256 256"><title>txnio — black ink circle</title>${body}</svg>\n`;
+const holes = `<mask id="ink-holes">
+  <rect width="256" height="256" fill="white"/>
+  <circle cx="97" cy="91" r="3.2" fill="black"/>
+  <circle cx="151" cy="76" r="2.1" fill="black"/>
+  <circle cx="177" cy="116" r="3.8" fill="black"/>
+  <circle cx="116" cy="133" r="2.5" fill="black"/>
+  <circle cx="157" cy="153" r="2.8" fill="black"/>
+  <circle cx="91" cy="167" r="3.5" fill="black"/>
+</mask>`;
+const body = `${texture}${holes}<g mask="url(#ink-holes)"><circle cx="128" cy="128" r="82" fill="currentColor"/><g>${paths.map(p => `<g filter="url(#ink)">${p}</g>`).join('')}</g></g>`;
+const svg = size => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 256 256"><title>txnio — ink circle</title><style>:root{color:${ink}}@media(prefers-color-scheme:dark){:root{color:#fff}}</style>${body}</svg>\n`;
 await fs.writeFile(path.join(publicDir, 'identity/ink-circle.svg'), svg(256));
 await fs.writeFile(path.join(publicDir, 'favicon.svg'), svg(32));
 const master = await sharp(Buffer.from(svg(1024))).png().toBuffer();
