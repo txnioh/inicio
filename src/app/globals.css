@@ -393,6 +393,59 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   mix-blend-mode: normal;
 }
 
+:root[data-audio-size-transition] .minimal-inline-player {
+  view-transition-name: audio-player;
+}
+
+:root[data-audio-size-transition] .minimal-release-vinyl {
+  view-transition-name: audio-vinyl;
+}
+
+:root[data-audio-size-transition] .minimal-inline-track {
+  view-transition-name: audio-track;
+}
+
+:root[data-audio-size-transition] .minimal-robot-companion {
+  view-transition-name: audio-companion;
+}
+
+:root[data-audio-size-transition]::view-transition-group(*),
+:root[data-audio-size-transition]::view-transition-old(*),
+:root[data-audio-size-transition]::view-transition-new(*) {
+  animation-duration: 650ms;
+  animation-timing-function: cubic-bezier(.4, 0, .2, 1);
+}
+
+:root[data-audio-size-transition]::view-transition-old(audio-player) {
+  animation-duration: 160ms;
+}
+
+:root[data-audio-size-transition]::view-transition-old(audio-player),
+:root[data-audio-size-transition]::view-transition-new(audio-player) {
+  height: 100%;
+  object-fit: none;
+  object-position: left center;
+}
+
+:root[data-audio-size-transition]::view-transition-old(active-album-cover),
+:root[data-audio-size-transition]::view-transition-new(active-album-cover),
+:root[data-audio-size-transition]::view-transition-old(audio-vinyl),
+:root[data-audio-size-transition]::view-transition-new(audio-vinyl) {
+  height: 100%;
+}
+
+:root[data-audio-size-transition]::view-transition-old(audio-track),
+:root[data-audio-size-transition]::view-transition-old(audio-companion) {
+  animation: none;
+  opacity: 0;
+}
+
+:root[data-audio-size-transition]::view-transition-new(audio-track),
+:root[data-audio-size-transition]::view-transition-new(audio-companion) {
+  height: 100%;
+  animation: none;
+}
+
 .minimal-player-screen {
   display: grid;
   width: 100%;

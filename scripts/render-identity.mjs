@@ -18,7 +18,7 @@ const out = path.join(root, 'out/identity');
 await fs.mkdir(path.join(publicDir, 'identity'), { recursive: true });
 await fs.mkdir(out, { recursive: true });
 
-const purple = '#918BD6';
+const ink = '#000000';
 const paper = '#fdfdfc';
 const passes = [
   { seed: 7, radius: 86, width: 37, x: 128, y: 128, start: -.32, opacity: .74 },
@@ -32,7 +32,7 @@ const paths = passes.map(({ radius, x, y, start, ...options }) => {
     return [x + Math.cos(angle) * r, y + Math.sin(angle) * r * .97];
   });
   return markerStroke(points, {
-    ...options, color: purple, core: false, samples: 140, wobble: .07,
+    ...options, color: ink, core: false, samples: 140, wobble: .07,
     edge: 1.15, taperIn: .045, taperOut: .055, startWidth: .18, endWidth: .26, chisel: .13,
   }).map(p => `<path d="${p.d}" fill="${p.fill}" fill-opacity="${p.opacity}"/>`).join('');
 });
@@ -44,12 +44,13 @@ const texture = `<defs><filter id="ink" x="-8%" y="-8%" width="116%" height="116
   <feTurbulence type="fractalNoise" baseFrequency=".11" numOctaves="2" seed="11" result="warp"/>
   <feDisplacementMap in="ink" in2="warp" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
 </filter></defs>`;
-const body = `${texture}<g>${paths.map(p => `<g filter="url(#ink)">${p}</g>`).join('')}</g>`;
-const svg = size => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 256 256"><title>txnio — purple ink circle</title>${body}</svg>\n`;
+const body = `${texture}<circle cx="128" cy="128" r="82" fill="${ink}"/><g>${paths.map(p => `<g filter="url(#ink)">${p}</g>`).join('')}</g>`;
+const svg = size => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 256 256"><title>txnio — black ink circle</title>${body}</svg>\n`;
 await fs.writeFile(path.join(publicDir, 'identity/ink-circle.svg'), svg(256));
 await fs.writeFile(path.join(publicDir, 'favicon.svg'), svg(32));
 const master = await sharp(Buffer.from(svg(1024))).png().toBuffer();
 await sharp(master).resize(512, 512).png().toFile(path.join(publicDir, 'identity/ink-circle.png'));
+await sharp(master).resize(512, 512).webp({ quality: 92 }).toFile(path.join(publicDir, 'identity/ink-circle.webp'));
 
 const pngs = await Promise.all([16, 32, 48].map(size => sharp(master).resize(size, size).png().toBuffer()));
 await fs.writeFile(path.join(publicDir, 'favicon-16x16.png'), pngs[0]);
@@ -87,6 +88,7 @@ ctx.fillStyle = '#77736e';
 ctx.font = '400 26px Geist';
 ctx.fillText('Software, interfaces, and experiments.', 434, 371);
 await fs.writeFile(path.join(publicDir, 'social-preview.png'), canvas.toBuffer('image/png'));
+await sharp(canvas.toBuffer('image/png')).webp({ quality: 92 }).toFile(path.join(publicDir, 'social-preview.webp'));
 
 // A compact proof showing the same mark at tab sizes and on both browser themes.
 const proof = createCanvas(800, 370);
@@ -96,7 +98,7 @@ p.fillRect(0, 0, 800, 370);
 p.drawImage(mark, 35, 22, 270, 270);
 p.fillStyle = '#20201e';
 p.font = '500 18px Geist';
-p.fillText('txnio · purple ink', 352, 67);
+p.fillText('txnio · black ink', 352, 67);
 p.font = '400 13px Geist';
 p.fillStyle = '#77736e';
 p.fillText('16 px', 354, 105);
@@ -114,6 +116,6 @@ for (const [i, size] of [16, 32, 48].entries()) {
 }
 p.font = '400 13px Geist';
 p.fillStyle = '#77736e';
-p.fillText('Three marker passes · #918BD6', 49, 331);
+p.fillText('Solid fill + three marker passes · #000000', 49, 331);
 await fs.writeFile(path.join(out, 'identity-proof.png'), proof.toBuffer('image/png'));
 console.log('Generated the ink mark, SVG/ICO/PNG favicons, touch icon and 1200 × 630 social preview.');

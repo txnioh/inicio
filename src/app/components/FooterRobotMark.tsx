@@ -6,6 +6,8 @@ import * as motion from 'framer-motion/m';
 import { useDragControls, useMotionValue } from 'framer-motion';
 import { useGlobalAudioPlayer } from './GlobalAudioPlayer';
 import useRobotGuide from './useRobotGuide';
+import { RobotFace, RobotEffects, SpeechLetters } from './RobotVisuals';
+import { robotPortalPose, robotHoleFrames } from './robotAnimation';
 
 const gestures = ['wink', 'happy', 'surprised'] as const;
 type Gesture = typeof gestures[number];
@@ -22,35 +24,6 @@ const lines = {
 } as const;
 type SpeechCue = keyof typeof lines;
 type Speech = { text: string; announce: boolean; context?: boolean };
-
-function SpeechLetters({ text }: { text: string }) {
-  let letterIndex = 0;
-  return text.split(/(\s+)/).map((word, wordIndex) => /^\s+$/.test(word) ? word : (
-    <span className="minimal-robot-word" key={wordIndex}>
-      {Array.from(word).map(letter => {
-        const index = letterIndex++;
-        return <span className="minimal-robot-letter" key={index} style={{ animationDelay: `${index * 24}ms` }}>{letter}</span>;
-      })}
-    </span>
-  ));
-}
-
-function RobotEffects({ mode }: { mode: string }) {
-  if (mode === 'sleeping') return <span className="minimal-robot-effects robot-sleep" aria-hidden="true">
-    <i className="robot-sleep-halo" />
-    <span>z</span><span>z</span><span>Z</span>
-  </span>;
-  if (mode === 'music') return <span className="minimal-robot-effects robot-music" aria-hidden="true">
-    <i className="robot-music-ring" />
-    <span>♪</span><span>♫</span><span>✦</span><span>♪</span>
-  </span>;
-  if (mode === 'carried') return <span className="minimal-robot-effects robot-sweat" aria-hidden="true">
-    {[0, 1, 2, 3, 4, 5].map(index => <svg key={index} viewBox="0 0 8 12">
-      <path d="M4 .5C3 3 0 6 0 8a4 4 0 0 0 8 0C8 6 5 3 4 .5Z" />
-    </svg>)}
-  </span>;
-  return null;
-}
 
 export default function FooterRobotMark({ draggable = true }: { draggable?: boolean }) {
   const rootRef = useRef<HTMLSpanElement>(null);
@@ -99,19 +72,11 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
 
     // Leave through the upper hole before changing perches; emerge from below.
     // The button stays mounted so keyboard focus survives both animations.
-    const emerge = entrance.animate(departing ? [
-      { opacity: 1, transform: 'none', clipPath: 'inset(-40px -40px -40px -40px)' },
-      { opacity: 0, transform: 'translateY(-15px) scale(.55)', clipPath: 'inset(21px -40px -40px -40px)' },
-    ] : [
-      { opacity: 0, transform: 'translateY(12px) scale(.65)', clipPath: 'inset(-40px -40px 21px -40px)' },
-      { opacity: 1, transform: 'none', clipPath: 'inset(-40px -40px -40px -40px)' },
+    const emerge = entrance.animate([
+      robotPortalPose(0, departing), robotPortalPose(1, departing),
     ], { duration: departing ? departureMs : 260, easing: 'cubic-bezier(.2, .7, .3, 1)', fill: departing ? 'forwards' : 'none' });
-    const opening = hole.animate([
-      { opacity: 0, transform: 'scaleX(.2)' },
-      { opacity: .7, transform: 'scaleX(1)', offset: .2 },
-      { opacity: .7, transform: 'scaleX(1)', offset: .55 },
-      { opacity: 0, transform: 'scaleX(.2)' },
-    ], { duration: departing ? departureMs : 380, easing: 'ease-out' });
+    const opening = hole.animate(robotHoleFrames,
+      { duration: departing ? departureMs : 380, easing: 'ease-out' });
     return () => { emerge.cancel(); opening.cancel(); };
   }, [anchor, active, reducedMotion, held, carried, departing, departureMs]);
 
@@ -251,22 +216,6 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
     : held || carried ? 'carried'
     : gesture ?? (anchor === 'guide' ? 'idle' : musicActive ? 'music' : sleeping ? 'sleeping' : 'idle');
 
-  const face = (
-    <svg viewBox="0 0 48 36" focusable="false" aria-hidden="true">
-      <g className="minimal-robot-head-follow">
-        <g className="minimal-robot-expression">
-          <rect className="minimal-robot-shell" x="7" y="8" width="34" height="23" rx="10" />
-          <rect className="minimal-robot-screen" x="12" y="12" width="24" height="14" rx="6" />
-          <g className="minimal-robot-eyes">
-            <g className="minimal-robot-blink">
-              <rect x="18" y="16" width="3.6" height="6.8" rx="1.8" />
-              <rect x="26.4" y="16" width="3.6" height="6.8" rx="1.8" />
-            </g>
-          </g>
-        </g>
-      </g>
-    </svg>
-  );
 
   const robot = (
     <span ref={stageRef}
@@ -333,13 +282,13 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
               nextGesture.current += 1;
             }}
           >
-            {face}
+            <RobotFace />
             <RobotEffects mode={expression} />
           </motion.button>
         </span>
       ) : (
         <span className="minimal-robot-option">
-          {face}
+          <RobotFace />
         </span>
       )}
       {draggable && <>

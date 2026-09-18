@@ -138,6 +138,7 @@ export function VinylPlayer() {
   const lastPanXRef = useRef<number | null>(null);
   const isDraggingCollectionRef = useRef(false);
   const dragReleaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resizeSequenceRef = useRef(0);
   const shouldReduceMotion = useReducedMotion();
   const {
     activeTrack,
@@ -203,6 +204,26 @@ export function VinylPlayer() {
     });
     void transition.finished.finally(() => {
       delete document.documentElement.dataset.audioTransition;
+    });
+  }, [shouldReduceMotion]);
+
+  const toggleSize = useCallback(() => {
+    const viewTransitionDocument = document as ViewTransitionDocument;
+    const resize = () => setIsLite((current) => !current);
+    if (shouldReduceMotion || !viewTransitionDocument.startViewTransition) {
+      resize();
+      return;
+    }
+
+    const sequence = ++resizeSequenceRef.current;
+    document.documentElement.dataset.audioSizeTransition = '';
+    const transition = viewTransitionDocument.startViewTransition(() => {
+      flushSync(resize);
+    });
+    void transition.finished.catch(() => {}).finally(() => {
+      if (sequence === resizeSequenceRef.current) {
+        delete document.documentElement.dataset.audioSizeTransition;
+      }
     });
   }, [shouldReduceMotion]);
 
@@ -669,7 +690,7 @@ export function VinylPlayer() {
       <button
         type="button"
         className="minimal-player-size-toggle"
-        onClick={() => setIsLite((current) => !current)}
+        onClick={toggleSize}
         aria-label={isLite ? 'Expand player' : 'Use lite player'}
         aria-expanded={!isLite}
         title={isLite ? 'Expand player' : 'Use lite player'}
