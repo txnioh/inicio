@@ -40,12 +40,12 @@ export function Home({ arrived }: { arrived: boolean }) {
 
             <div className="minimal-home-intro">
               <p className="minimal-reveal-line">
-                I&apos;m Antonio, also known as txnio. I build software for the web,
-                automate everyday tasks, and experiment with how interfaces look and feel.
+                I build software for the web, with a soft spot for thoughtful interfaces
+                and small interactions.
               </p>
 
               <p className="minimal-reveal-line" data-robot-companies="">
-                I&apos;ve worked as a fullstack engineer at{' '}
+                Previously, fullstack at{' '}
                 <span className="minimal-inline-label minimal-company-label" tabIndex={0} data-robot-company="ntt-data"
                   data-robot-note="antonio trabajó aquí como ingeniero fullstack.">
                   <img className="minimal-ntt-logo" src="/logos/ntt-data-48.webp" width="16" height="16" alt="" />
@@ -56,25 +56,22 @@ export function Home({ arrived }: { arrived: boolean }) {
                   <img src="/logos/cemosa-48.webp" width="16" height="16" alt="" />
                   cemosa
                 </span>.
-                My work spans TypeScript, React, Next.js, Python, and .NET.
-                On my own time, I build things like{' '}
-                <ExternalLink href="https://os.txnio.com">txniOS</ExternalLink>{' '}
-                and explore small interface ideas here.
               </p>
 
               <p className="minimal-reveal-line">
-                I also take photographs. I&apos;m putting together{' '}
-                <a className="minimal-basic-link" href="/carrete">Carrete</a>, a space
-                for photography and film. An early preview is now open.
+                Away from the screen, I take <a className="minimal-basic-link" href="/carrete">photographs</a>.
               </p>
-
-              <p className="minimal-reveal-line">
-              You can find me on <ExternalLink href="https://www.linkedin.com/in/txnio/">LinkedIn</ExternalLink>,{' '}
-              <ExternalLink href="https://github.com/txnioh">GitHub</ExternalLink>, or reach me via{' '}
-              <a className="minimal-basic-link" href="mailto:txniodev@gmail.com">email</a>.
-              </p>
+              <nav className="minimal-contact-links minimal-reveal-line" aria-label="Contact">
+                <a className="minimal-basic-link" href="mailto:txniodev@gmail.com">Email</a>
+                <ExternalLink href="https://github.com/txnioh">GitHub</ExternalLink>
+                <ExternalLink href="https://www.linkedin.com/in/txnio/">LinkedIn</ExternalLink>
+              </nav>
             </div>
           </article>
+
+          <section className="minimal-section" aria-labelledby="projects-title">
+            <ProjectShowcase />
+          </section>
 
           <section className="minimal-section" aria-labelledby="writing-title">
             <div className="minimal-project-list">
@@ -83,10 +80,6 @@ export function Home({ arrived }: { arrived: boolean }) {
                 <InkWritingLink />
               </li></ul></li></ul>
             </div>
-          </section>
-
-          <section className="minimal-section" aria-labelledby="projects-title">
-            <ProjectShowcase />
           </section>
 
           <footer className="minimal-footer">

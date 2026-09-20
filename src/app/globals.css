@@ -116,6 +116,29 @@ input {
   color: #111111;
 }
 
+.minimal-contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-top: 24px;
+  color: #646460;
+  font-size: 13px;
+  line-height: 24px;
+}
+
+.minimal-homepage > .minimal-section {
+  padding-top: 52px;
+}
+
+.minimal-homepage > .minimal-section > .minimal-project-list {
+  padding-top: 0;
+}
+
+.minimal-homepage .page-index .minimal-row-link {
+  min-height: 48px;
+  padding-left: 0;
+}
+
 .minimal-inline-label {
   display: inline;
   padding: 2px 7px;
@@ -1330,6 +1353,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 
 .minimal-reveal-line {
   opacity: 1;
+  transform-origin: left center;
 }
 
 @keyframes minimalRobotBlink {

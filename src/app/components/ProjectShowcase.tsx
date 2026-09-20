@@ -30,9 +30,7 @@ export default function ProjectShowcase() {
                     {project.href === '/carrete' && <span className="project-wip">Work in progress<svg viewBox="0 0 110 9" aria-hidden="true"><path d="M2 6Q38 0 108 4M12 8Q57 3 98 6" /></svg></span>}
                   </div>
                   <span className="minimal-row-meta" aria-label={`${project.group} project, ${project.date}`}>
-                    <span>{project.group}</span>
-                    <span aria-hidden="true">/</span>
-                    <span>{project.date}</span>
+                    {project.date.slice(-4)}
                   </span>
                 </a>
               </li>
