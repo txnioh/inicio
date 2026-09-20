@@ -81,13 +81,42 @@ const holes = `<mask id="ink-holes">
 </mask>`;
 const body = `${texture}${holes}<g mask="url(#ink-holes)" filter="url(#ink)"><path d="${silhouette}" fill="currentColor" fill-opacity=".62"/><g clip-path="url(#mark-shape)">${fillPasses}</g>${outlinePasses}</g>`;
 const svg = size => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 256 256"><title>txnio — ink circle</title><style>:root{color:${ink}}@media(prefers-color-scheme:dark){:root{color:#fff}}</style>${body}</svg>\n`;
-await fs.writeFile(path.join(publicDir, 'identity/ink-circle.svg'), svg(256));
-await fs.writeFile(path.join(publicDir, 'favicon.svg'), svg(32));
+// Original three-pass circle from 33c446e, recolored in black.
+const passes = [
+  { seed: 7, radius: 86, width: 37, x: 128, y: 128, start: -.32, opacity: .74 },
+  { seed: 23, radius: 89, width: 31, x: 127, y: 126, start: -.17, opacity: .58 },
+  { seed: 41, radius: 83, width: 29, x: 130, y: 130, start: -.46, opacity: .46 },
+];
+const paths = passes.map(({ radius, x, y, start, ...options }) => {
+  const points = Array.from({ length: 181 }, (_, i) => {
+    const angle = start + i / 180 * Math.PI * 2.06;
+    const r = radius + 1.8 * Math.sin(angle * 3 + options.seed) + 1.1 * Math.sin(angle * 5);
+    return [x + Math.cos(angle) * r, y + Math.sin(angle) * r * .97];
+  });
+  return markerStroke(points, {
+    ...options, color: ink, core: false, samples: 140, wobble: .07,
+    edge: 1.15, taperIn: .045, taperOut: .055, startWidth: .18, endWidth: .26, chisel: .13,
+  }).map(p => `<path d="${p.d}" fill="currentColor" fill-opacity="${p.opacity}"/>`).join('');
+});
+// The same grain and displaced edge as the article, at the mark's own scale.
+const faviconTexture = `<defs><filter id="ink" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
+  <feTurbulence type="fractalNoise" baseFrequency=".55" numOctaves="2" seed="7" result="grain"/>
+  <feColorMatrix in="grain" type="luminanceToAlpha" result="alpha"/>
+  <feComposite in="SourceGraphic" in2="alpha" operator="arithmetic" k1="0" k2="1" k3="-.22" k4="0" result="ink"/>
+  <feTurbulence type="fractalNoise" baseFrequency=".11" numOctaves="2" seed="11" result="warp"/>
+  <feDisplacementMap in="ink" in2="warp" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+</filter></defs>`;
+const faviconBody = `${faviconTexture}<g>${paths.map(p => `<g filter="url(#ink)">${p}</g>`).join('')}</g>`;
+const faviconSvg = size => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 256 256"><title>txnio — ink circle</title><style>:root{color:#000}@media(prefers-color-scheme:dark){:root{color:#fff}}</style>${faviconBody}</svg>\n`;
+const faviconOnly = process.argv.includes('--favicon-only');
+if (!faviconOnly) await fs.writeFile(path.join(publicDir, 'identity/ink-circle.svg'), svg(256));
+await fs.writeFile(path.join(publicDir, 'favicon.svg'), faviconSvg(32));
 const master = await sharp(Buffer.from(svg(1024))).png().toBuffer();
-await sharp(master).resize(512, 512).png().toFile(path.join(publicDir, 'identity/ink-circle.png'));
-await sharp(master).resize(512, 512).webp({ quality: 92 }).toFile(path.join(publicDir, 'identity/ink-circle.webp'));
+if (!faviconOnly) await sharp(master).resize(512, 512).png().toFile(path.join(publicDir, 'identity/ink-circle.png'));
+if (!faviconOnly) await sharp(master).resize(512, 512).webp({ quality: 92 }).toFile(path.join(publicDir, 'identity/ink-circle.webp'));
 
-const pngs = await Promise.all([16, 32, 48].map(size => sharp(master).resize(size, size).png().toBuffer()));
+const faviconMaster = await sharp(Buffer.from(faviconSvg(1024))).png().toBuffer();
+const pngs = await Promise.all([16, 32, 48].map(size => sharp(faviconMaster).resize(size, size).png().toBuffer()));
 await fs.writeFile(path.join(publicDir, 'favicon-16x16.png'), pngs[0]);
 await fs.writeFile(path.join(publicDir, 'favicon-32x32.png'), pngs[1]);
 const header = Buffer.alloc(6 + pngs.length * 16);
@@ -104,8 +133,10 @@ pngs.forEach((png, i) => {
   offset += png.length;
 });
 await fs.writeFile(path.join(publicDir, 'favicon.ico'), Buffer.concat([header, ...pngs]));
-await sharp(master).resize(180, 180).flatten({ background: paper }).png()
+await sharp(faviconMaster).resize(180, 180).flatten({ background: paper }).png()
   .toFile(path.join(publicDir, 'apple-touch-icon.png'));
+
+if (faviconOnly) process.exit(0);
 
 const mark = await loadImage(master);
 const canvas = createCanvas(1200, 630);
