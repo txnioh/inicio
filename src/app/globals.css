@@ -341,7 +341,7 @@ input {
 @keyframes ink-link-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
 
 .ink-title { width: fit-content; }
-.minimal-navigation-arrival .minimal-reveal-line { opacity: 1; transform: none; }
+.minimal-navigation-arrival .minimal-reveal-line { animation: none; opacity: 1; transform: none; }
 .minimal-portfolio-page:focus { outline: none; }
 html[data-page-transition] .ink-title { view-transition-name: ink-title; }
 html[data-page-transition]::view-transition-group(ink-title) { animation-duration: 420ms; animation-timing-function: cubic-bezier(.22, .8, .25, 1); }
@@ -1353,6 +1353,23 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 .minimal-reveal-line {
   opacity: 1;
   transform-origin: left center;
+  animation: minimal-blur-in 720ms var(--reveal-delay, 0ms) cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.minimal-homepage .minimal-inline-player { --reveal-delay: 75ms; }
+.minimal-home-intro > :nth-child(1) { --reveal-delay: 150ms; }
+.minimal-home-intro > :nth-child(2) { --reveal-delay: 225ms; }
+.minimal-home-intro > :nth-child(n + 3),
+.minimal-homepage > .minimal-section { --reveal-delay: 300ms; }
+
+.minimal-reveal-line.minimal-reveal-pending {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes minimal-blur-in {
+  from { opacity: 0; filter: blur(10px); transform: translateY(4px) scale(1.025); }
+  to { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); }
 }
 
 @keyframes minimalRobotBlink {
@@ -1445,8 +1462,11 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .minimal-reveal-line {
+  .minimal-reveal-line,
+  .minimal-reveal-line.minimal-reveal-pending {
+    animation: none;
     opacity: 1;
+    filter: none;
     transform: none;
   }
 

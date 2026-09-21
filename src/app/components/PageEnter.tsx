@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 
 type PageEnterProps = {
   children: ReactNode;
@@ -12,7 +12,7 @@ type PageEnterProps = {
 export default function PageEnter({ children, className, skipAnimation = false }: PageEnterProps) {
   const rootRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const rootElement = rootRef.current;
     if (!rootElement) return;
 
@@ -23,30 +23,22 @@ export default function PageEnter({ children, className, skipAnimation = false }
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
     if (skipAnimation || reducedMotion.matches) return;
 
-    // The prerendered page stays readable without JavaScript. Animate each block
-    // once, when it enters the viewport, so lower sections keep their entrance.
-    const animations = new Map(revealElements.map(element => {
-      const animation = element.animate(
-        [
-          { opacity: 0, filter: 'blur(10px)', transform: 'translateY(4px) scale(1.025)' },
-          { opacity: 1, filter: 'blur(0px)', transform: 'translateY(0) scale(1)' },
-        ],
-        { duration: 720, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'backwards' },
-      );
-      animation.pause();
-      return [element, animation] as const;
-    }));
-
+    // CSS starts the visible entrance at first paint, even before hydration.
+    // Only defer blocks below the viewport; never restart visible text on mount.
+    const pendingElements = revealElements.filter(element => element.getBoundingClientRect().top >= innerHeight);
     const observer = new IntersectionObserver(entries => {
       entries.filter(entry => entry.isIntersecting).forEach((entry, index) => {
-        const animation = animations.get(entry.target as HTMLElement);
-        animation?.effect?.updateTiming({ delay: Math.min(index * 75, 300) });
-        animation?.play();
-        observer.unobserve(entry.target);
+        const element = entry.target as HTMLElement;
+        element.style.animationDelay = `${Math.min(index * 75, 300)}ms`;
+        element.classList.remove('minimal-reveal-pending');
+        observer.unobserve(element);
       });
     }, { threshold: 0 });
 
-    revealElements.forEach(element => observer.observe(element));
+    pendingElements.forEach(element => {
+      element.classList.add('minimal-reveal-pending');
+      observer.observe(element);
+    });
 
     // A keyboard user can reach a link before its entrance has completed.
     const revealFocused = (event: FocusEvent) => {
@@ -54,20 +46,25 @@ export default function PageEnter({ children, className, skipAnimation = false }
       const element = event.target.closest<HTMLElement>('.minimal-reveal-line');
       if (element) {
         observer.unobserve(element);
-        animations.get(element)?.finish();
+        element.classList.remove('minimal-reveal-pending');
+        element.style.animation = 'none';
       }
     };
     const finish = () => {
       if (!reducedMotion.matches) return;
       observer.disconnect();
-      animations.forEach(animation => animation.cancel());
+      pendingElements.forEach(element => element.classList.remove('minimal-reveal-pending'));
     };
     rootElement.addEventListener('focusin', revealFocused);
     reducedMotion.addEventListener('change', finish);
 
     return () => {
       observer.disconnect();
-      animations.forEach(animation => animation.cancel());
+      revealElements.forEach(element => {
+        element.classList.remove('minimal-reveal-pending');
+        element.style.removeProperty('animation');
+        element.style.removeProperty('animation-delay');
+      });
       rootElement.removeEventListener('focusin', revealFocused);
       reducedMotion.removeEventListener('change', finish);
     };
