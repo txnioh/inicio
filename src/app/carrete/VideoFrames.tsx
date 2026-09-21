@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { frameAtTime, loadVideoFrames, type VideoFramesData } from './loadVideoFrames';
-import FrameVolume, { type FrameVolumeHandle } from './FrameVolume';
-
-const initialRotation = { x: -12, y: -32 };
+import FrameVolume from './FrameVolume';
+import FrameEditor from './FrameEditor';
+import FrameTimeline from './FrameTimeline';
+import { defaultFrameSettings } from './frameSettings';
 
 export default function VideoFrames({ src, width, height, initialTime, video, onSeek }: {
   src: string;
@@ -13,8 +14,9 @@ export default function VideoFrames({ src, width, height, initialTime, video, on
   onSeek: (time: number) => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
-  const volume = useRef<FrameVolumeHandle>(null);
-  const rotation = useRef({ ...initialRotation });
+  const [settings, setSettings] = useState({ ...defaultFrameSettings });
+  const rotation = useRef({ x: settings.rotationX, y: settings.rotationY });
+  rotation.current = { x: settings.rotationX, y: settings.rotationY };
   const pointer = useRef<{ id: number; x: number; y: number; startX: number; startY: number; dragged: boolean } | null>(null);
   const startTime = useRef(initialTime).current;
   const [data, setData] = useState<VideoFramesData | null>(null);
@@ -26,6 +28,13 @@ export default function VideoFrames({ src, width, height, initialTime, video, on
   const [playError, setPlayError] = useState(false);
   const times = data?.times;
   const count = times?.length ?? 0;
+
+  useEffect(() => {
+    if (!video) return;
+    const previous = video.playbackRate;
+    return () => { video.playbackRate = previous; };
+  }, [video]);
+  useEffect(() => { if (video) video.playbackRate = settings.playbackRate; }, [video, settings.playbackRate]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -61,8 +70,8 @@ export default function VideoFrames({ src, width, height, initialTime, video, on
   }, [video, times]);
 
   const rotate = (x: number, y: number) => {
-    rotation.current = { x: Math.max(-65, Math.min(65, x)), y };
-    volume.current?.rotate(rotation.current.x, rotation.current.y);
+    rotation.current = { x: Math.max(-65, Math.min(65, x)), y: ((y + 180) % 360 + 360) % 360 - 180 };
+    setSettings(previous => ({ ...previous, rotationX: rotation.current.x, rotationY: rotation.current.y }));
   };
   const release = (event: PointerEvent<HTMLDivElement>) => {
     if (pointer.current?.id !== event.pointerId) return;
@@ -121,12 +130,17 @@ export default function VideoFrames({ src, width, height, initialTime, video, on
         rotate(rotation.current.x + (event.key === 'ArrowUp' ? -5 : event.key === 'ArrowDown' ? 5 : 0),
           rotation.current.y + (event.key === 'ArrowLeft' ? -5 : event.key === 'ArrowRight' ? 5 : 0));
       }}>
-      {data && <FrameVolume ref={volume} data={data} selected={selected} depth={1} ratio={width / height} video={video} />}
+      {data && <FrameVolume data={data} selected={selected} settings={settings} ratio={width / height} video={video} />}
       {!count && <div className="carrete-frames-status" role="status">
         {error ? <><p>No se han podido cargar los fotogramas.</p><button className="minimal-basic-link carrete-text-button" onClick={() => setAttempt(value => value + 1)}>Reintentar</button></>
           : <><p>Cargando fotogramas…</p><progress max={100} value={progress} aria-label="Cargando fotogramas" /><span>{progress}%</span></>}
       </div>}
     </div>
+    {count > 0 && <>
+      <FrameEditor settings={settings} onChange={setSettings} />
+      <FrameTimeline times={times!} selected={selected} zoom={settings.timelineZoom} playing={playing}
+        onSelect={select} onToggle={togglePlayback} />
+    </>}
     {playError && <p className="carrete-frames-play-error" role="status">No se pudo reproducir. Vuelve a pulsar el visor.</p>}
   </section>;
 }

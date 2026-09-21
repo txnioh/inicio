@@ -185,6 +185,43 @@
 .carrete-frames-status progress { width: 120px; height: 3px; accent-color: #555550; }
 .carrete-frames-status > span { color: #858580; font-variant-numeric: tabular-nums; }
 .carrete-frames-play-error { margin: 0; font-size: 10px; color: #9e2d22; }
+.carrete-frame-editor { position: absolute; top: 0; right: 0; z-index: 2; max-height: calc(100% - 90px); overflow: auto; border-radius: 8px; }
+.carrete-frame-editor .lil-gui {
+  --background-color: #f3f3ef;
+  --text-color: #555550;
+  --title-background-color: #eaeae5;
+  --title-text-color: #33332f;
+  --widget-color: #dfdfd7;
+  --hover-color: #d5d5cd;
+  --focus-color: #cbcbc2;
+  --number-color: #555550;
+  --string-color: #555550;
+  --font-family: inherit;
+  --font-size: 11px;
+  --widget-height: 22px;
+  --padding: 7px;
+  --spacing: 6px;
+  --slider-knob-width: 3px;
+}
+.carrete-frame-editor .lil-gui.lil-root { width: min(250px, calc(100vw - 48px)); }
+.carrete-frame-timeline { flex: 0 0 auto; padding-top: 12px; user-select: none; }
+.carrete-frame-timeline-meta { display: flex; align-items: center; gap: 10px; height: 30px; }
+.carrete-timeline-play { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: #edede7; color: #555550; cursor: pointer; font-size: 10px; }
+.carrete-timeline-play:hover { background: #deded6; }
+.carrete-timeline-time { font-variant-numeric: tabular-nums; color: #33332f; }
+.carrete-timeline-time > span { color: #96968e; }
+.carrete-timeline-hint { margin-left: auto; color: #96968e; font-size: 10px; }
+.carrete-timeline-track { position: relative; margin-top: 8px; }
+.carrete-timeline-scroll { display: flex; height: 40px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; cursor: ew-resize; touch-action: none; overscroll-behavior: contain; }
+.carrete-timeline-scroll::-webkit-scrollbar { display: none; }
+.carrete-timeline-scroll:focus-visible { outline: 1px solid #c7c7bf; outline-offset: 3px; border-radius: 3px; }
+.carrete-timeline-spacer { flex: 0 0 50%; }
+.carrete-timeline-ruler { position: relative; flex: 0 0 auto; height: 100%; background-image: linear-gradient(to right, #c6c6bd 1px, transparent 1px); background-repeat: repeat-x; }
+.carrete-timeline-elapsed { position: absolute; top: 0; height: 2px; background: #929287; }
+.carrete-timeline-tick { position: absolute; top: 0; padding-top: 17px; color: #99998f; font-size: 9px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.carrete-timeline-tick::before { content: ''; position: absolute; top: 0; left: 0; width: 1px; height: 12px; background: #a5a59a; }
+.carrete-timeline-playhead { position: absolute; top: -3px; bottom: 5px; left: 50%; width: 1px; background: #555550; pointer-events: none; }
+.carrete-timeline-playhead::before { content: ''; position: absolute; top: 0; left: -2px; width: 5px; height: 5px; border-radius: 50%; background: #555550; }
 .is-exploring-frames .minimal-now-playing { bottom: calc(24px + env(safe-area-inset-bottom)); }
 
 .carrete-settings {
