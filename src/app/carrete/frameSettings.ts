@@ -1,14 +1,13 @@
 export const defaultFrameSettings = {
-  depth: 1,
+  samples: 160,
+  depth: 4,
   scale: 1,
-  opacity: 1,
-  brightness: 1,
-  saturation: 1,
-  blur: 0,
-  fade: 0,
-  rotationX: -12,
-  rotationY: -32,
-  solidPast: true,
+  showFrame: false,
+  density: .88,
+  brightness: 1.7,
+  autoRotate: false,
+  rotationX: 22,
+  rotationY: 42,
   playbackRate: 1,
 };
 

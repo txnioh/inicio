@@ -1,307 +1,190 @@
-import { useEffect, useRef, useState } from 'react';
-import { frameBackground, type VideoFramesData } from './loadVideoFrames';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { VideoFramesData } from './loadVideoFrames';
 import type { FrameSettings } from './frameSettings';
-import type { MediaQuality } from './quality';
 
-const vertex = `
-attribute vec2 position;
-attribute vec2 texcoord;
-attribute float frame;
+const vertex = `#version 300 es
+in vec2 position;
+void main() { gl_Position = vec4(position, 0., 1.); }
+`;
+
+// Continuous space/time sampling, inspired by Video Summagator's ray-marched
+// volume. A 3D texture interpolates between temporal samples instead of leaving
+// gaps between individual planes. The played interval has an exact solid boundary.
+const fragment = `#version 300 es
+precision highp float;
+precision highp sampler3D;
+uniform sampler3D volume;
+uniform sampler2D liveFrame;
+uniform vec3 dimensions;
+uniform vec3 halfSize;
 uniform vec2 viewport;
-uniform vec2 size;
 uniform vec2 rotation;
-uniform float depth;
-uniform float count;
-uniform float selected;
-varying vec2 uv;
-varying vec2 local;
-varying float active;
-varying float upcoming;
-void main() {
-  vec3 p = vec3(position * size, (frame / max(1., count - 1.) - .5) * depth);
-  p = vec3(cos(rotation.y) * p.x + sin(rotation.y) * p.z, p.y, -sin(rotation.y) * p.x + cos(rotation.y) * p.z);
-  p = vec3(p.x, cos(rotation.x) * p.y - sin(rotation.x) * p.z, sin(rotation.x) * p.y + cos(rotation.x) * p.z);
-  gl_Position = vec4(p.xy * 2. / viewport, -p.z / 1100., 1. - p.z / 1100.);
-  uv = texcoord;
-  local = position + .5;
-  active = abs(frame - selected) < .5 ? 1. : 0.;
-  upcoming = max(0., (frame - selected) / max(1., count - 1. - selected));
+uniform float zoom;
+uniform float progress;
+uniform float density;
+uniform float brightness;
+uniform bool showFrame;
+uniform bool hasLive;
+out vec4 outputColor;
+vec3 decode(vec3 c) { return mix(c/12.92, pow((c+.055)/1.055,vec3(2.4)),step(vec3(.04045),c)); }
+vec3 encode(vec3 c) { return mix(c*12.92,1.055*pow(max(c,vec3(0.)),vec3(1./2.4))-.055,step(vec3(.0031308),c)); }
+vec3 sampleAt(vec3 p) {
+  vec3 uv = clamp(p/(2.*halfSize)+.5,0.,1.);
+  uv.y = 1.-uv.y;
+  uv = (uv*(dimensions-1.)+.5)/dimensions;
+  return decode(texture(volume,uv).rgb)*brightness;
 }
-`;
-const fragment = `
-precision mediump float;
-uniform sampler2D atlas;
-uniform float opacity;
-uniform float futureOpacity;
-uniform bool live;
-uniform bool solid;
-uniform vec2 texel;
-uniform vec2 cellSize;
-uniform vec3 effects;
-uniform float fade;
-varying vec2 uv;
-varying vec2 local;
-varying float active;
-varying float upcoming;
+vec2 intersectBox(vec3 origin, vec3 direction, vec3 lo, vec3 hi) {
+  vec3 safeDirection = mix(vec3(-1.),vec3(1.),greaterThanEqual(direction,vec3(0.)))*max(abs(direction),vec3(.000001));
+  vec3 a=(lo-origin)/safeDirection, b=(hi-origin)/safeDirection;
+  vec3 nearP=min(a,b), farP=max(a,b);
+  return vec2(max(max(nearP.x,nearP.y),nearP.z),min(min(farP.x,farP.y),farP.z));
+}
 void main() {
-  vec3 color = texture2D(atlas, live ? vec2(local.x, 1. - local.y) : uv).rgb;
-  if (!solid && active < .5 && upcoming > 0.) {
-    if (effects.z > 0.) {
-      vec2 origin = floor(uv / cellSize) * cellSize;
-      vec2 lo = origin + texel * .5;
-      vec2 hi = origin + cellSize - texel * .5;
-      vec2 radius = texel * effects.z;
-      color *= 4.;
-      color += texture2D(atlas, clamp(uv + vec2(radius.x, 0.), lo, hi)).rgb;
-      color += texture2D(atlas, clamp(uv - vec2(radius.x, 0.), lo, hi)).rgb;
-      color += texture2D(atlas, clamp(uv + vec2(0., radius.y), lo, hi)).rgb;
-      color += texture2D(atlas, clamp(uv - vec2(0., radius.y), lo, hi)).rgb;
-      color /= 8.;
-    }
-    color = mix(vec3(dot(color, vec3(.2126, .7152, .0722))), color, effects.y) * effects.x;
+  vec3 eye = vec3(sin(rotation.y)*cos(rotation.x),sin(rotation.x),cos(rotation.y)*cos(rotation.x));
+  vec3 right = vec3(cos(rotation.y),0.,-sin(rotation.y));
+  vec3 up = cross(eye,right);
+  float aspect=viewport.x/viewport.y;
+  float halfView=2.75/min(aspect,1.)/zoom;
+  vec2 screen=(gl_FragCoord.xy/viewport*2.-1.)*vec2(halfView*aspect,halfView);
+  vec3 origin=eye*10.+right*screen.x+up*screen.y, direction=-eye;
+  vec2 box=intersectBox(origin,direction,-halfSize,halfSize);
+  float entry=max(box.x,0.), exitT=box.y;
+  if(exitT<entry) discard;
+  float frameZ=mix(-halfSize.z,halfSize.z,progress);
+  vec2 solid=intersectBox(origin,direction,-halfSize,vec3(halfSize.xy,frameZ));
+  float solidEntry=max(entry,solid.x), solidExit=min(exitT,solid.y);
+  bool hitsSolid=solidEntry<=solidExit;
+  float endT=hitsSolid?solidEntry:exitT;
+  float stepSize=max(endT-entry,0.)/160.;
+  vec3 color=vec3(0.);
+  float alpha=0.;
+  for(int i=0;i<160;i++) {
+    if(stepSize<=0. || alpha>.995) break;
+    vec3 p=origin+direction*(entry+(float(i)+.5)*stepSize);
+    float a=1.-exp(-density*5.*stepSize);
+    color+=(1.-alpha)*a*sampleAt(p);
+    alpha+=(1.-alpha)*a;
   }
-  float alpha = solid || active > .5 ? 1. : opacity * (upcoming > 0. ? futureOpacity : 1.) * (1. - fade * upcoming);
-  gl_FragColor = vec4(clamp(color, 0., 1.), alpha);
+  if(hitsSolid) {
+    vec3 p=origin+direction*solidEntry;
+    bool current=abs(p.z-frameZ)<.0002;
+    vec3 surface=sampleAt(p);
+    if(current && hasLive) {
+      vec2 uv=clamp(vec2(p.x/(2.*halfSize.x)+.5,.5-p.y/(2.*halfSize.y)),0.,1.);
+      surface=decode(texture(liveFrame,uv).rgb)*brightness;
+    }
+    if(current && showFrame) {
+      vec2 edge=halfSize.xy-abs(p.xy);
+      float border=1.-smoothstep(0.,2.*halfView/viewport.y,min(edge.x,edge.y));
+      surface=mix(surface,vec3(1.),border);
+    }
+    color+=(1.-alpha)*surface;
+    alpha=1.;
+  }
+  // Preserve the transparent interval over the same blurred gallery as video.
+  // WebGL's default canvas compositor expects premultiplied sRGB output.
+  outputColor=vec4(encode(color/max(alpha,.00001))*alpha,alpha);
 }
 `;
 
-function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData, quality: MediaQuality) {
-  const gl = canvas.getContext('webgl', { alpha: true, antialias: true, depth: true });
-  if (!gl) return null;
+function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData) {
+  const gl = canvas.getContext('webgl2', { alpha: true, antialias: true, depth: false });
+  if (!gl || data.times.length > gl.getParameter(gl.MAX_3D_TEXTURE_SIZE)) return null;
   const program = gl.createProgram()!;
-  const shaders: WebGLShader[] = [];
-  const textures: WebGLTexture[] = [];
-  const buffers: WebGLBuffer[] = [];
+  const shaders: WebGLShader[] = [], textures: WebGLTexture[] = [];
+  const buffer = gl.createBuffer()!;
   const dispose = () => {
-    shaders.forEach(shader => gl.deleteShader(shader));
-    textures.forEach(texture => gl.deleteTexture(texture));
-    buffers.forEach(buffer => gl.deleteBuffer(buffer));
-    gl.deleteProgram(program);
+    shaders.forEach(shader => gl.deleteShader(shader)); textures.forEach(texture => gl.deleteTexture(texture));
+    gl.deleteBuffer(buffer); gl.deleteProgram(program);
   };
-  for (const [type, source] of [[gl.VERTEX_SHADER, vertex], [gl.FRAGMENT_SHADER, fragment]] as const) {
-    const shader = gl.createShader(type)!;
-    shaders.push(shader);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) { dispose(); return null; }
+  for (const [kind, source] of [[gl.VERTEX_SHADER, vertex], [gl.FRAGMENT_SHADER, fragment]] as const) {
+    const shader = gl.createShader(kind)!; shaders.push(shader); gl.shaderSource(shader, source); gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(shader)); dispose(); return null; }
     gl.attachShader(program, shader);
   }
   gl.linkProgram(program);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) { dispose(); return null; }
   gl.useProgram(program);
-  gl.enable(gl.BLEND);
-  gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-  gl.clearColor(0, 0, 0, 0);
-  const capacity = data.columns * data.rows;
-  const stride = quality === 'lite' ? Math.ceil(data.times.length / 180) : 1;
-  const corners = [[-.5, -.5], [.5, -.5], [-.5, .5], [-.5, .5], [.5, -.5], [.5, .5]];
-  const uploadBuffer = (values: number[]) => {
-    const buffer = gl.createBuffer()!;
-    buffers.push(buffer);
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(values), gl.STATIC_DRAW);
-    return buffer;
-  };
-  const batches = data.sheets.map((sheet, sheetIndex) => {
-    const texture = gl.createTexture()!;
-    textures.push(texture);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sheet);
-    const length = Math.min(capacity, data.times.length - sheetIndex * capacity);
-    const vertexAt = (cell: number, x: number, y: number, frame: number) => {
-      // Half-texel insets prevent adjacent atlas frames bleeding into each other.
-      const u = ((cell % data.columns) * data.width + .5 + (x + .5) * (data.width - 1)) / sheet.naturalWidth;
-      const v = (Math.floor(cell / data.columns) * data.height + .5 + (.5 - y) * (data.height - 1)) / sheet.naturalHeight;
-      return [x, y, u, v, frame];
-    };
-    const createBuffer = (reverse: boolean, step = 1) => {
-      const values: number[] = [];
-      for (let offset = 0; offset < length; offset++) {
-        const cell = reverse ? length - 1 - offset : offset;
-        if ((sheetIndex * capacity + cell) % step !== 0) continue;
-        for (const [x, y] of corners) {
-          values.push(...vertexAt(cell, x, y, sheetIndex * capacity + cell));
-        }
-      }
-      return uploadBuffer(values);
-    };
-    // Join each image's perimeter to the next slice. These textured strips
-    // close the played volume, including at large spacing and atlas boundaries.
-    const sides: number[] = [];
-    const perimeter = [[-.5, -.5], [.5, -.5], [.5, .5], [-.5, .5]];
-    for (let cell = 0; cell < length; cell++) {
-      const frame = sheetIndex * capacity + cell;
-      for (let edge = 0; edge < 4; edge++) {
-        const a = perimeter[edge];
-        const b = perimeter[(edge + 1) % 4];
-        for (const [point, offset] of [[a, 0], [b, 0], [a, 1], [a, 1], [b, 0], [b, 1]] as const) {
-          sides.push(...vertexAt(cell, point[0], point[1], frame + offset));
-        }
-      }
-    }
-    const forward = createBuffer(false);
-    return { texture, forward, samples: stride === 1 ? forward : createBuffer(false, stride),
-      reverse: createBuffer(true, stride), sides: uploadBuffer(sides),
-      start: sheetIndex * capacity, length, width: sheet.naturalWidth, height: sheet.naturalHeight };
-  });
-  const uniforms = Object.fromEntries(['viewport', 'size', 'rotation', 'depth', 'count', 'selected', 'opacity', 'futureOpacity', 'solid', 'texel', 'cellSize', 'effects', 'fade']
-    .map(name => [name, gl.getUniformLocation(program, name)]));
-  const attributes = ['position', 'texcoord', 'frame'].map(name => gl.getAttribLocation(program, name));
-  attributes.forEach(attribute => gl.enableVertexAttribArray(attribute));
-  const bindBuffer = (buffer: WebGLBuffer) => {
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.vertexAttribPointer(attributes[0], 2, gl.FLOAT, false, 20, 0);
-    gl.vertexAttribPointer(attributes[1], 2, gl.FLOAT, false, 20, 8);
-    gl.vertexAttribPointer(attributes[2], 1, gl.FLOAT, false, 20, 16);
-  };
-  const liveUniform = gl.getUniformLocation(program, 'live');
-  const liveTexture = gl.createTexture()!;
-  textures.push(liveTexture);
-  gl.bindTexture(gl.TEXTURE_2D, liveTexture);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  const liveCanvas = quality === 'lite' ? document.createElement('canvas') : null;
-  const liveContext = liveCanvas?.getContext('2d');
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+  const position = gl.getAttribLocation(program, 'position'); gl.enableVertexAttribArray(position); gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+  const volume = gl.createTexture()!; textures.push(volume);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_3D, volume);
+  gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  for (const axis of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T, gl.TEXTURE_WRAP_R]) gl.texParameteri(gl.TEXTURE_3D, axis, gl.CLAMP_TO_EDGE);
+  gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, data.width, data.height, data.times.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, data.pixels as Uint8Array<ArrayBuffer>);
+  gl.uniform1i(gl.getUniformLocation(program, 'volume'), 0);
+  const live = gl.createTexture()!; textures.push(live);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, live);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0,0,0,255]));
+  gl.uniform1i(gl.getUniformLocation(program, 'liveFrame'), 1);
+  const uniforms = Object.fromEntries(['dimensions','halfSize','viewport','rotation','zoom','progress','density','brightness','showFrame','hasLive'].map(name => [name, gl.getUniformLocation(program,name)]));
+  gl.uniform3f(uniforms.dimensions, data.width, data.height, data.times.length);
+  gl.clearColor(0,0,0,0);
   return {
     dispose,
-    draw(width: number, height: number, ratio: number, settings: FrameSettings, selected: number, video: HTMLVideoElement | null) {
-      const { rotationX: x, rotationY: y, depth, scale, opacity, solidPast, brightness, saturation, blur, fade } = settings;
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.depthMask(true);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      const frameWidth = Math.min(width * .57, height * .57 * ratio, 460) * scale;
-      const radians = Math.PI / 180;
-      gl.uniform2f(uniforms.viewport, width, height);
-      gl.uniform2f(uniforms.size, frameWidth, frameWidth / ratio);
-      gl.uniform2f(uniforms.rotation, -x * radians, -y * radians);
-      gl.uniform1f(uniforms.depth, Math.min(width * .36, height * .7, 260) * depth);
-      gl.uniform1f(uniforms.count, data.times.length);
-      gl.uniform1f(uniforms.selected, selected);
-      gl.uniform3f(uniforms.effects, brightness, saturation, blur);
-      gl.uniform1f(uniforms.fade, fade);
-      gl.uniform1i(liveUniform, 0);
-      // Keep each layer above the 8-bit drawing buffer's alpha precision.
-      const layerOpacity = Math.max(1 / 128, 1 - Math.pow(.9, 32 / data.times.length));
-      gl.uniform1f(uniforms.opacity, 1 - Math.pow(1 - layerOpacity, stride));
-      gl.uniform1f(uniforms.futureOpacity, opacity);
-      gl.enable(gl.DEPTH_TEST);
-      if (solidPast && selected > 0) {
-        gl.uniform1i(uniforms.solid, 1);
-        for (const batch of batches) {
-          const length = Math.min(batch.length, selected - batch.start);
-          if (length <= 0) break;
-          gl.bindTexture(gl.TEXTURE_2D, batch.texture);
-          bindBuffer(batch.sides);
-          gl.drawArrays(gl.TRIANGLES, 0, length * 24);
-        }
-        // The first and current images cap the accumulated image strips.
-        for (const frame of [0, selected]) {
-          const batch = batches[Math.floor(frame / capacity)];
-          gl.bindTexture(gl.TEXTURE_2D, batch.texture);
-          bindBuffer(batch.forward);
-          gl.drawArrays(gl.TRIANGLES, frame % capacity * 6, 6);
-        }
-      }
-      gl.uniform1i(uniforms.solid, 0);
-      gl.depthMask(false);
-      const reverse = Math.cos(x * radians) * Math.cos(y * radians) < 0;
-      for (let index = 0; index < batches.length; index++) {
-        const batch = batches[reverse ? batches.length - 1 - index : index];
-        const start = Math.ceil((solidPast ? Math.max(batch.start, selected + 1) : batch.start) / stride);
-        const length = Math.ceil((batch.start + batch.length) / stride) - start;
-        if (length <= 0) continue;
-        gl.bindTexture(gl.TEXTURE_2D, batch.texture);
-        gl.uniform2f(uniforms.texel, 1 / batch.width, 1 / batch.height);
-        gl.uniform2f(uniforms.cellSize, data.width / batch.width, data.height / batch.height);
-        bindBuffer(reverse ? batch.reverse : batch.samples);
-        gl.drawArrays(gl.TRIANGLES, reverse ? 0 : (start - Math.ceil(batch.start / stride)) * 6, length * 6);
-      }
-      // Draw the inspected slice last so it stays readable inside the volume.
-      // Use the original player for a sharp live frame; its atlas cell covers seeks.
-      gl.disable(gl.DEPTH_TEST);
-      const batch = batches[Math.floor(selected / capacity)];
-      gl.bindTexture(gl.TEXTURE_2D, batch.texture);
-      if (video && video.readyState >= 2 && !video.seeking) {
-        gl.bindTexture(gl.TEXTURE_2D, liveTexture);
-        if (liveCanvas && liveContext) {
-          const scale = Math.min(1, 480 / Math.max(video.videoWidth, video.videoHeight));
-          const width = Math.max(1, Math.round(video.videoWidth * scale));
-          const height = Math.max(1, Math.round(video.videoHeight * scale));
-          if (liveCanvas.width !== width || liveCanvas.height !== height) {
-            liveCanvas.width = width; liveCanvas.height = height;
-          }
-          liveContext.drawImage(video, 0, 0, width, height);
-        }
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, liveContext ? liveCanvas! : video);
-        gl.uniform1i(liveUniform, 1);
-      }
-      gl.uniform1f(uniforms.selected, selected);
-      bindBuffer(batch.forward);
-      gl.drawArrays(gl.TRIANGLES, selected % capacity * 6, 6);
+    draw(_width: number, _height: number, ratio: number, settings: FrameSettings, time: number, video: HTMLVideoElement | null) {
+      gl.viewport(0,0,canvas.width,canvas.height); gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform2f(uniforms.viewport,canvas.width,canvas.height);
+      gl.uniform3f(uniforms.halfSize,1.35*Math.min(1,ratio),1.35/Math.max(1,ratio),settings.depth/2);
+      gl.uniform2f(uniforms.rotation,settings.rotationX*Math.PI/180,settings.rotationY*Math.PI/180);
+      gl.uniform1f(uniforms.zoom,settings.scale);
+      gl.uniform1f(uniforms.progress,Math.max(0,Math.min(1,time/data.duration)));
+      gl.uniform1f(uniforms.density,settings.density); gl.uniform1f(uniforms.brightness,settings.brightness);
+      gl.uniform1i(uniforms.showFrame,settings.showFrame?1:0);
+      const hasLive = Boolean(video && video.readyState>=2 && !video.seeking);
+      gl.uniform1i(uniforms.hasLive,hasLive?1:0);
+      if (hasLive) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,live); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video!); }
+      gl.drawArrays(gl.TRIANGLES,0,6);
     },
   };
 }
 
-export default function FrameVolume({ data, selected, settings, ratio, video, quality }: {
-  data: VideoFramesData;
-  selected: number;
-  settings: FrameSettings;
-  ratio: number;
-  video: HTMLVideoElement | null;
-  quality: MediaQuality;
+export default function FrameVolume({ data, time, settings, ratio, video }: {
+  data: VideoFramesData; time: number; settings: FrameSettings; ratio: number; video: HTMLVideoElement | null;
 }) {
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const latest = useRef({ selected, settings, ratio });
-  latest.current = { selected, settings, ratio };
+  const canvas = useRef<HTMLCanvasElement>(null), fallbackCanvas = useRef<HTMLCanvasElement>(null);
+  const latest = useRef({ time, settings, ratio, video }); latest.current = { time, settings, ratio, video };
   const draw = useRef(() => {});
   const [fallback, setFallback] = useState(false);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = canvas.current!;
-    let renderer = createVolume(element, data, quality);
+    let renderer = createVolume(element,data), pending = 0;
     setFallback(!renderer);
-    let pending = 0;
     const render = () => {
       pending = 0;
-      const width = element.clientWidth;
-      const height = element.clientHeight;
+      const width=element.clientWidth, height=element.clientHeight;
       if (!width || !height) return;
-      const dpr = Math.min(devicePixelRatio || 1, quality === 'lite' ? 1 : 2);
-      if (element.width !== Math.round(width * dpr) || element.height !== Math.round(height * dpr)) {
-        element.width = Math.round(width * dpr);
-        element.height = Math.round(height * dpr);
-      }
-      const { selected, settings, ratio } = latest.current;
-      renderer?.draw(width, height, ratio, settings, selected, video);
+      const dpr=Math.min(devicePixelRatio||1,1.5,1600/Math.max(width,height));
+      if (element.width!==Math.round(width*dpr) || element.height!==Math.round(height*dpr)) { element.width=Math.round(width*dpr); element.height=Math.round(height*dpr); }
+      const { time, settings, ratio, video }=latest.current;
+      renderer?.draw(width,height,ratio,settings,time,video);
     };
-    draw.current = () => { if (!pending) pending = requestAnimationFrame(render); };
-    const observer = new ResizeObserver(draw.current);
-    observer.observe(element);
-    const lost = (event: Event) => { event.preventDefault(); renderer?.dispose(); renderer = null; setFallback(true); };
-    const restored = () => { renderer = createVolume(element, data, quality); setFallback(!renderer); draw.current(); };
-    element.addEventListener('webglcontextlost', lost);
-    element.addEventListener('webglcontextrestored', restored);
-    video?.addEventListener('seeked', draw.current);
-    draw.current();
-    return () => {
-      cancelAnimationFrame(pending);
-      observer.disconnect();
-      renderer?.dispose();
-      video?.removeEventListener('seeked', draw.current);
-      draw.current = () => {};
-      element.removeEventListener('webglcontextlost', lost);
-      element.removeEventListener('webglcontextrestored', restored);
-    };
-  }, [data, video, quality]);
-  useEffect(() => { draw.current(); }, [selected, settings, ratio]);
+    draw.current=()=>{if(!pending) pending=requestAnimationFrame(render);};
+    const observer=new ResizeObserver(draw.current); observer.observe(element);
+    const lost=(event:Event)=>{event.preventDefault();renderer?.dispose();renderer=null;setFallback(true);};
+    const restored=()=>{renderer=createVolume(element,data);setFallback(!renderer);draw.current();};
+    element.addEventListener('webglcontextlost',lost);element.addEventListener('webglcontextrestored',restored);
+    render();
+    return ()=>{cancelAnimationFrame(pending);observer.disconnect();renderer?.dispose();element.removeEventListener('webglcontextlost',lost);element.removeEventListener('webglcontextrestored',restored);draw.current=()=>{};};
+  },[data]);
+  useEffect(()=>{const drawFrame=()=>draw.current();video?.addEventListener('seeked',drawFrame);return()=>video?.removeEventListener('seeked',drawFrame);},[video]);
+  useEffect(()=>{draw.current();},[time,settings,ratio,video]);
+  useEffect(()=>{
+    if(!fallback || !fallbackCanvas.current)return;
+    const context=fallbackCanvas.current.getContext('2d')!;
+    if(video && video.readyState>=2)context.drawImage(video,0,0,data.width,data.height);
+    else {
+      const index=Math.max(0,Math.min(data.times.length-1,Math.round(time/data.duration*(data.times.length-1))));
+      const start=index*data.width*data.height*4;
+      context.putImageData(new ImageData(new Uint8ClampedArray(data.pixels.slice(start,start+data.width*data.height*4)),data.width,data.height),0,0);
+    }
+  },[fallback,data,time,video]);
   return <>
-    <canvas ref={canvas} className="carrete-frames-canvas" aria-hidden="true" data-frame-count={data.times.length} data-quality={quality} />
-    {fallback && <div className="carrete-frame-fallback" aria-hidden="true"
-      style={{ ...frameBackground(data, selected), aspectRatio: ratio }} />}
+    <canvas ref={canvas} className="carrete-frames-canvas" aria-hidden="true" data-sample-count={data.times.length} data-renderer="continuous-volume" />
+    {fallback && <canvas ref={fallbackCanvas} className="carrete-frame-fallback" width={data.width} height={data.height} aria-label="Selected video frame. WebGL 2 is unavailable." />}
   </>;
 }

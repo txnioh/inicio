@@ -9,17 +9,19 @@
     "preview": "vite preview",
     "perf": "node scripts/audit-performance.mjs",
     "lint": "tsc --noEmit",
+    "volume:carrete": "node scripts/render-carrete-volume.mjs",
     "frames:carrete": "node scripts/render-carrete-frames.mjs",
     "lite:carrete": "node scripts/render-carrete-lite.mjs",
     "deploy": "vercel --prod"
   },
   "dependencies": {
     "framer-motion": "^12.43.0",
-    "lil-gui": "^0.21.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "tweakpane": "^4.0.5"
   },
   "devDependencies": {
+    "@tweakpane/core": "^2.0.5",
     "@types/node": "^25.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

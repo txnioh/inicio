@@ -1,9 +1,11 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { LoadedMedia } from './media';
 import { wrap } from './InfiniteGrid';
 import VideoFrames from './VideoFrames';
 import QualitySelector from './QualitySelector';
 import type { QualityControl } from './quality';
+import { loadVideoFrames, type VideoFramesData } from './loadVideoFrames';
 
 const easing = 'cubic-bezier(.22,.8,.2,1)';
 
@@ -100,7 +102,10 @@ export default function MediaViewer({ media, index, initialSource: openingSource
   const animation = useRef<Animation | null>(null);
   const closing = useRef(false);
   const [ready, setReady] = useState(reducedMotion);
-  const [frameView, setFrameView] = useState<{ index: number; time: number } | null>(null);
+  const [frameView, setFrameView] = useState<{ index: number; time: number; data: VideoFramesData } | null>(null);
+  const [loadingFrames, setLoadingFrames] = useState(false), [framesError, setFramesError] = useState('');
+  const frameLoad = useRef<AbortController | null>(null), modeTransition = useRef<ViewTransition | null>(null);
+  const modeVersion = useRef(0);
   const exploringFrames = frameView?.index === index;
   const { item, image } = media[index];
   const initialSource = useRef(openingSource).current;
@@ -186,6 +191,9 @@ export default function MediaViewer({ media, index, initialSource: openingSource
     observer.observe(viewport);
     if (video && tile) observer.observe(tile);
     return () => {
+      modeVersion.current++;
+      frameLoad.current?.abort(); modeTransition.current?.skipTransition();
+      delete document.documentElement.dataset.carreteModeTransition;
       observer.disconnect();
       pauseVideo(video, grid, videoPositions);
       animation.current?.cancel();
@@ -199,6 +207,7 @@ export default function MediaViewer({ media, index, initialSource: openingSource
   const close = () => {
     if (closing.current) return;
     closing.current = true;
+    modeVersion.current++; frameLoad.current?.abort(); modeTransition.current?.skipTransition();
     pauseVideo(activeVideo.current, grid, videoPositions);
     source.current?.removeAttribute('data-exploring-frames');
     setFrameView(null);
@@ -224,23 +233,60 @@ export default function MediaViewer({ media, index, initialSource: openingSource
   };
   const move = (direction: number) => {
     if (!closing.current) {
+      modeVersion.current++; frameLoad.current?.abort(); modeTransition.current?.skipTransition();
+      setLoadingFrames(false); setFramesError('');
       setFrameView(null);
       onNavigate(wrap(index + direction, media.length));
     }
   };
-  const showFrames = () => {
-    if (closing.current || exploringFrames || !activeVideo.current) return;
+  const changeMode = (version: number, update: () => void, afterUpdate?: () => void) => {
+    modeTransition.current?.skipTransition();
+    const commit = () => {
+      if (closing.current || modeVersion.current !== version) return;
+      flushSync(update);
+      afterUpdate?.();
+    };
+    if (reducedMotion || !document.startViewTransition) { commit(); return; }
+    document.documentElement.dataset.carreteModeTransition = 'true';
+    const transition = document.startViewTransition(commit);
+    modeTransition.current = transition;
+    void transition.finished.catch(() => {}).finally(() => {
+      if (modeTransition.current === transition) {
+        modeTransition.current = null;
+        delete document.documentElement.dataset.carreteModeTransition;
+      }
+    });
+  };
+  const showFrames = async () => {
+    if (closing.current || exploringFrames || loadingFrames || !activeVideo.current) return;
     const video = activeVideo.current;
     video.pause();
-    source.current?.setAttribute('data-exploring-frames', 'true');
-    setFrameView({ index, time: video.currentTime });
+    const version = ++modeVersion.current, controller = new AbortController();
+    frameLoad.current?.abort(); frameLoad.current = controller;
+    setLoadingFrames(true); setFramesError('');
+    try {
+      // Keep the decoded video visible until the volume can be captured by the transition.
+      const data = await loadVideoFrames(item.src, quality.resolved === 'lite' ? 96 : 160, controller.signal, () => {});
+      if (controller.signal.aborted || modeVersion.current !== version) return;
+      changeMode(version, () => {
+        source.current?.setAttribute('data-exploring-frames', 'true');
+        setFrameView({ index, time: data.duration, data }); setLoadingFrames(false);
+      });
+    } catch {
+      if (!controller.signal.aborted) { setLoadingFrames(false); setFramesError('Samples could not be loaded. Try Frames again.'); }
+    }
   };
   const showVideo = () => {
-    if (closing.current || !exploringFrames) return;
-    source.current?.removeAttribute('data-exploring-frames');
-    setFrameView(null);
-    videoMode.current?.focus({ preventScroll: true });
-    if (activeVideo.current && source.current) playVideo(activeVideo.current, source.current);
+    if (closing.current || (!exploringFrames && !loadingFrames && !modeTransition.current)) return;
+    const version = ++modeVersion.current;
+    frameLoad.current?.abort(); setLoadingFrames(false); setFramesError('');
+    changeMode(version, () => {
+      source.current?.removeAttribute('data-exploring-frames');
+      setFrameView(null);
+    }, () => {
+      videoMode.current?.focus({ preventScroll: true });
+      if (activeVideo.current && source.current) playVideo(activeVideo.current, source.current);
+    });
   };
 
   return <dialog ref={dialog} className={`carrete-viewer${exploringFrames ? ' is-exploring-frames' : ''}`} aria-label={item.alt} data-ready={ready}
@@ -252,12 +298,13 @@ export default function MediaViewer({ media, index, initialSource: openingSource
       if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
     }}>
     <header className="carrete-header">
-      <div className="carrete-heading"><span>Carrete</span><span className="carrete-count">{String(media.length).padStart(2, '0')}</span><QualitySelector quality={quality} /></div>
+      <div className="carrete-heading"><span>Carrete</span><span className="carrete-count">{String(media.length).padStart(2, '0')}</span><span style={{ visibility: exploringFrames ? 'hidden' : undefined }}><QualitySelector quality={quality} /></span></div>
       <button className="minimal-basic-link carrete-text-button" onClick={close} autoFocus>Back</button>
     </header>
     {item.type === 'video' && <div className="carrete-viewer-modes" role="group" aria-label="Video view">
       <button ref={videoMode} className="carrete-text-button" aria-pressed={!exploringFrames} onClick={showVideo}>Video</button>
-      <button className="carrete-text-button" aria-pressed={exploringFrames} onClick={showFrames}>Frames <span aria-hidden="true">↗</span></button>
+      <button className="carrete-text-button" aria-pressed={exploringFrames} aria-busy={loadingFrames} onClick={showFrames}>Frames <span aria-hidden="true">{loadingFrames ? '…' : '↗'}</span></button>
+      {framesError && <p className="carrete-mode-error" role="status">{framesError}</p>}
     </div>}
     <div ref={stage} className="carrete-viewer-stage" onClick={event => { if (event.target === event.currentTarget) close(); }}>
       <div ref={frame} className="carrete-viewer-media">
@@ -268,7 +315,7 @@ export default function MediaViewer({ media, index, initialSource: openingSource
     </div>
     {exploringFrames && item.type === 'video' && <VideoFrames key={item.id} src={item.src} width={item.width} height={item.height}
       quality={quality.resolved}
-      initialTime={frameView.time} video={activeVideo.current} onSeek={time => {
+      initialTime={frameView.time} initialData={frameView.data} video={activeVideo.current} onSeek={time => {
         if (activeVideo.current) activeVideo.current.currentTime = time;
         videoPositions.set(item.id, time);
       }} />}

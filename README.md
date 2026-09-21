@@ -42,22 +42,48 @@ The selected tile stays mounted during viewport changes. Repeated tiles and
 tiles recycled by the virtual grid restore the saved playback position.
 Focus returns to the grid without outlining the tapped photograph.
 
-Opening a video also offers a **Fotogramas** view with every decoded frame and its
-original presentation timestamp. The volume fills the viewer without a heading
-or control panel. Tap or click it to play/pause; drag or use arrow keys to rotate.
-Enter and Space also toggle playback when the volume is focused. Shift with the
-left/right arrows pauses and steps through individual frames. The selected plane
-follows the original video; the **Vídeo** switch returns to the regular player
-at the same position.
+Opening a video offers a **Frames** view: a continuous space/time volume of the
+clip. Its WebGL 2 renderer interpolates a 3D texture rather than drawing separated
+planes. The selected time divides the solid played interval from the transparent
+upcoming interval, using the continuous sampling approach in
+[Video Summagator](https://video-summagator.v2space.workers.dev/). The current image
+stays at its physical depth and uses the original video player when decoded;
+it cannot draw through the volume in front of it.
 
-Run `npm run frames:carrete` (requires FFmpeg and ffprobe) when video files change.
-The checked-in `*-frames/` atlases contain all frames, including the first and
-last, grouped in 8×8 JPEG sheets. Their index records the exact timestamps.
-The complete atlas for each video is limited to 12 million decoded pixels by
-adjusting thumbnail resolution, without omitting frames. A single WebGL canvas
-draws the volume; without WebGL the selected frame remains available in 2D.
-Atlases load only when opening this view; loading can be retried or cancelled,
-and GPU resources and playback listeners are released on exit.
+The Tweakpane panel replaces the previous frame editor. It offers the same groups
+as the reference: Video source (Carrete or a local file, Samples), Timeline (time,
+play, speed and return to start), Transparent volume (depth, frame outline,
+density and brightness), and Camera (automatic rotation, reset and front view).
+Samples offers 96, 160 or 240 temporal samples at the same image resolution.
+The site's image-quality selector is hidden in this view; it only sets the initial
+sample count (96 for Lite, 160 for High), without reducing the source video's resolution.
+Drag to orbit, scroll or pinch to zoom, use Left/Right to step through time,
+Space/Enter or a tap to play/pause, and R to reset the camera. Mobile has a compact
+play/scrub control. The **Video** switch returns to the archive player at the same
+position. Local files are decoded in the browser and never uploaded.
+
+Video and Frames share the same transparent viewer, blurred gallery background,
+stage bounds, header and footer. The View Transition API blends only the video and
+volume once the samples are ready; the gallery stays fully visible throughout,
+without a white flash. It has an immediate fallback for reduced motion or browsers
+without support. Controls start hidden; opening them overlays a white panel with
+soft, blurred edges without moving the model. The volume preserves alpha so the
+gallery remains visible through the unplayed interval.
+
+Defaults are depth 4, density 0.88, brightness 1.70, with frame outline and auto
+rotation off. Each entry opens fully filled in front view, then moves to 30%
+filled and the angled camera (22° / 42°) over 700 ms. Playback starts from that
+30% position and grows the solid interval. Clicking during the entrance skips
+straight to 30%; reduced-motion preferences skip the animation too.
+
+Run `npm run volume:carrete` (FFmpeg and ffprobe required) when videos change.
+The checked-in `*-volume/` atlases provide 240 uniformly spaced samples, at up to
+320 pixels on the longest edge, including the beginning and end. Smaller sample
+counts select from these atlases without shrinking the images. Atlases load only
+on entering Frames. Sampling can be retried or cancelled, GPU resources are
+released on exit, and a selected-frame fallback remains available without WebGL 2.
+Legacy `*-frames/` assets and their generator remain available but are not used by
+the continuous viewer.
 
 The collection contains **47 photos and 12 videos from [@txnioh](https://www.instagram.com/txnioh/)**:
 all slides of the 22 profile publications, including six reels and six videos
