@@ -20,6 +20,34 @@ await fs.mkdir(out, { recursive: true });
 
 const ink = '#000000';
 const paper = '#fdfdfc';
+async function renderSocialPreview(mark) {
+  const canvas = createCanvas(1200, 630);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = paper;
+  ctx.fillRect(0, 0, 1200, 630);
+  ctx.drawImage(mark, 75, 165, 300, 300);
+  ctx.fillStyle = '#77736e';
+  ctx.font = '400 25px Geist';
+  ctx.fillText('txnio', 434, 248);
+  ctx.fillStyle = '#20201e';
+  ctx.font = '500 52px Geist';
+  ctx.fillText('Antonio J. Gonzalez', 430, 319);
+  ctx.fillStyle = '#77736e';
+  ctx.font = '400 26px Geist';
+  ctx.fillText('Software, interfaces, and experiments.', 434, 371);
+  const png = canvas.toBuffer('image/png');
+  await fs.writeFile(path.join(publicDir, 'social-preview.png'), png);
+  await sharp(png).webp({ quality: 92 }).toFile(path.join(publicDir, 'social-preview.webp'));
+}
+
+// Reuse the checked-in favicon exactly, without regenerating any identity assets.
+if (process.argv.includes('--social-only')) {
+  const favicon = await fs.readFile(path.join(publicDir, 'favicon.svg'));
+  const mark = await sharp(favicon, { density: 2304 }).resize(1024, 1024).png().toBuffer();
+  await renderSocialPreview(await loadImage(mark));
+  console.log('Generated the 1200 × 630 social preview from the current favicon.');
+  process.exit(0);
+}
 const silhouettePoints = Array.from({ length: 96 }, (_, i) => {
   const angle = i / 96 * Math.PI * 2;
   const radius = 101 + 2.5 * Math.sin(angle * 3 + .8) + 1.6 * Math.sin(angle * 7 + 2.1);
@@ -138,23 +166,8 @@ await sharp(faviconMaster).resize(180, 180).flatten({ background: paper }).png()
 
 if (faviconOnly) process.exit(0);
 
-const mark = await loadImage(master);
-const canvas = createCanvas(1200, 630);
-const ctx = canvas.getContext('2d');
-ctx.fillStyle = paper;
-ctx.fillRect(0, 0, 1200, 630);
-ctx.drawImage(mark, 75, 165, 300, 300);
-ctx.fillStyle = '#77736e';
-ctx.font = '400 25px Geist';
-ctx.fillText('txnio', 434, 248);
-ctx.fillStyle = '#20201e';
-ctx.font = '500 52px Geist';
-ctx.fillText('Antonio J. Gonzalez', 430, 319);
-ctx.fillStyle = '#77736e';
-ctx.font = '400 26px Geist';
-ctx.fillText('Software, interfaces, and experiments.', 434, 371);
-await fs.writeFile(path.join(publicDir, 'social-preview.png'), canvas.toBuffer('image/png'));
-await sharp(canvas.toBuffer('image/png')).webp({ quality: 92 }).toFile(path.join(publicDir, 'social-preview.webp'));
+const mark = await loadImage(faviconMaster);
+await renderSocialPreview(mark);
 
 // A compact proof showing the same mark at tab sizes and on both browser themes.
 const proof = createCanvas(800, 370);
@@ -182,6 +195,6 @@ for (const [i, size] of [16, 32, 48].entries()) {
 }
 p.font = '400 13px Geist';
 p.fillStyle = '#77736e';
-p.fillText('Layered marker passes · constellation gaps', 49, 331);
+p.fillText('Layered marker passes · open ink circle', 49, 331);
 await fs.writeFile(path.join(out, 'identity-proof.png'), proof.toBuffer('image/png'));
 console.log('Generated the ink mark, SVG/ICO/PNG favicons, touch icon and 1200 × 630 social preview.');
