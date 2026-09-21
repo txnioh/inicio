@@ -85,7 +85,7 @@ export default function Carrete() {
   useEffect(() => {
     const title = document.title;
     const lang = document.documentElement.lang;
-    document.title = 'Camera roll · txnio';
+    document.title = 'Carrete · txnio';
     document.documentElement.lang = 'en';
     return () => { document.title = title; document.documentElement.lang = lang; };
   }, []);
@@ -154,10 +154,10 @@ export default function Carrete() {
   return <main className={`carrete-page${entered ? ' has-entered' : ''}${selected ? ' has-viewer' : ''}`} tabIndex={-1} data-quality={quality.resolved}>
     <header className="carrete-header">
       {entered && <div className="carrete-heading">
-        <h1 className="carrete-title">Camera roll</h1>
+        <h1 className="carrete-title">Carrete</h1>
         <span className="carrete-count">{String(loaded.length).padStart(2, '0')}</span>
       </div>}
-      <nav className="carrete-header-actions" aria-label="Camera roll">
+      <nav className="carrete-header-actions" aria-label="Carrete">
         <QualitySelector quality={quality} />
         {canConfigure && <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-settings" aria-haspopup="dialog">Settings</button>}
         <a className="minimal-basic-link" href="/">Back home</a>
@@ -175,7 +175,7 @@ export default function Carrete() {
       <button className="carrete-intro-trigger" aria-label="Open camera roll" aria-describedby="carrete-entry-hint"
         disabled={!settled || !loaded.length} onClick={() => setEntered(true)} />
       <div className="carrete-intro-center">
-        <h1>Camera roll</h1>
+        <h1>Carrete</h1>
         <p id="carrete-entry-hint" className="carrete-entry-hint">
           {!settled ? 'Loading…' : loaded.length > 0 ? 'Tap to explore' : 'No items available'}
         </p>

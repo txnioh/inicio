@@ -1854,6 +1854,11 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 .project-filters button { padding: 0; border: 0; background: none; color: #999; font: inherit; font-size: 12px; cursor: pointer; }
 .project-filters button[aria-pressed='true'] { color: #111; text-decoration: underline; text-underline-offset: 4px; }
 .project-filters button:focus-visible { outline: 1px solid; outline-offset: 4px; }
+
+.minimal-homepage :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: none;
+}
 .project-name { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
 .project-wip { position: relative; color: #89877d; font: italic 12px 'Bradley Hand', 'Segoe Print', cursive; white-space: nowrap; transform: rotate(-3deg); }
 .project-wip svg { position: absolute; width: 100%; height: 9px; top: 100%; left: 0; fill: none; stroke: currentColor; stroke-width: .8; }

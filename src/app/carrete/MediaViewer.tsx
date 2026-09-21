@@ -252,7 +252,7 @@ export default function MediaViewer({ media, index, initialSource: openingSource
       if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
     }}>
     <header className="carrete-header">
-      <div className="carrete-heading"><span>Camera roll</span><span className="carrete-count">{String(media.length).padStart(2, '0')}</span><QualitySelector quality={quality} /></div>
+      <div className="carrete-heading"><span>Carrete</span><span className="carrete-count">{String(media.length).padStart(2, '0')}</span><QualitySelector quality={quality} /></div>
       <button className="minimal-basic-link carrete-text-button" onClick={close} autoFocus>Back</button>
     </header>
     {item.type === 'video' && <div className="carrete-viewer-modes" role="group" aria-label="Video view">

@@ -289,3 +289,9 @@
   .carrete-tile, .carrete-viewer .carrete-header, .carrete-viewer-footer { transition: none; }
   .carrete-tile-content { animation: none; }
 }
+
+.carrete-page :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible,
+.carrete-viewer :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: none;
+}
