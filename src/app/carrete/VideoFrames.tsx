@@ -88,10 +88,10 @@ export default function VideoFrames({ src, width, height, initialTime, video, on
     event.currentTarget.removeAttribute('data-dragging');
     if (tap) togglePlayback();
   };
-  const select = (index: number) => {
+  const select = (index: number, pause = true) => {
     const next = Math.max(0, Math.min(count - 1, index));
     if (!times) return;
-    video?.pause();
+    if (pause) video?.pause();
     setSelected(next);
     onSeek(times[next] + .0001);
   };
@@ -103,10 +103,10 @@ export default function VideoFrames({ src, width, height, initialTime, video, on
     void video.play().catch(() => setPlayError(true));
   };
 
-  return <section className="carrete-frames" aria-label="Explorar fotogramas"
+  return <section className="carrete-frames" aria-label="Explore frames"
     onKeyDown={event => { if (event.key !== 'Escape') event.stopPropagation(); }}>
     <div ref={viewport} className="carrete-frames-viewport" role="group" tabIndex={count ? 0 : -1}
-      aria-label={`Volumen de fotogramas. Pulsa, usa Intro o espacio para ${playing ? 'pausar' : 'reproducir'}. Arrastra o usa las flechas para girar. Mayús y flechas izquierda o derecha para avanzar un fotograma.`}
+      aria-label={`Frame volume. Tap or press Enter or Space to ${playing ? 'pause' : 'play'}. Drag or use the arrow keys to rotate. Shift and Left or Right Arrow to step through frames.`}
       onPointerDown={event => {
         if (event.button !== 0 || !event.isPrimary || !count) return;
         pointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY,
@@ -139,15 +139,15 @@ export default function VideoFrames({ src, width, height, initialTime, video, on
       }}>
       {data && <FrameVolume data={data} selected={selected} settings={settings} ratio={width / height} video={video} quality={quality} />}
       {!count && <div className="carrete-frames-status" role="status">
-        {error ? <><p>No se han podido cargar los fotogramas.</p><button className="minimal-basic-link carrete-text-button" onClick={() => setAttempt(value => value + 1)}>Reintentar</button></>
-          : <><p>Cargando fotogramas…</p><progress max={100} value={progress} aria-label="Cargando fotogramas" /><span>{progress}%</span></>}
+        {error ? <><p>Frames could not be loaded.</p><button className="minimal-basic-link carrete-text-button" onClick={() => setAttempt(value => value + 1)}>Retry</button></>
+          : <><p>Loading frames…</p><progress max={100} value={progress} aria-label="Loading frames" /><span>{progress}%</span></>}
       </div>}
     </div>
     {count > 0 && <>
       <FrameEditor settings={settings} onChange={setSettings} />
       <FrameTimeline times={times!} selected={selected} playing={playing}
-        onSelect={select} onToggle={togglePlayback} />
+        onSelect={index => select(index, false)} onToggle={togglePlayback} />
     </>}
-    {playError && <p className="carrete-frames-play-error" role="status">No se pudo reproducir. Vuelve a pulsar el visor.</p>}
+    {playError && <p className="carrete-frames-play-error" role="status">Playback could not start. Tap the viewer to try again.</p>}
   </section>;
 }

@@ -85,8 +85,8 @@ export default function Carrete() {
   useEffect(() => {
     const title = document.title;
     const lang = document.documentElement.lang;
-    document.title = 'Carrete · txnio';
-    document.documentElement.lang = 'es';
+    document.title = 'Camera roll · txnio';
+    document.documentElement.lang = 'en';
     return () => { document.title = title; document.documentElement.lang = lang; };
   }, []);
 
@@ -154,13 +154,13 @@ export default function Carrete() {
   return <main className={`carrete-page${entered ? ' has-entered' : ''}${selected ? ' has-viewer' : ''}`} tabIndex={-1} data-quality={quality.resolved}>
     <header className="carrete-header">
       {entered && <div className="carrete-heading">
-        <h1 className="carrete-title">Carrete</h1>
+        <h1 className="carrete-title">Camera roll</h1>
         <span className="carrete-count">{String(loaded.length).padStart(2, '0')}</span>
       </div>}
-      <nav className="carrete-header-actions" aria-label="Carrete">
+      <nav className="carrete-header-actions" aria-label="Camera roll">
         <QualitySelector quality={quality} />
-        {canConfigure && <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-settings" aria-haspopup="dialog">Ajustes</button>}
-        <a className="minimal-basic-link" href="/">Volver a inicio</a>
+        {canConfigure && <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-settings" aria-haspopup="dialog">Settings</button>}
+        <a className="minimal-basic-link" href="/">Back home</a>
       </nav>
     </header>
 
@@ -170,27 +170,27 @@ export default function Carrete() {
         selection={selected} videoPositions={videoPositions} />
     </div>}
 
-    {introVisible && <section className="carrete-intro" aria-label="Cargar el carrete" inert={entered}>
+    {introVisible && <section className="carrete-intro" aria-label="Load camera roll" inert={entered}>
       <OrbitLens key={orbitReplay} frames={frames} reducedMotion={reducedMotion} settings={settings} quality={quality.resolved} />
-      <button className="carrete-intro-trigger" aria-label="Abrir el carrete" aria-describedby="carrete-entry-hint"
+      <button className="carrete-intro-trigger" aria-label="Open camera roll" aria-describedby="carrete-entry-hint"
         disabled={!settled || !loaded.length} onClick={() => setEntered(true)} />
       <div className="carrete-intro-center">
-        <h1>Carrete</h1>
+        <h1>Camera roll</h1>
         <p id="carrete-entry-hint" className="carrete-entry-hint">
-          {!settled ? 'Preparando…' : loaded.length > 0 ? 'Pulsa para entrar' : 'Sin piezas disponibles'}
+          {!settled ? 'Loading…' : loaded.length > 0 ? 'Tap to explore' : 'No items available'}
         </p>
         {settled && failed > 0 && <div className="carrete-load-error" role="status">
-          <p>{failed === 1 ? 'Una pieza no se ha podido cargar.' : `${failed} piezas no se han podido cargar.`}</p>
-          <button className="minimal-basic-link carrete-text-button" onClick={() => setAttempt(value => value + 1)}>Reintentar</button>
-          {loaded.length > 0 && <span>Puedes entrar con las {loaded.length} disponibles.</span>}
+          <p>{failed === 1 ? 'One item could not be loaded.' : `${failed} items could not be loaded.`}</p>
+          <button className="minimal-basic-link carrete-text-button" onClick={() => setAttempt(value => value + 1)}>Retry</button>
+          {loaded.length > 0 && <span>You can explore the {loaded.length} available items.</span>}
         </div>}
-        {collection.length === 0 && <p className="carrete-empty">El carrete está vacío.</p>}
+        {collection.length === 0 && <p className="carrete-empty">The camera roll is empty.</p>}
         <span className="carrete-sr-only" role="status">{settled
-          ? loaded.length ? `${loaded.length} piezas listas. Ya puedes entrar.` : 'No hay piezas disponibles.'
-          : 'Preparando el carrete.'}</span>
+          ? loaded.length ? `${loaded.length} items ready. You can enter now.` : 'No items are available.'
+          : 'Loading camera roll.'}</span>
       </div>
       <footer className="carrete-intro-footer">
-        <span>Fotografía & vídeo</span>
+        <span>Photography & video</span>
         <span>@txnioh · {String(collection.length).padStart(2, '0')}</span>
       </footer>
     </section>}
@@ -199,7 +199,7 @@ export default function Carrete() {
       canEnter={settled && loaded.length > 0} reducedMotion={reducedMotion}
       onIntro={showIntro} onGrid={() => setEntered(true)} onReplay={replay} />}
     <div ref={playerSlot} />
-    {createPortal(<NowPlaying lang="es" />, playerHost)}
+    {createPortal(<NowPlaying />, playerHost)}
     {selected !== null && <MediaViewer media={ordered} index={selected.index} quality={quality}
       initialSource={selected.source} reducedMotion={reducedMotion} onClose={close}
       onNavigate={navigate} onSource={retainSource} videoPositions={videoPositions} playerHost={playerHost} />}

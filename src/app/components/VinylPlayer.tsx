@@ -2,6 +2,7 @@
 
 import Image from './Image';
 import PlayerIcon from './PlayerIcon';
+import PlayerTimelineTrack from './PlayerTimelineTrack';
 import * as motion from 'framer-motion/m';
 import {
   type PanInfo,
@@ -23,11 +24,6 @@ const COVER_SPRING = {
   type: 'spring' as const,
   stiffness: 500,
   damping: 48,
-};
-
-const TIMELINE_TRANSITION = {
-  duration: 0.16,
-  ease: [0.22, 1, 0.36, 1] as const,
 };
 
 const VINYL_ROTATION_TRANSITION = {
@@ -160,18 +156,11 @@ export function VinylPlayer() {
     ? Math.min(currentTime / duration, 1) * 100
     : 0;
   const visibleProgressPercent = seekPercent ?? progressPercent;
-  const visiblePreviewPercent = previewPercent === null
-    ? visibleProgressPercent
-    : Math.max(previewPercent, visibleProgressPercent);
   const selectedIndex = Math.min(
     Math.max(Math.round(collectionPosition), 0),
     tracks.length - 1,
   );
   const selectedTrack = tracks[selectedIndex] ?? activeTrack;
-  const timelineTransition = shouldReduceMotion
-    ? { duration: 0 }
-    : TIMELINE_TRANSITION;
-  const timelineHeight = isSeeking ? 8 : 4;
   const visibleTime = seekPercent === null
     ? currentTime
     : (seekPercent / 100) * duration;
@@ -505,40 +494,8 @@ export function VinylPlayer() {
                   onPointerLeave={handleTimelinePointerLeave}
                   onKeyDown={handleTimelineKeyDown}
                 >
-                  <motion.span
-                    className="minimal-timeline-track"
-                    initial={false}
-                    animate={{ scaleY: timelineHeight / 4 }}
-                    transition={timelineTransition}
-                  />
-                  <motion.span
-                    className="minimal-timeline-buffered"
-                    initial={false}
-                    animate={{
-                      scaleX: bufferedPercent / 100,
-                      scaleY: timelineHeight / 4,
-                    }}
-                    transition={timelineTransition}
-                  />
-                  <motion.span
-                    className="minimal-timeline-preview"
-                    initial={false}
-                    animate={{
-                      scaleX: visiblePreviewPercent / 100,
-                      scaleY: timelineHeight / 4,
-                      opacity: previewPercent !== null || isSeeking ? 1 : 0,
-                    }}
-                    transition={timelineTransition}
-                  />
-                  <motion.span
-                    className="minimal-timeline-progress"
-                    initial={false}
-                    animate={{
-                      scaleX: visibleProgressPercent / 100,
-                      scaleY: timelineHeight / 4,
-                    }}
-                    transition={timelineTransition}
-                  />
+                  <PlayerTimelineTrack progress={visibleProgressPercent} preview={previewPercent}
+                    buffered={bufferedPercent} seeking={isSeeking} />
                 </div>
                 <span className="minimal-inline-time" title={`${formatTime(currentTime)} / ${formatTime(isReady ? duration : activeTrack.duration)}`}>
                   {loadState === 'loading' && !isReady

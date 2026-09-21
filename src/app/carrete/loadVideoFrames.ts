@@ -13,9 +13,9 @@ export type VideoFramesData = {
 export async function loadVideoFrames(src: string, quality: MediaQuality, signal: AbortSignal, onProgress: (progress: number) => void): Promise<VideoFramesData> {
   const directory = src.replace(/\.mp4$/, quality === 'lite' ? '-frames-lite' : '-frames');
   const response = await fetch(`${directory}/index.json`, { signal });
-  if (!response.ok) throw new Error('No se han podido cargar los fotogramas.');
+  if (!response.ok) throw new Error('Frames could not be loaded.');
   const manifest = await response.json() as Omit<VideoFramesData, 'sheets'> & { sheets: string[] };
-  if (!manifest.times?.length || !manifest.sheets?.length) throw new Error('No hay fotogramas disponibles.');
+  if (!manifest.times?.length || !manifest.sheets?.length) throw new Error('No frames are available.');
   const sheets: HTMLImageElement[] = [];
   for (const file of manifest.sheets) {
     signal.throwIfAborted();

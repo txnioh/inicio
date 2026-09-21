@@ -19,8 +19,8 @@ export default function EffectSettings({ settings, setSettings, entered, canEnte
   const sliders = (keys: NumericSetting[]) => keys.map(key => {
     const { label, min, max, step, unit } = numericSettings[key];
     const value = settings[key];
-    const display = unit === 'ms' ? `${(value / 1000).toLocaleString('es', { maximumFractionDigits: 2 })} s`
-      : `${value.toLocaleString('es')}${unit}`;
+    const display = unit === 'ms' ? `${(value / 1000).toLocaleString('en', { maximumFractionDigits: 2 })} s`
+      : `${value.toLocaleString('en')}${unit}`;
     return <label className="carrete-setting" key={key} htmlFor={`${id}-${key}`}>
       <span>{label}<output htmlFor={`${id}-${key}`}>{display}</output></span>
       <input id={`${id}-${key}`} type="range" min={min} max={max} step={step} value={value}
@@ -33,24 +33,24 @@ export default function EffectSettings({ settings, setSettings, entered, canEnte
 
   return <div id="carrete-settings" className="carrete-settings" popover="auto" role="dialog" aria-labelledby={`${id}-title`}>
     <div className="carrete-settings-heading">
-      <h2 id={`${id}-title`}>Ajustes</h2>
-      <button className="carrete-text-button" popoverTarget="carrete-settings" popoverTargetAction="hide" aria-label="Cerrar ajustes">×</button>
+      <h2 id={`${id}-title`}>Settings</h2>
+      <button className="carrete-text-button" popoverTarget="carrete-settings" popoverTargetAction="hide" aria-label="Close settings">×</button>
     </div>
-    <div className="carrete-settings-views" role="group" aria-label="Vista a ajustar">
-      <button className="carrete-text-button" aria-pressed={!entered} onClick={onIntro}>Entrada</button>
+    <div className="carrete-settings-views" role="group" aria-label="View settings">
+      <button className="carrete-text-button" aria-pressed={!entered} onClick={onIntro}>Intro</button>
       <button className="carrete-text-button" aria-pressed={entered} disabled={!canEnter} onClick={onGrid}>Grid</button>
     </div>
-    {reducedMotion && <p className="carrete-settings-note" role="status">Movimiento reducido activo: las animaciones se muestran sin movimiento.</p>}
+    {reducedMotion && <p className="carrete-settings-note" role="status">Reduced motion is enabled. Animations are shown without movement.</p>}
     {entered ? <>
-      <fieldset><legend>Entrada de imágenes</legend>{sliders(gridControls)}</fieldset>
+      <fieldset><legend>Image entrance</legend>{sliders(gridControls)}</fieldset>
     </> : <>
-      <fieldset><legend>Círculos</legend>{sliders(introControls)}</fieldset>
-      <fieldset><legend>Cristal · solo en los laterales</legend>{sliders(lensControls)}</fieldset>
+      <fieldset><legend>Circles</legend>{sliders(introControls)}</fieldset>
+      <fieldset><legend>Glass · sides only</legend>{sliders(lensControls)}</fieldset>
     </>}
     <div className="carrete-settings-actions">
-      <button className="minimal-basic-link carrete-text-button" onClick={onReplay}>Repetir entrada <span aria-hidden="true">↻</span></button>
-      <button className="minimal-basic-link carrete-text-button" onClick={() => setSettings({ ...defaultSettings })}>Restablecer</button>
+      <button className="minimal-basic-link carrete-text-button" onClick={onReplay}>Replay entrance <span aria-hidden="true">↻</span></button>
+      <button className="minimal-basic-link carrete-text-button" onClick={() => setSettings({ ...defaultSettings })}>Reset</button>
     </div>
-    <p className="carrete-settings-note">Los ajustes se guardan en este navegador.</p>
+    <p className="carrete-settings-note">Settings are saved in this browser.</p>
   </div>;
 }

@@ -1,14 +1,14 @@
 export const numericSettings = {
-  introDuration: { label: 'Duración de entrada', min: 400, max: 4000, step: 100, initial: 400, unit: 'ms' },
-  introStagger: { label: 'Intervalo entre círculos', min: 0, max: 200, step: 10, initial: 50, unit: 'ms' },
-  orbitCount: { label: 'Círculos', min: 8, max: 28, step: 1, initial: 9, unit: '' },
-  circleScale: { label: 'Tamaño', min: 50, max: 160, step: 5, initial: 125, unit: '%' },
-  orbitSpeed: { label: 'Velocidad de giro', min: 0, max: 200, step: 5, initial: 50, unit: '%' },
-  distortion: { label: 'Deformación', min: 0, max: 70, step: 1, initial: 53, unit: '%' },
-  ripple: { label: 'Ondulación', min: 0, max: 12, step: .5, initial: 12, unit: '%' },
-  dispersion: { label: 'Aberración cromática', min: 0, max: 10, step: .5, initial: .5, unit: '%' },
-  sideStart: { label: 'Inicio de los laterales', min: 40, max: 95, step: 1, initial: 77, unit: '%' },
-  fadeDuration: { label: 'Duración del fundido', min: 0, max: 600, step: 20, initial: 500, unit: 'ms' },
+  introDuration: { label: 'Entrance duration', min: 400, max: 4000, step: 100, initial: 400, unit: 'ms' },
+  introStagger: { label: 'Circle stagger', min: 0, max: 200, step: 10, initial: 50, unit: 'ms' },
+  orbitCount: { label: 'Circles', min: 8, max: 28, step: 1, initial: 9, unit: '' },
+  circleScale: { label: 'Size', min: 50, max: 160, step: 5, initial: 125, unit: '%' },
+  orbitSpeed: { label: 'Orbit speed', min: 0, max: 200, step: 5, initial: 50, unit: '%' },
+  distortion: { label: 'Distortion', min: 0, max: 70, step: 1, initial: 53, unit: '%' },
+  ripple: { label: 'Ripple', min: 0, max: 12, step: .5, initial: 12, unit: '%' },
+  dispersion: { label: 'Chromatic aberration', min: 0, max: 10, step: .5, initial: .5, unit: '%' },
+  sideStart: { label: 'Side threshold', min: 40, max: 95, step: 1, initial: 77, unit: '%' },
+  fadeDuration: { label: 'Fade duration', min: 0, max: 600, step: 20, initial: 500, unit: 'ms' },
 } as const;
 
 export type NumericSetting = keyof typeof numericSettings;

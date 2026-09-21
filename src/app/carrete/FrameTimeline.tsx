@@ -1,9 +1,11 @@
-import { useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { useRef, useState, type PointerEvent } from 'react';
 import { frameAtTime } from './loadVideoFrames';
+import PlayerIcon from '../components/PlayerIcon';
+import PlayerTimelineTrack from '../components/PlayerTimelineTrack';
 
 function timestamp(time: number) {
-  const hundredths = Math.round(time * 100);
-  return `${String(Math.floor(hundredths / 6000)).padStart(2, '0')}:${String(Math.floor(hundredths / 100) % 60).padStart(2, '0')}.${String(hundredths % 100).padStart(2, '0')}`;
+  const seconds = Math.max(0, Math.floor(time));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
 export default function FrameTimeline({ times, selected, playing, onSelect, onToggle }: {
@@ -15,7 +17,6 @@ export default function FrameTimeline({ times, selected, playing, onSelect, onTo
 }) {
   const pointer = useRef<number | null>(null);
   const [dragging, setDragging] = useState(false);
-  const [keyboardFocus, setKeyboardFocus] = useState(false);
   const [preview, setPreview] = useState<number | null>(null);
   const start = times[0];
   const end = times[times.length - 1];
@@ -39,22 +40,17 @@ export default function FrameTimeline({ times, selected, playing, onSelect, onTo
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
-  return <div className="carrete-frame-timeline">
-    <button type="button" className="carrete-timeline-play" onClick={onToggle}
-      aria-label={playing ? 'Pausar vídeo' : 'Reproducir vídeo'}>
-      <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" aria-hidden="true">
-        {playing ? <path d="M5 4h3v12H5zm7 0h3v12h-3z" /> : <path d="M6 3.8a.8.8 0 0 1 1.2-.7l9 6.2a.8.8 0 0 1 0 1.4l-9 6.2a.8.8 0 0 1-1.2-.7z" />}
-      </svg>
-    </button>
-    <div className="carrete-timeline-body">
-      <div className="carrete-timeline-slider" role="slider" tabIndex={0}
-        data-dragging={dragging || undefined} data-hovered={preview !== null || undefined} data-keyboard={keyboardFocus || undefined}
-        style={{ '--timeline-progress': `${percent(selected)}%`, '--timeline-preview': `${percent(preview ?? selected)}%` } as CSSProperties}
-        aria-label="Timeline completo del vídeo" aria-orientation="horizontal"
+  return <div className="carrete-frame-timeline minimal-inline-controls is-lite">
+    <div className="minimal-transport">
+      <button type="button" className="minimal-play-button" onClick={onToggle}
+        aria-label={playing ? 'Pause video' : 'Play video'} title={playing ? 'Pause' : 'Play'}>
+        <PlayerIcon name={playing ? 'pause' : 'play'} />
+      </button>
+    </div>
+      <div className={`minimal-timeline${dragging ? ' is-seeking' : ''}`} role="slider" tabIndex={0}
+        aria-label="Video progress" aria-orientation="horizontal"
         aria-valuemin={1} aria-valuemax={times.length} aria-valuenow={selected + 1}
-        aria-valuetext={`${timestamp(time)}, fotograma ${selected + 1} de ${times.length}`}
-        onFocus={() => setKeyboardFocus(pointer.current === null)}
-        onBlur={() => setKeyboardFocus(false)}
+        aria-valuetext={`${timestamp(time)} of ${timestamp(end)}, frame ${selected + 1} of ${times.length}`}
         onPointerEnter={event => { if (event.pointerType !== 'touch') setPreview(frameAtPointer(event)); }}
         onPointerLeave={() => { if (pointer.current === null) setPreview(null); }}
         onPointerDown={event => {
@@ -63,7 +59,6 @@ export default function FrameTimeline({ times, selected, playing, onSelect, onTo
           pointer.current = event.pointerId;
           event.currentTarget.focus({ preventScroll: true });
           event.currentTarget.setPointerCapture(event.pointerId);
-          setKeyboardFocus(false);
           setDragging(true);
           const frame = frameAtPointer(event);
           setPreview(frame);
@@ -77,7 +72,6 @@ export default function FrameTimeline({ times, selected, playing, onSelect, onTo
         }}
         onPointerUp={release} onPointerCancel={release} onLostPointerCapture={release}
         onKeyDown={event => {
-          setKeyboardFocus(true);
           let frame = selected;
           if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') frame--;
           else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') frame++;
@@ -91,15 +85,8 @@ export default function FrameTimeline({ times, selected, playing, onSelect, onTo
           setPreview(null);
           onSelect(Math.max(0, Math.min(times.length - 1, frame)));
         }}>
-        <div className="carrete-timeline-rail" aria-hidden="true">
-          <div className="carrete-timeline-fill" />
-          <span className="carrete-timeline-thumb" />
-        </div>
-        <span className="carrete-timeline-preview" aria-hidden="true">{timestamp(times[preview ?? selected])}</span>
+        <PlayerTimelineTrack progress={percent(selected)} preview={preview === null ? null : percent(preview)} seeking={dragging} />
       </div>
-      <div className="carrete-timeline-times" aria-hidden="true">
-        <span>{timestamp(time)}</span><span>{timestamp(end)}</span>
-      </div>
-    </div>
+      <span className="minimal-inline-time" title={`${timestamp(time)} / ${timestamp(end)}`}>{timestamp(time)} / {timestamp(end)}</span>
   </div>;
 }

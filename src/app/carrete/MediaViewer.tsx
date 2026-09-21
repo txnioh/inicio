@@ -252,16 +252,16 @@ export default function MediaViewer({ media, index, initialSource: openingSource
       if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
     }}>
     <header className="carrete-header">
-      <div className="carrete-heading"><span>Carrete</span><span className="carrete-count">{String(media.length).padStart(2, '0')}</span><QualitySelector quality={quality} /></div>
-      <button className="minimal-basic-link carrete-text-button" onClick={close} autoFocus>Volver</button>
+      <div className="carrete-heading"><span>Camera roll</span><span className="carrete-count">{String(media.length).padStart(2, '0')}</span><QualitySelector quality={quality} /></div>
+      <button className="minimal-basic-link carrete-text-button" onClick={close} autoFocus>Back</button>
     </header>
-    {item.type === 'video' && <div className="carrete-viewer-modes" role="group" aria-label="Vista del vídeo">
-      <button ref={videoMode} className="carrete-text-button" aria-pressed={!exploringFrames} onClick={showVideo}>Vídeo</button>
-      <button className="carrete-text-button" aria-pressed={exploringFrames} onClick={showFrames}>Fotogramas <span aria-hidden="true">↗</span></button>
+    {item.type === 'video' && <div className="carrete-viewer-modes" role="group" aria-label="Video view">
+      <button ref={videoMode} className="carrete-text-button" aria-pressed={!exploringFrames} onClick={showVideo}>Video</button>
+      <button className="carrete-text-button" aria-pressed={exploringFrames} onClick={showFrames}>Frames <span aria-hidden="true">↗</span></button>
     </div>}
     <div ref={stage} className="carrete-viewer-stage" onClick={event => { if (event.target === event.currentTarget) close(); }}>
       <div ref={frame} className="carrete-viewer-media">
-        <button className="carrete-viewer-surface" aria-label={item.type === 'video' ? 'Cerrar vídeo' : 'Cerrar imagen'} onClick={close}>
+        <button className="carrete-viewer-surface" aria-label={item.type === 'video' ? 'Close video' : 'Close image'} onClick={close}>
           {item.type === 'image' && <img key={item.id} src={image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />}
         </button>
       </div>
@@ -275,8 +275,8 @@ export default function MediaViewer({ media, index, initialSource: openingSource
     <footer className="carrete-viewer-footer">
       <div>
         <span className="carrete-counter" aria-live="polite">{String(index + 1).padStart(2, '0')} <span>/ {String(media.length).padStart(2, '0')}</span></span>
-        <button className="carrete-arrow" aria-label="Imagen anterior" onClick={() => move(-1)}>←</button>
-        <button className="carrete-arrow" aria-label="Imagen siguiente" onClick={() => move(1)}>→</button>
+        <button className="carrete-arrow" aria-label="Previous item" onClick={() => move(-1)}>←</button>
+        <button className="carrete-arrow" aria-label="Next item" onClick={() => move(1)}>→</button>
       </div>
     </footer>
   </dialog>;

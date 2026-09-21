@@ -28,7 +28,7 @@ const GridTile = memo(function GridTile({ tileKey, column, row, cell, media, ind
   return <button type="button" className="carrete-tile" data-media-index={index} tabIndex={-1}
     data-grid-key={tileKey} data-column={column} data-row={row}
     style={{ width, height, zIndex: variation, transform: `translate3d(${x}px, ${y}px, 0) rotate(${Math.sin(column * 3 + row * 5) * 3}deg)` }}
-    aria-label={`Ampliar: ${item.alt}`}>
+    aria-label={`Open: ${item.alt}`}>
     <div key={item.type === 'image' ? replay : undefined} className="carrete-tile-content">
       {item.type === 'video'
         ? <video className="carrete-video" data-media-id={item.id} src={item.src}
@@ -41,7 +41,7 @@ const GridTile = memo(function GridTile({ tileKey, column, row, cell, media, ind
               video.currentTime = Math.min(videoPositions.get(item.id) ?? .001, video.duration);
             }} />
         : <img src={image.src} alt={item.alt} width={item.width} height={item.height} draggable={false} />}
-      {item.type === 'video' && <span className="carrete-video-mark" aria-label="Vídeo">film</span>}
+      {item.type === 'video' && <span className="carrete-video-mark" aria-label="Video">film</span>}
     </div>
   </button>;
 });
@@ -266,7 +266,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
         tappedTile.current = null;
         if (tile?.isConnected) openTile.current(tile);
       }}
-      tabIndex={0} role="region" aria-label="Carrete. Arrastra o usa las flechas para explorar. Pulsa Intro para ampliar la imagen central.">
+      tabIndex={0} role="region" aria-label="Camera roll. Drag or use the arrow keys to explore. Press Enter to open the center image.">
       <div ref={world} className="carrete-world">
         {tiles.map(({ key, column, row, index }) => <GridTile key={key} tileKey={key}
           column={column} row={row} cell={view.cell} media={media[index]} index={index} quality={quality}

@@ -18,7 +18,7 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
 export default function App() {
   const { path, Article, Carrete, arrived } = usePageNavigation();
   if (path === '/') return <Home arrived={arrived} />;
-  if (path === '/carrete') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Cargando Carrete" />}><Carrete /></Suspense>;
+  if (path === '/carrete') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading camera roll" />}><Carrete /></Suspense>;
   if (path === '/writing/ink') return <Suspense fallback={<main className="minimal-portfolio-page"><div className="minimal-portfolio-shell" role="status">Loading article…</div></main>}><Article /></Suspense>;
   return <main className="minimal-portfolio-page"><div className="minimal-portfolio-shell minimal-article">
     <header><h1>Page not found</h1></header><p>This page doesn’t exist. <a className="minimal-basic-link" href="/">Back to Index</a></p>
