@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { frameBackground, type VideoFramesData } from './loadVideoFrames';
 import type { FrameSettings } from './frameSettings';
+import type { MediaQuality } from './quality';
 
 const vertex = `
 attribute vec2 position;
@@ -64,7 +65,7 @@ void main() {
 }
 `;
 
-function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData) {
+function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData, quality: MediaQuality) {
   const gl = canvas.getContext('webgl', { alpha: true, antialias: true, depth: true });
   if (!gl) return null;
   const program = gl.createProgram()!;
@@ -92,6 +93,7 @@ function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData) {
   gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   gl.clearColor(0, 0, 0, 0);
   const capacity = data.columns * data.rows;
+  const stride = quality === 'lite' ? Math.ceil(data.times.length / 180) : 1;
   const corners = [[-.5, -.5], [.5, -.5], [-.5, .5], [-.5, .5], [.5, -.5], [.5, .5]];
   const uploadBuffer = (values: number[]) => {
     const buffer = gl.createBuffer()!;
@@ -116,10 +118,11 @@ function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData) {
       const v = (Math.floor(cell / data.columns) * data.height + .5 + (.5 - y) * (data.height - 1)) / sheet.naturalHeight;
       return [x, y, u, v, frame];
     };
-    const createBuffer = (reverse: boolean) => {
+    const createBuffer = (reverse: boolean, step = 1) => {
       const values: number[] = [];
       for (let offset = 0; offset < length; offset++) {
         const cell = reverse ? length - 1 - offset : offset;
+        if ((sheetIndex * capacity + cell) % step !== 0) continue;
         for (const [x, y] of corners) {
           values.push(...vertexAt(cell, x, y, sheetIndex * capacity + cell));
         }
@@ -140,7 +143,9 @@ function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData) {
         }
       }
     }
-    return { texture, forward: createBuffer(false), reverse: createBuffer(true), sides: uploadBuffer(sides),
+    const forward = createBuffer(false);
+    return { texture, forward, samples: stride === 1 ? forward : createBuffer(false, stride),
+      reverse: createBuffer(true, stride), sides: uploadBuffer(sides),
       start: sheetIndex * capacity, length, width: sheet.naturalWidth, height: sheet.naturalHeight };
   });
   const uniforms = Object.fromEntries(['viewport', 'size', 'rotation', 'depth', 'count', 'selected', 'opacity', 'futureOpacity', 'solid', 'texel', 'cellSize', 'effects', 'fade']
@@ -161,6 +166,8 @@ function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  const liveCanvas = quality === 'lite' ? document.createElement('canvas') : null;
+  const liveContext = liveCanvas?.getContext('2d');
   return {
     dispose,
     draw(width: number, height: number, ratio: number, settings: FrameSettings, selected: number, video: HTMLVideoElement | null) {
@@ -180,7 +187,8 @@ function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData) {
       gl.uniform1f(uniforms.fade, fade);
       gl.uniform1i(liveUniform, 0);
       // Keep each layer above the 8-bit drawing buffer's alpha precision.
-      gl.uniform1f(uniforms.opacity, Math.max(1 / 128, 1 - Math.pow(.9, 32 / data.times.length)));
+      const layerOpacity = Math.max(1 / 128, 1 - Math.pow(.9, 32 / data.times.length));
+      gl.uniform1f(uniforms.opacity, 1 - Math.pow(1 - layerOpacity, stride));
       gl.uniform1f(uniforms.futureOpacity, opacity);
       gl.enable(gl.DEPTH_TEST);
       if (solidPast && selected > 0) {
@@ -205,14 +213,14 @@ function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData) {
       const reverse = Math.cos(x * radians) * Math.cos(y * radians) < 0;
       for (let index = 0; index < batches.length; index++) {
         const batch = batches[reverse ? batches.length - 1 - index : index];
-        const start = solidPast ? Math.max(batch.start, selected + 1) : batch.start;
-        const length = batch.start + batch.length - start;
+        const start = Math.ceil((solidPast ? Math.max(batch.start, selected + 1) : batch.start) / stride);
+        const length = Math.ceil((batch.start + batch.length) / stride) - start;
         if (length <= 0) continue;
         gl.bindTexture(gl.TEXTURE_2D, batch.texture);
         gl.uniform2f(uniforms.texel, 1 / batch.width, 1 / batch.height);
         gl.uniform2f(uniforms.cellSize, data.width / batch.width, data.height / batch.height);
-        bindBuffer(reverse ? batch.reverse : batch.forward);
-        gl.drawArrays(gl.TRIANGLES, reverse ? 0 : (start - batch.start) * 6, length * 6);
+        bindBuffer(reverse ? batch.reverse : batch.samples);
+        gl.drawArrays(gl.TRIANGLES, reverse ? 0 : (start - Math.ceil(batch.start / stride)) * 6, length * 6);
       }
       // Draw the inspected slice last so it stays readable inside the volume.
       // Use the original player for a sharp live frame; its atlas cell covers seeks.
@@ -221,7 +229,16 @@ function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData) {
       gl.bindTexture(gl.TEXTURE_2D, batch.texture);
       if (video && video.readyState >= 2 && !video.seeking) {
         gl.bindTexture(gl.TEXTURE_2D, liveTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+        if (liveCanvas && liveContext) {
+          const scale = Math.min(1, 480 / Math.max(video.videoWidth, video.videoHeight));
+          const width = Math.max(1, Math.round(video.videoWidth * scale));
+          const height = Math.max(1, Math.round(video.videoHeight * scale));
+          if (liveCanvas.width !== width || liveCanvas.height !== height) {
+            liveCanvas.width = width; liveCanvas.height = height;
+          }
+          liveContext.drawImage(video, 0, 0, width, height);
+        }
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, liveContext ? liveCanvas! : video);
         gl.uniform1i(liveUniform, 1);
       }
       gl.uniform1f(uniforms.selected, selected);
@@ -231,12 +248,13 @@ function createVolume(canvas: HTMLCanvasElement, data: VideoFramesData) {
   };
 }
 
-export default function FrameVolume({ data, selected, settings, ratio, video }: {
+export default function FrameVolume({ data, selected, settings, ratio, video, quality }: {
   data: VideoFramesData;
   selected: number;
   settings: FrameSettings;
   ratio: number;
   video: HTMLVideoElement | null;
+  quality: MediaQuality;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const latest = useRef({ selected, settings, ratio });
@@ -245,7 +263,7 @@ export default function FrameVolume({ data, selected, settings, ratio, video }: 
   const [fallback, setFallback] = useState(false);
   useEffect(() => {
     const element = canvas.current!;
-    let renderer = createVolume(element, data);
+    let renderer = createVolume(element, data, quality);
     setFallback(!renderer);
     let pending = 0;
     const render = () => {
@@ -253,7 +271,7 @@ export default function FrameVolume({ data, selected, settings, ratio, video }: 
       const width = element.clientWidth;
       const height = element.clientHeight;
       if (!width || !height) return;
-      const dpr = Math.min(devicePixelRatio || 1, 2);
+      const dpr = Math.min(devicePixelRatio || 1, quality === 'lite' ? 1 : 2);
       if (element.width !== Math.round(width * dpr) || element.height !== Math.round(height * dpr)) {
         element.width = Math.round(width * dpr);
         element.height = Math.round(height * dpr);
@@ -265,7 +283,7 @@ export default function FrameVolume({ data, selected, settings, ratio, video }: 
     const observer = new ResizeObserver(draw.current);
     observer.observe(element);
     const lost = (event: Event) => { event.preventDefault(); renderer?.dispose(); renderer = null; setFallback(true); };
-    const restored = () => { renderer = createVolume(element, data); setFallback(!renderer); draw.current(); };
+    const restored = () => { renderer = createVolume(element, data, quality); setFallback(!renderer); draw.current(); };
     element.addEventListener('webglcontextlost', lost);
     element.addEventListener('webglcontextrestored', restored);
     video?.addEventListener('seeked', draw.current);
@@ -279,10 +297,10 @@ export default function FrameVolume({ data, selected, settings, ratio, video }: 
       element.removeEventListener('webglcontextlost', lost);
       element.removeEventListener('webglcontextrestored', restored);
     };
-  }, [data, video]);
+  }, [data, video, quality]);
   useEffect(() => { draw.current(); }, [selected, settings, ratio]);
   return <>
-    <canvas ref={canvas} className="carrete-frames-canvas" aria-hidden="true" data-frame-count={data.times.length} />
+    <canvas ref={canvas} className="carrete-frames-canvas" aria-hidden="true" data-frame-count={data.times.length} data-quality={quality} />
     {fallback && <div className="carrete-frame-fallback" aria-hidden="true"
       style={{ ...frameBackground(data, selected), aspectRatio: ratio }} />}
   </>;

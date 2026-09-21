@@ -1,7 +1,8 @@
 import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { flushSync } from 'react-dom';
-import type { LoadedMedia } from './media';
+import { imageSource, type LoadedMedia } from './media';
 import type { CarreteSettings } from './settings';
+import type { MediaQuality } from './quality';
 
 export const wrap = (value: number, size: number) => ((value % size) + size) % size;
 export const mediaIndex = (column: number, row: number, count: number) => wrap(column + row * 4, count);
@@ -10,10 +11,11 @@ type Position = { x: number; y: number };
 type View = { width: number; height: number; cell: number; column: number; row: number };
 
 // Crossing a cell only renders the new edge; retained photographs stay untouched.
-const GridTile = memo(function GridTile({ tileKey, column, row, cell, media, index, replay, videoPositions }: {
+const GridTile = memo(function GridTile({ tileKey, column, row, cell, media, index, replay, videoPositions, quality }: {
   tileKey: string;
   column: number; row: number; cell: number; media: LoadedMedia; index: number; replay: number;
   videoPositions: Map<string, number>;
+  quality: MediaQuality;
 }) {
   const { item, image } = media;
   const ratio = item.width / item.height;
@@ -30,7 +32,8 @@ const GridTile = memo(function GridTile({ tileKey, column, row, cell, media, ind
     <div key={item.type === 'image' ? replay : undefined} className="carrete-tile-content">
       {item.type === 'video'
         ? <video className="carrete-video" data-media-id={item.id} src={item.src}
-            width={item.width} height={item.height} muted playsInline preload="metadata"
+            width={item.width} height={item.height} muted playsInline preload={quality === 'lite' ? 'none' : 'metadata'}
+            poster={quality === 'lite' ? imageSource(item, quality) : undefined}
             controls={false} disablePictureInPicture disableRemotePlayback aria-label={item.alt}
             onLoadedMetadata={event => {
               const video = event.currentTarget;
@@ -43,7 +46,7 @@ const GridTile = memo(function GridTile({ tileKey, column, row, cell, media, ind
   </button>;
 });
 
-export default function InfiniteGrid({ media, reducedMotion, settings, replay, onOpen, selection, videoPositions }: {
+export default function InfiniteGrid({ media, reducedMotion, settings, replay, onOpen, selection, videoPositions, quality }: {
   media: LoadedMedia[];
   reducedMotion: boolean;
   settings: CarreteSettings;
@@ -51,6 +54,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
   onOpen: (index: number, source: HTMLButtonElement) => void;
   selection: { index: number; source: HTMLButtonElement } | null;
   videoPositions: Map<string, number>;
+  quality: MediaQuality;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
@@ -265,7 +269,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
       tabIndex={0} role="region" aria-label="Carrete. Arrastra o usa las flechas para explorar. Pulsa Intro para ampliar la imagen central.">
       <div ref={world} className="carrete-world">
         {tiles.map(({ key, column, row, index }) => <GridTile key={key} tileKey={key}
-          column={column} row={row} cell={view.cell} media={media[index]} index={index}
+          column={column} row={row} cell={view.cell} media={media[index]} index={index} quality={quality}
           replay={replay} videoPositions={videoPositions} />)}
       </div>
     </div>;

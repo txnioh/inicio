@@ -10,6 +10,7 @@
     "perf": "node scripts/audit-performance.mjs",
     "lint": "tsc --noEmit",
     "frames:carrete": "node scripts/render-carrete-frames.mjs",
+    "lite:carrete": "node scripts/render-carrete-lite.mjs",
     "deploy": "vercel --prod"
   },
   "dependencies": {

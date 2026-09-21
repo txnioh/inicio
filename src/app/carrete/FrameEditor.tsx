@@ -28,9 +28,8 @@ export default function FrameEditor({ settings, onChange }: {
     future.add(values, 'saturation', 0, 2, .01).name('Saturación').listen();
     future.add(values, 'blur', 0, 6, .1).name('Desenfoque').listen();
     future.add(values, 'fade', 0, 1, .01).name('Desvanecimiento').listen();
-    const timeline = gui.addFolder('Timeline');
+    const timeline = gui.addFolder('Reproducción');
     timeline.add(values, 'playbackRate', .25, 2, .25).name('Velocidad').listen();
-    timeline.add(values, 'timelineZoom', 30, 240, 1).name('Zoom temporal').listen();
     gui.onChange(() => change.current({ ...values }));
     gui.add({ reset: () => {
       Object.assign(values, defaultFrameSettings);

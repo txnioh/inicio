@@ -2,6 +2,8 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import type { LoadedMedia } from './media';
 import { wrap } from './InfiniteGrid';
 import VideoFrames from './VideoFrames';
+import QualitySelector from './QualitySelector';
+import type { QualityControl } from './quality';
 
 const easing = 'cubic-bezier(.22,.8,.2,1)';
 
@@ -76,7 +78,7 @@ function playVideo(video: HTMLVideoElement, tile: HTMLButtonElement) {
 }
 
 export default function MediaViewer({ media, index, initialSource: openingSource, reducedMotion, onClose,
-  onNavigate, onSource, videoPositions, playerHost }: {
+  onNavigate, onSource, videoPositions, playerHost, quality }: {
   media: LoadedMedia[];
   index: number;
   initialSource: HTMLButtonElement;
@@ -86,6 +88,7 @@ export default function MediaViewer({ media, index, initialSource: openingSource
   onSource: (source: HTMLButtonElement) => void;
   videoPositions: Map<string, number>;
   playerHost: HTMLDivElement;
+  quality: QualityControl;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -249,7 +252,7 @@ export default function MediaViewer({ media, index, initialSource: openingSource
       if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
     }}>
     <header className="carrete-header">
-      <div className="carrete-heading"><span>Carrete</span><span className="carrete-count">{String(media.length).padStart(2, '0')}</span></div>
+      <div className="carrete-heading"><span>Carrete</span><span className="carrete-count">{String(media.length).padStart(2, '0')}</span><QualitySelector quality={quality} /></div>
       <button className="minimal-basic-link carrete-text-button" onClick={close} autoFocus>Volver</button>
     </header>
     {item.type === 'video' && <div className="carrete-viewer-modes" role="group" aria-label="Vista del vídeo">
@@ -264,6 +267,7 @@ export default function MediaViewer({ media, index, initialSource: openingSource
       </div>
     </div>
     {exploringFrames && item.type === 'video' && <VideoFrames key={item.id} src={item.src} width={item.width} height={item.height}
+      quality={quality.resolved}
       initialTime={frameView.time} video={activeVideo.current} onSeek={time => {
         if (activeVideo.current) activeVideo.current.currentTime = time;
         videoPositions.set(item.id, time);

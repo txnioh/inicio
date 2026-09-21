@@ -1,4 +1,5 @@
 import { loadImage } from './media';
+import type { MediaQuality } from './quality';
 
 export type VideoFramesData = {
   columns: number;
@@ -9,8 +10,8 @@ export type VideoFramesData = {
   sheets: HTMLImageElement[];
 };
 
-export async function loadVideoFrames(src: string, signal: AbortSignal, onProgress: (progress: number) => void): Promise<VideoFramesData> {
-  const directory = src.replace(/\.mp4$/, '-frames');
+export async function loadVideoFrames(src: string, quality: MediaQuality, signal: AbortSignal, onProgress: (progress: number) => void): Promise<VideoFramesData> {
+  const directory = src.replace(/\.mp4$/, quality === 'lite' ? '-frames-lite' : '-frames');
   const response = await fetch(`${directory}/index.json`, { signal });
   if (!response.ok) throw new Error('No se han podido cargar los fotogramas.');
   const manifest = await response.json() as Omit<VideoFramesData, 'sheets'> & { sheets: string[] };

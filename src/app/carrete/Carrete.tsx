@@ -4,6 +4,8 @@ import InfiniteGrid from './InfiniteGrid';
 import MediaViewer from './MediaViewer';
 import OrbitLens from './OrbitLens';
 import EffectSettings from './EffectSettings';
+import QualitySelector from './QualitySelector';
+import { useMediaQuality } from './quality';
 import NowPlaying from '../components/NowPlaying';
 import { collection, loadImage, loadMedia, type LoadedMedia } from './media';
 import { defaultSettings, readSettings, SETTINGS_KEY } from './settings';
@@ -32,10 +34,12 @@ export default function Carrete() {
   }, [playerHost]);
 
   const reducedMotion = useReducedMotion();
+  const quality = useMediaQuality();
   const [attempt, setAttempt] = useState(0);
   const [loaded, setLoaded] = useState<LoadedMedia[]>([]);
   const [previews, setPreviews] = useState<LoadedMedia[]>([]);
   const [failed, setFailed] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [entered, setEntered] = useState(false);
   const [introVisible, setIntroVisible] = useState(true);
   const [selected, setSelected] = useState<{ index: number; source: HTMLButtonElement } | null>(null);
@@ -51,7 +55,9 @@ export default function Carrete() {
   const retainSource = useCallback((source: HTMLButtonElement) => {
     setSelected(current => current && current.source !== source ? { ...current, source } : current);
   }, []);
-  const settled = loaded.length + failed === collection.length;
+  const settled = !loading;
+  const previousMedia = useRef(loaded);
+  previousMedia.current = loaded;
   const showIntro = () => {
     setEntered(false);
     setIntroVisible(true);
@@ -86,31 +92,55 @@ export default function Carrete() {
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoaded([]);
-    setFailed(0);
     void Promise.all(collection.map(async item => {
       try { return { item, image: await loadImage(item.preview, controller.signal) }; }
       catch { return null; }
     })).then(results => {
       if (!controller.signal.aborted) setPreviews(results.filter((item): item is LoadedMedia => item !== null));
     });
-    // Four downloads at a time keep larger collections from saturating the connection.
+    return () => controller.abort();
+  }, [attempt]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setFailed(0);
+    const results = new Map<string, LoadedMedia>();
+    let failures = 0;
     let cursor = 0;
     async function worker() {
       while (cursor < collection.length && !controller.signal.aborted) {
         const item = collection[cursor++];
         try {
-          const media = await loadMedia(item, controller.signal);
+          const media = await loadMedia(item, controller.signal, quality.resolved);
           if (controller.signal.aborted) return;
-          setLoaded(current => [...current, media]);
+          results.set(item.id, media);
         } catch {
-          if (!controller.signal.aborted) setFailed(current => current + 1);
+          if (!controller.signal.aborted) failures++;
         }
       }
     }
-    for (let index = 0; index < Math.min(4, collection.length); index++) void worker();
+    // Swap decoded images together, retaining the open item and old images if
+    // an upgrade fails. Aborting a quality change also cancels its downloads.
+    void Promise.all(Array.from({ length: quality.resolved === 'lite' ? 2 : 4 }, worker)).then(() => {
+      if (controller.signal.aborted) return;
+      const previous = previousMedia.current;
+      const next = collection.flatMap(item => {
+        const media = results.get(item.id) ?? previous.find(media => media.item.id === item.id);
+        return media ? [media] : [];
+      });
+      setSelected(current => {
+        if (!current) return current;
+        const id = previous[current.index]?.item.id;
+        const index = next.findIndex(media => media.item.id === id);
+        return index < 0 ? null : { ...current, index };
+      });
+      setLoaded(next);
+      setFailed(failures);
+      setLoading(false);
+    });
     return () => controller.abort();
-  }, [attempt]);
+  }, [attempt, quality.resolved]);
 
   useEffect(() => {
     if (!entered) return;
@@ -121,26 +151,27 @@ export default function Carrete() {
     return () => clearTimeout(timer);
   }, [entered, reducedMotion]);
 
-  return <main className={`carrete-page${entered ? ' has-entered' : ''}${selected ? ' has-viewer' : ''}`} tabIndex={-1}>
+  return <main className={`carrete-page${entered ? ' has-entered' : ''}${selected ? ' has-viewer' : ''}`} tabIndex={-1} data-quality={quality.resolved}>
     <header className="carrete-header">
       {entered && <div className="carrete-heading">
         <h1 className="carrete-title">Carrete</h1>
         <span className="carrete-count">{String(loaded.length).padStart(2, '0')}</span>
       </div>}
       <nav className="carrete-header-actions" aria-label="Carrete">
+        <QualitySelector quality={quality} />
         {canConfigure && <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-settings" aria-haspopup="dialog">Ajustes</button>}
         <a className="minimal-basic-link" href="/">Volver a inicio</a>
       </nav>
     </header>
 
     {entered && <div className="carrete-explore">
-      <InfiniteGrid media={ordered} reducedMotion={reducedMotion}
+      <InfiniteGrid media={ordered} reducedMotion={reducedMotion} quality={quality.resolved}
         settings={settings} replay={gridReplay} onOpen={open}
         selection={selected} videoPositions={videoPositions} />
     </div>}
 
     {introVisible && <section className="carrete-intro" aria-label="Cargar el carrete" inert={entered}>
-      <OrbitLens key={orbitReplay} frames={frames} reducedMotion={reducedMotion} settings={settings} />
+      <OrbitLens key={orbitReplay} frames={frames} reducedMotion={reducedMotion} settings={settings} quality={quality.resolved} />
       <button className="carrete-intro-trigger" aria-label="Abrir el carrete" aria-describedby="carrete-entry-hint"
         disabled={!settled || !loaded.length} onClick={() => setEntered(true)} />
       <div className="carrete-intro-center">
@@ -169,7 +200,7 @@ export default function Carrete() {
       onIntro={showIntro} onGrid={() => setEntered(true)} onReplay={replay} />}
     <div ref={playerSlot} />
     {createPortal(<NowPlaying lang="es" />, playerHost)}
-    {selected !== null && <MediaViewer media={ordered} index={selected.index}
+    {selected !== null && <MediaViewer media={ordered} index={selected.index} quality={quality}
       initialSource={selected.source} reducedMotion={reducedMotion} onClose={close}
       onNavigate={navigate} onSource={retainSource} videoPositions={videoPositions} playerHost={playerHost} />}
   </main>;

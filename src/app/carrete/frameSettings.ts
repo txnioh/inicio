@@ -10,7 +10,6 @@ export const defaultFrameSettings = {
   rotationY: -32,
   solidPast: true,
   playbackRate: 1,
-  timelineZoom: 80,
 };
 
 export type FrameSettings = typeof defaultFrameSettings;

@@ -1,4 +1,5 @@
 import archive from './instagram.json';
+import type { MediaQuality } from './quality';
 
 type MediaBase = {
   id: string;
@@ -47,17 +48,19 @@ export function loadImage(src: string, signal: AbortSignal): Promise<HTMLImageEl
   });
 }
 
-export async function loadMedia(item: Media, signal: AbortSignal): Promise<LoadedMedia> {
+export function imageSource(item: Media, quality: MediaQuality) {
+  const src = item.type === 'image' ? item.src : item.poster;
+  return quality === 'lite' ? src.replace(/\.webp$/, '-lite.webp') : src;
+}
+
+export async function loadMedia(item: Media, signal: AbortSignal, quality: MediaQuality): Promise<LoadedMedia> {
   const controller = new AbortController();
   const abort = () => controller.abort();
   signal.addEventListener('abort', abort, { once: true });
   if (signal.aborted) controller.abort();
   const timeout = window.setTimeout(abort, 30_000);
   try {
-    if (item.type === 'image') return { item, image: await loadImage(item.src, controller.signal) };
-    // Covers are only used by the decorative intro orbit. Grid tiles display
-    // native, paused videos and keep their own player when expanded.
-    return { item, image: await loadImage(item.poster, controller.signal) };
+    return { item, image: await loadImage(imageSource(item, quality), controller.signal) };
   } finally {
     controller.abort();
     clearTimeout(timeout);

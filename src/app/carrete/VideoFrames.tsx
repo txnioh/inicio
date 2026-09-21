@@ -4,14 +4,16 @@ import FrameVolume from './FrameVolume';
 import FrameEditor from './FrameEditor';
 import FrameTimeline from './FrameTimeline';
 import { defaultFrameSettings } from './frameSettings';
+import type { MediaQuality } from './quality';
 
-export default function VideoFrames({ src, width, height, initialTime, video, onSeek }: {
+export default function VideoFrames({ src, width, height, initialTime, video, onSeek, quality }: {
   src: string;
   width: number;
   height: number;
   initialTime: number;
   video: HTMLVideoElement | null;
   onSeek: (time: number) => void;
+  quality: MediaQuality;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const [settings, setSettings] = useState({ ...defaultFrameSettings });
@@ -38,21 +40,26 @@ export default function VideoFrames({ src, width, height, initialTime, video, on
 
   useEffect(() => {
     const controller = new AbortController();
+    setData(null);
     setError(false);
     setProgress(0);
-    void loadVideoFrames(src, controller.signal, setProgress).then(result => {
+    void loadVideoFrames(src, quality, controller.signal, setProgress).then(result => {
       if (controller.signal.aborted) return;
       setData(result);
-      setSelected(frameAtTime(result.times, startTime));
+      setSelected(frameAtTime(result.times, video?.currentTime ?? startTime));
     }).catch(() => { if (!controller.signal.aborted) setError(true); });
     return () => controller.abort();
-  }, [src, startTime, attempt]);
+  }, [src, startTime, attempt, quality, video]);
 
   useEffect(() => {
     if (!video || !times) return;
     let animation = 0;
     const update = () => setSelected(frameAtTime(times, video.currentTime));
-    const tick = () => { update(); animation = requestAnimationFrame(tick); };
+    let previous = 0;
+    const tick = (now: number) => {
+      if (quality === 'high' || now - previous >= 1000 / 30) { update(); previous = now; }
+      animation = requestAnimationFrame(tick);
+    };
     const sync = () => {
       cancelAnimationFrame(animation);
       const running = !video.paused && !video.ended;
@@ -67,7 +74,7 @@ export default function VideoFrames({ src, width, height, initialTime, video, on
       cancelAnimationFrame(animation);
       events.forEach(event => video.removeEventListener(event, sync));
     };
-  }, [video, times]);
+  }, [video, times, quality]);
 
   const rotate = (x: number, y: number) => {
     rotation.current = { x: Math.max(-65, Math.min(65, x)), y: ((y + 180) % 360 + 360) % 360 - 180 };
@@ -130,7 +137,7 @@ export default function VideoFrames({ src, width, height, initialTime, video, on
         rotate(rotation.current.x + (event.key === 'ArrowUp' ? -5 : event.key === 'ArrowDown' ? 5 : 0),
           rotation.current.y + (event.key === 'ArrowLeft' ? -5 : event.key === 'ArrowRight' ? 5 : 0));
       }}>
-      {data && <FrameVolume data={data} selected={selected} settings={settings} ratio={width / height} video={video} />}
+      {data && <FrameVolume data={data} selected={selected} settings={settings} ratio={width / height} video={video} quality={quality} />}
       {!count && <div className="carrete-frames-status" role="status">
         {error ? <><p>No se han podido cargar los fotogramas.</p><button className="minimal-basic-link carrete-text-button" onClick={() => setAttempt(value => value + 1)}>Reintentar</button></>
           : <><p>Cargando fotogramas…</p><progress max={100} value={progress} aria-label="Cargando fotogramas" /><span>{progress}%</span></>}
@@ -138,7 +145,7 @@ export default function VideoFrames({ src, width, height, initialTime, video, on
     </div>
     {count > 0 && <>
       <FrameEditor settings={settings} onChange={setSettings} />
-      <FrameTimeline times={times!} selected={selected} zoom={settings.timelineZoom} playing={playing}
+      <FrameTimeline times={times!} selected={selected} playing={playing}
         onSelect={select} onToggle={togglePlayback} />
     </>}
     {playError && <p className="carrete-frames-play-error" role="status">No se pudo reproducir. Vuelve a pulsar el visor.</p>}

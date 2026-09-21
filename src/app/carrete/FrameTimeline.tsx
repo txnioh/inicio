@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { frameAtTime } from './loadVideoFrames';
 
 function timestamp(time: number) {
@@ -6,116 +6,100 @@ function timestamp(time: number) {
   return `${String(Math.floor(hundredths / 6000)).padStart(2, '0')}:${String(Math.floor(hundredths / 100) % 60).padStart(2, '0')}.${String(hundredths % 100).padStart(2, '0')}`;
 }
 
-export default function FrameTimeline({ times, selected, zoom, playing, onSelect, onToggle }: {
+export default function FrameTimeline({ times, selected, playing, onSelect, onToggle }: {
   times: number[];
   selected: number;
-  zoom: number;
   playing: boolean;
   onSelect: (frame: number) => void;
   onToggle: () => void;
 }) {
-  const scroller = useRef<HTMLDivElement>(null);
-  const syncedScroll = useRef(0);
-  const select = useRef(onSelect);
-  select.current = onSelect;
-  const drag = useRef<{ id: number; x: number; left: number; moved: boolean } | null>(null);
+  const pointer = useRef<number | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [keyboardFocus, setKeyboardFocus] = useState(false);
+  const [preview, setPreview] = useState<number | null>(null);
+  const start = times[0];
   const end = times[times.length - 1];
+  const duration = end - start;
   const time = times[selected];
-  const ticks = useMemo(() => {
-    const interval = zoom < 50 ? 2 : zoom > 160 ? .5 : 1;
-    return Array.from({ length: Math.floor(end / interval) + 1 }, (_, index) => index * interval);
-  }, [end, zoom]);
-
-  const scrub = (left: number) => {
-    const element = scroller.current!;
-    element.scrollLeft = left;
-    syncedScroll.current = element.scrollLeft;
-    select.current(frameAtTime(times, element.scrollLeft / zoom));
+  const percent = (frame: number) => duration > 0 ? (times[frame] - start) / duration * 100 : 0;
+  const frameAtPointer = (event: PointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const progress = Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(1, rect.width)));
+    return frameAtTime(times, start + progress * duration);
+  };
+  const release = (event: PointerEvent<HTMLDivElement>) => {
+    if (pointer.current !== event.pointerId) return;
+    if (event.type === 'pointerup') onSelect(frameAtPointer(event));
+    pointer.current = null;
+    setDragging(false);
+    const rect = event.currentTarget.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX <= rect.right
+      && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (event.type !== 'pointerup' || event.pointerType === 'touch' || !inside) setPreview(null);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
-  useEffect(() => {
-    const element = scroller.current!;
-    element.scrollLeft = time * zoom;
-    syncedScroll.current = element.scrollLeft;
-  }, [time, zoom]);
-
-  useEffect(() => {
-    const element = scroller.current!;
-    const wheel = (event: WheelEvent) => {
-      if (event.ctrlKey) return;
-      event.preventDefault();
-      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-      scrub(element.scrollLeft + delta * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? element.clientWidth : 1));
-    };
-    element.addEventListener('wheel', wheel, { passive: false });
-    return () => element.removeEventListener('wheel', wheel);
-  }, [times, zoom]);
-
   return <div className="carrete-frame-timeline">
-    <div className="carrete-frame-timeline-meta">
-      <button type="button" className="carrete-timeline-play" onClick={onToggle}
-        aria-label={playing ? 'Pausar vídeo' : 'Reproducir vídeo'}>
-        <span aria-hidden="true">{playing ? 'Ⅱ' : '▶'}</span>
-      </button>
-      <span className="carrete-timeline-time">{timestamp(time)} <span>/ {timestamp(end)}</span></span>
-      <span className="carrete-timeline-hint">Desliza para recorrer</span>
-    </div>
-    <div className="carrete-timeline-track">
-      <div ref={scroller} className="carrete-timeline-scroll" role="slider" tabIndex={0}
-        aria-label="Timeline del vídeo" aria-orientation="horizontal"
+    <button type="button" className="carrete-timeline-play" onClick={onToggle}
+      aria-label={playing ? 'Pausar vídeo' : 'Reproducir vídeo'}>
+      <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" aria-hidden="true">
+        {playing ? <path d="M5 4h3v12H5zm7 0h3v12h-3z" /> : <path d="M6 3.8a.8.8 0 0 1 1.2-.7l9 6.2a.8.8 0 0 1 0 1.4l-9 6.2a.8.8 0 0 1-1.2-.7z" />}
+      </svg>
+    </button>
+    <div className="carrete-timeline-body">
+      <div className="carrete-timeline-slider" role="slider" tabIndex={0}
+        data-dragging={dragging || undefined} data-hovered={preview !== null || undefined} data-keyboard={keyboardFocus || undefined}
+        style={{ '--timeline-progress': `${percent(selected)}%`, '--timeline-preview': `${percent(preview ?? selected)}%` } as CSSProperties}
+        aria-label="Timeline completo del vídeo" aria-orientation="horizontal"
         aria-valuemin={1} aria-valuemax={times.length} aria-valuenow={selected + 1}
         aria-valuetext={`${timestamp(time)}, fotograma ${selected + 1} de ${times.length}`}
-        onScroll={event => {
-          const left = event.currentTarget.scrollLeft;
-          if (Math.abs(left - syncedScroll.current) < .5) return;
-          syncedScroll.current = left;
-          select.current(frameAtTime(times, left / zoom));
-        }}
+        onFocus={() => setKeyboardFocus(pointer.current === null)}
+        onBlur={() => setKeyboardFocus(false)}
+        onPointerEnter={event => { if (event.pointerType !== 'touch') setPreview(frameAtPointer(event)); }}
+        onPointerLeave={() => { if (pointer.current === null) setPreview(null); }}
         onPointerDown={event => {
-          if (event.button !== 0 || !event.isPrimary) return;
+          if (event.button !== 0 || !event.isPrimary || pointer.current !== null) return;
+          event.preventDefault();
+          pointer.current = event.pointerId;
           event.currentTarget.focus({ preventScroll: true });
           event.currentTarget.setPointerCapture(event.pointerId);
-          drag.current = { id: event.pointerId, x: event.clientX, left: event.currentTarget.scrollLeft, moved: false };
+          setKeyboardFocus(false);
+          setDragging(true);
+          const frame = frameAtPointer(event);
+          setPreview(frame);
+          onSelect(frame);
         }}
         onPointerMove={event => {
-          const start = drag.current;
-          if (!start || start.id !== event.pointerId) return;
-          start.moved ||= Math.abs(event.clientX - start.x) > 3;
-          if (start.moved) scrub(start.left + start.x - event.clientX);
+          if (pointer.current !== null && pointer.current !== event.pointerId) return;
+          const frame = frameAtPointer(event);
+          if (event.pointerType !== 'touch' || pointer.current !== null) setPreview(frame);
+          if (pointer.current === event.pointerId) onSelect(frame);
         }}
-        onPointerUp={event => {
-          const start = drag.current;
-          if (!start || start.id !== event.pointerId) return;
-          if (!start.moved) {
-            const rect = event.currentTarget.getBoundingClientRect();
-            scrub(event.currentTarget.scrollLeft + event.clientX - rect.left - rect.width / 2);
-          }
-          drag.current = null;
-          event.currentTarget.releasePointerCapture(event.pointerId);
-        }}
-        onPointerCancel={() => { drag.current = null; }}
-        onLostPointerCapture={() => { drag.current = null; }}
+        onPointerUp={release} onPointerCancel={release} onLostPointerCapture={release}
         onKeyDown={event => {
+          setKeyboardFocus(true);
           let frame = selected;
-          if (event.key === 'ArrowLeft') frame--;
-          else if (event.key === 'ArrowRight') frame++;
+          if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') frame--;
+          else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') frame++;
           else if (event.key === 'Home') frame = 0;
           else if (event.key === 'End') frame = times.length - 1;
+          else if (event.key === 'PageUp') frame = frameAtTime(times, Math.min(end, time + duration / 10));
+          else if (event.key === 'PageDown') frame = frameAtTime(times, Math.max(start, time - duration / 10));
           else if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); onToggle(); return; }
           else return;
           event.preventDefault();
-          select.current(Math.max(0, Math.min(times.length - 1, frame)));
+          setPreview(null);
+          onSelect(Math.max(0, Math.min(times.length - 1, frame)));
         }}>
-        <div className="carrete-timeline-spacer" />
-        <div className="carrete-timeline-ruler" style={{ width: end * zoom, backgroundSize: `${zoom / 4}px 7px` }}>
-          <div className="carrete-timeline-elapsed" style={{ width: time * zoom }} />
-          {ticks.map(tick => <span className="carrete-timeline-tick" key={tick} style={{ left: tick * zoom }}>
-            {timestamp(tick).slice(0, -3)}{tick % 1 ? '.5' : ''}
-          </span>)}
+        <div className="carrete-timeline-rail" aria-hidden="true">
+          <div className="carrete-timeline-fill" />
+          <span className="carrete-timeline-thumb" />
         </div>
-        <div className="carrete-timeline-spacer" />
+        <span className="carrete-timeline-preview" aria-hidden="true">{timestamp(times[preview ?? selected])}</span>
       </div>
-      <span className="carrete-timeline-playhead" aria-hidden="true" />
+      <div className="carrete-timeline-times" aria-hidden="true">
+        <span>{timestamp(time)}</span><span>{timestamp(end)}</span>
+      </div>
     </div>
   </div>;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { LoadedMedia } from './media';
 import type { CarreteSettings } from './settings';
+import type { MediaQuality } from './quality';
 
 const vertex = `
 attribute vec2 position;
@@ -99,7 +100,7 @@ function createLens(canvas: HTMLCanvasElement) {
   };
 }
 
-export default function OrbitLens({ frames, reducedMotion, settings }: { frames: LoadedMedia[]; reducedMotion: boolean; settings: CarreteSettings }) {
+export default function OrbitLens({ frames, reducedMotion, settings, quality }: { frames: LoadedMedia[]; reducedMotion: boolean; settings: CarreteSettings; quality: MediaQuality }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const fallbackCanvas = useRef<HTMLCanvasElement>(null);
   const latest = useRef(frames);
@@ -133,7 +134,7 @@ export default function OrbitLens({ frames, reducedMotion, settings }: { frames:
       elapsed += delta;
       orbitAngle += delta * .075 * effects.orbitSpeed / 100;
       previous = now;
-      const dpr = Math.min(devicePixelRatio || 1, 1.5);
+      const dpr = Math.min(devicePixelRatio || 1, quality === 'lite' ? 1 : 1.5);
       if (source.width !== Math.round(width * dpr) || source.height !== Math.round(height * dpr)) {
         source.width = output.width = fallbackOutput.width = Math.round(width * dpr);
         source.height = output.height = fallbackOutput.height = Math.round(height * dpr);
@@ -203,7 +204,7 @@ export default function OrbitLens({ frames, reducedMotion, settings }: { frames:
       output.removeEventListener('carrete:loaded', refresh);
       document.removeEventListener('visibilitychange', schedule);
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, quality]);
 
   useEffect(() => { canvas.current?.dispatchEvent(new Event('carrete:loaded')); }, [frames, settings]);
 
