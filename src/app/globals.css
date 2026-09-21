@@ -25,6 +25,16 @@
   box-sizing: border-box;
 }
 
+/* Pointer/touch activation should not leave a browser focus ring behind.
+   Keyboard focus still uses the component-specific :focus-visible styles. */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]) {
+  -webkit-tap-highlight-color: transparent;
+}
+
 html,
 body {
   min-height: 100%;
