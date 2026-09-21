@@ -35,12 +35,29 @@ defaults and slider limits live in `src/app/carrete/settings.ts`.
 Video tiles contain real, paused players with no poster image. Opening expands
 the same tile and starts its existing player (muted if the browser blocks audible
 playback). Closing pauses and returns that same element, preserving its decoded
-frame and playback position. There is no player replacement, frame capture, or
-thumbnail swap. Original black opening frames are left intact. Native controls
+frame and playback position. The grid and playback view always retain that
+player, including original black opening frames. Native controls
 remain hidden on mobile and desktop; only the selected player runs.
 The selected tile stays mounted during viewport changes. Repeated tiles and
 tiles recycled by the virtual grid restore the saved playback position.
 Focus returns to the grid without outlining the tapped photograph.
+
+Opening a video also offers a **Fotogramas** view with every decoded frame and its
+original presentation timestamp. The volume fills the viewer without a heading
+or control panel. Tap or click it to play/pause; drag or use arrow keys to rotate.
+Enter and Space also toggle playback when the volume is focused. Shift with the
+left/right arrows pauses and steps through individual frames. The selected plane
+follows the original video; the **Vídeo** switch returns to the regular player
+at the same position.
+
+Run `npm run frames:carrete` (requires FFmpeg and ffprobe) when video files change.
+The checked-in `*-frames/` atlases contain all frames, including the first and
+last, grouped in 8×8 JPEG sheets. Their index records the exact timestamps.
+The complete atlas for each video is limited to 12 million decoded pixels by
+adjusting thumbnail resolution, without omitting frames. A single WebGL canvas
+draws the volume; without WebGL the selected frame remains available in 2D.
+Atlases load only when opening this view; loading can be retried or cancelled,
+and GPU resources and playback listeners are released on exit.
 
 The collection contains **47 photos and 12 videos from [@txnioh](https://www.instagram.com/txnioh/)**:
 all slides of the 22 profile publications, including six reels and six videos

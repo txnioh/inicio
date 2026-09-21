@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "perf": "node scripts/audit-performance.mjs",
     "lint": "tsc --noEmit",
+    "frames:carrete": "node scripts/render-carrete-frames.mjs",
     "deploy": "vercel --prod"
   },
   "dependencies": {
