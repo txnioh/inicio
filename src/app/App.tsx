@@ -1,4 +1,4 @@
-import { Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import FooterRobotMark from './components/FooterRobotMark';
 import InkWritingLink from './components/InkWritingLink';
 import LocalTime from './components/LocalTime';
@@ -6,6 +6,8 @@ import PageEnter from './components/PageEnter';
 import ProjectShowcase from './components/ProjectShowcase';
 import { VinylPlayer } from './components/VinylPlayer';
 import usePageNavigation from './usePageNavigation';
+
+const Neural = lazy(() => import('./neural/Neural'));
 
 function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
   return (
@@ -17,6 +19,7 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
 
 export default function App() {
   const { path, Article, Carrete, arrived } = usePageNavigation();
+  if (path === '/neural') return <Suspense fallback={<main style={{ position: 'fixed', inset: 0, background: '#000' }} aria-label="Cargando la red neuronal" />}><Neural /></Suspense>;
   if (path === '/') return <Home arrived={arrived} />;
   if (path === '/carrete') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading camera roll" />}><Carrete /></Suspense>;
   if (path === '/writing/ink') return <Suspense fallback={<main className="minimal-portfolio-page"><div className="minimal-portfolio-shell" role="status">Loading article…</div></main>}><Article /></Suspense>;

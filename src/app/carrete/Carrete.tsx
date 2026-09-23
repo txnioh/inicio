@@ -5,6 +5,8 @@ import MediaViewer from './MediaViewer';
 import OrbitLens from './OrbitLens';
 import EffectSettings from './EffectSettings';
 import QualitySelector from './QualitySelector';
+import PhotoLibrary from './PhotoLibrary';
+import usePersonalPhotos from './usePersonalPhotos';
 import { useMediaQuality } from './quality';
 import NowPlaying from '../components/NowPlaying';
 import { collection, loadImage, loadMedia, type LoadedMedia } from './media';
@@ -35,6 +37,8 @@ export default function Carrete() {
 
   const reducedMotion = useReducedMotion();
   const quality = useMediaQuality();
+  const personal = usePersonalPhotos();
+  const [source, setSource] = useState<'antonio' | 'personal'>('antonio');
   const [attempt, setAttempt] = useState(0);
   const [loaded, setLoaded] = useState<LoadedMedia[]>([]);
   const [previews, setPreviews] = useState<LoadedMedia[]>([]);
@@ -55,7 +59,7 @@ export default function Carrete() {
   const retainSource = useCallback((source: HTMLButtonElement) => {
     setSelected(current => current && current.source !== source ? { ...current, source } : current);
   }, []);
-  const settled = !loading;
+  const settled = source === 'personal' || !loading;
   const previousMedia = useRef(loaded);
   previousMedia.current = loaded;
   const showIntro = () => {
@@ -67,14 +71,22 @@ export default function Carrete() {
     if (entered) setGridReplay(value => value + 1);
     else setOrbitReplay(value => value + 1);
   };
-  const ordered = collection.flatMap(item => {
-    const full = loaded.find(media => media.item.id === item.id);
-    return full ? [full] : [];
-  });
-  const frames = collection.flatMap(item => {
+  const ordered = source === 'personal' ? personal.media : loaded;
+  const frames = source === 'personal' ? personal.media : collection.flatMap(item => {
     const frame = loaded.find(media => media.item.id === item.id) ?? previews.find(media => media.item.id === item.id);
     return frame ? [frame] : [];
   });
+  const changeSource = (next: 'antonio' | 'personal') => {
+    setSelected(null);
+    setSource(next);
+    setEntered(false);
+    setIntroVisible(true);
+    setOrbitReplay(value => value + 1);
+  };
+  const importPhotos = async (files: File[]) => {
+    const added = await personal.addFiles(files);
+    if (added) changeSource('personal');
+  };
 
   useEffect(() => {
     if (!canConfigure) return;
@@ -131,6 +143,7 @@ export default function Carrete() {
       });
       setSelected(current => {
         if (!current) return current;
+        if (current.source.closest('.carrete-grid')?.getAttribute('data-collection') === 'personal') return current;
         const id = previous[current.index]?.item.id;
         const index = next.findIndex(media => media.item.id === id);
         return index < 0 ? null : { ...current, index };
@@ -153,19 +166,20 @@ export default function Carrete() {
 
   return <main className={`carrete-page${entered ? ' has-entered' : ''}${selected ? ' has-viewer' : ''}`} tabIndex={-1} data-quality={quality.resolved}>
     <header className="carrete-header">
-      {entered && <div className="carrete-heading">
-        <h1 className="carrete-title">Carrete</h1>
-        <span className="carrete-count">{String(loaded.length).padStart(2, '0')}</span>
-      </div>}
+      <div className="carrete-heading">
+        <h1 className="carrete-title">{source === 'personal' ? 'Your Carrete' : 'Carrete by Antonio'}</h1>
+        {entered && <span className="carrete-count">{String(ordered.length).padStart(2, '0')}</span>}
+      </div>
       <nav className="carrete-header-actions" aria-label="Carrete">
-        <QualitySelector quality={quality} />
+        <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-library" aria-haspopup="dialog">{source === 'personal' ? 'Photo library' : 'Your photos'}</button>
+        {source === 'antonio' && <QualitySelector quality={quality} />}
         {canConfigure && <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-settings" aria-haspopup="dialog">Settings</button>}
         <a className="minimal-basic-link" href="/">Back home</a>
       </nav>
     </header>
 
     {entered && <div className="carrete-explore">
-      <InfiniteGrid media={ordered} reducedMotion={reducedMotion} quality={quality.resolved}
+      <InfiniteGrid key={`${source}:${ordered.length}`} collection={source} media={ordered} reducedMotion={reducedMotion} quality={quality.resolved}
         settings={settings} replay={gridReplay} onOpen={open}
         selection={selected} videoPositions={videoPositions} />
     </div>}
@@ -173,30 +187,33 @@ export default function Carrete() {
     {introVisible && <section className="carrete-intro" aria-label="Load camera roll" inert={entered}>
       <OrbitLens key={orbitReplay} frames={frames} reducedMotion={reducedMotion} settings={settings} quality={quality.resolved} />
       <button className="carrete-intro-trigger" aria-label="Open camera roll" aria-describedby="carrete-entry-hint"
-        disabled={!settled || !loaded.length} onClick={() => setEntered(true)} />
+        disabled={!settled || !ordered.length} onClick={() => setEntered(true)} />
       <div className="carrete-intro-center">
         <h1>Carrete</h1>
         <p id="carrete-entry-hint" className="carrete-entry-hint">
-          {!settled ? 'Loading…' : loaded.length > 0 ? 'Tap to explore' : 'No items available'}
+          {!settled ? 'Loading…' : ordered.length > 0 ? 'Tap to explore' : 'No items available'}
         </p>
-        {settled && failed > 0 && <div className="carrete-load-error" role="status">
+        {source === 'antonio' && settled && failed > 0 && <div className="carrete-load-error" role="status">
           <p>{failed === 1 ? 'One item could not be loaded.' : `${failed} items could not be loaded.`}</p>
           <button className="minimal-basic-link carrete-text-button" onClick={() => setAttempt(value => value + 1)}>Retry</button>
           {loaded.length > 0 && <span>You can explore the {loaded.length} available items.</span>}
         </div>}
         {collection.length === 0 && <p className="carrete-empty">The camera roll is empty.</p>}
         <span className="carrete-sr-only" role="status">{settled
-          ? loaded.length ? `${loaded.length} items ready. You can enter now.` : 'No items are available.'
+          ? ordered.length ? `${ordered.length} items ready. You can enter now.` : 'No items are available.'
           : 'Loading camera roll.'}</span>
       </div>
       <footer className="carrete-intro-footer">
-        <span>Photography & video</span>
-        <span>@txnioh · {String(collection.length).padStart(2, '0')}</span>
+        <span>{source === 'personal' ? 'Your photos · only here' : 'Photography & video'}</span>
+        <span>{source === 'personal' ? `${personal.media.length} photos` : `@txnioh · ${String(collection.length).padStart(2, '0')}`}</span>
       </footer>
     </section>}
 
+    <PhotoLibrary personal={personal} source={source} onSource={changeSource} onImport={importPhotos}
+      onClear={() => { changeSource('antonio'); personal.clear(); }} />
+
     {canConfigure && <EffectSettings settings={settings} setSettings={setSettings} entered={entered}
-      canEnter={settled && loaded.length > 0} reducedMotion={reducedMotion}
+      canEnter={settled && ordered.length > 0} reducedMotion={reducedMotion}
       onIntro={showIntro} onGrid={() => setEntered(true)} onReplay={replay} />}
     <div ref={playerSlot} />
     {createPortal(<NowPlaying />, playerHost)}

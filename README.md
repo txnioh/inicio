@@ -4,6 +4,25 @@ Minimal portfolio for Antonio J. Gonzalez (txnio).
 
 ## Carrete
 
+Carrete opens on Antonio’s archive. **Your photos** opens the device’s native
+photo/file selector, a folder selector where supported, or a drop area. Visitors
+can add up to 200 photos (40 MB per file), switch between Antonio’s collection
+and their own, and clear their selection. Photos are processed in this tab only:
+there are no uploads, accounts, or persistent gallery permissions. Reloading or
+leaving Carrete clears the personal roll. Folder selection includes subfolders;
+unsupported files and duplicates are reported without replacing the current roll.
+HEIC/HEIF decoding depends on the browser; JPG, PNG, and WebP are alternatives.
+Two files are decoded at a time. Local previews are capped at 512 px and viewer
+images at 1600 px; object URLs are released on clearing or leaving the page.
+
+The infinite grid assigns new cells using nearby-photo separation and recency,
+with shuffled ties. Photos keep their coordinates during nearby return journeys;
+a 4096-cell cache bounds memory, so sufficiently distant revisits may be rearranged.
+Wheel and keyboard movement ease toward their destinations; direct dragging
+retains time-based inertia. Reduced motion skips easing and inertia.
+Run `node --test scripts/test-carrete-grid.mjs` with Node 24+ to check distribution,
+six travel directions, small collections, return trips, and cache eviction.
+
 `/carrete` is the photography and film archive, linked from the homepage. Its
 intro adapts the radial lens and RGB dispersion from VGPU Lab's `ripple-12`
 study to an orbit of circular photographs, with deformation and RGB dispersion
@@ -131,6 +150,60 @@ The active mark is an open circle drawn with three layered black ink strokes. It
 Regenerate them with `node --experimental-strip-types scripts/render-identity.mjs` (verified with Node 24). The script uses Sharp and Canvas from the workspace runtime; `INK_RENDER_NODE_MODULES` can point to another installation. These packages are not added to the website bundle.
 
 ## Development
+
+### Neural animation
+
+`/neural` has two manually controlled pixel-art scenes, based on
+[DotCSV's neural network video](https://x.com/DotCSV/status/2102737776219168939)
+and [Scr44gr's rabbit animation](https://x.com/Scr44gr/status/2102772799248986562).
+The neural scene uses an eight-second cycle with blue forward propagation,
+probability bars and pink gradients flowing backward. The diffusion scene uses
+a 24-second cycle with a typed caption, conditioning paths, network pulses and
+ten noise-removal passes. It visually reconstructs the selected image; it is
+not a text-to-image model. The default rabbit is original procedural pixel art.
+
+Play/pause is the only playback button; Space also works outside form fields.
+Both scenes start paused and play original synthesized effects synchronized to
+the audio clock. Background tabs suspend playback. Inputs never change
+automatically: choose a reference example, draw in the preview, select a shape,
+type literal text or open a local image. Color and the digit target can also be
+changed manually. Editing an input pauses and resets the scene. Double-click
+the drawing preview, or focus it and press Delete, to clear it. Images stay in
+the browser and are never uploaded.
+
+The `784 → 16 → 16 → 10` ReLU/softmax network was trained from scratch on all
+60,000 MNIST training images with Adam (12 epochs, seed 42). Its held-out test
+accuracy is **95.30% on 9,993 images**. The reference examples replay recorded
+forward passes, cross-entropy gradients and SGD updates. Custom inputs run
+inference and calculate gradients in the browser using the exported weights in
+`public/neural/model.json`; they do not persistently retrain the model. The
+classifier recognizes digits 0–9, so shapes, photos and non-digit text are still
+assigned one of those ten classes. The same seven handwritten images
+as the reference were identified in MNIST: test indices 409, 1551, 996, 7435,
+1374, 4068 and 1800. These seven demonstration images are excluded from held-out
+evaluation before their recorded updates. All predictions are the model's actual
+outputs, including the final misclassification of a 6 as a 4.
+The displayed input column selects
+14 of 784 real pixels. Intensities are normalized per layer, and the largest
+gradients are emphasized for legibility. Each recorded update reduces its
+example's cross-entropy loss. Full metrics, source indices, activations, displayed
+weights and gradients are in `public/neural/training.json`.
+
+To regenerate, install NumPy in your Python environment, download the four IDX
+gzip files from the [MNIST mirror](https://github.com/cvdfoundation/mnist) into a
+directory as `train-images.gz`, `train-labels.gz`, `test-images.gz`, and
+`test-labels.gz`, then run:
+
+```bash
+python3 scripts/train-neural.py --data-dir /tmp/inicio-mnist
+```
+
+The demo loads its data and renderer only when `/neural` is visited.
+To export the same canvas and synthesized audio as a clean 56-second, 1080p,
+60 fps MP4, use Node 24+,
+FFmpeg and `@napi-rs/canvas`: `node scripts/render-neural.mjs`. The default output
+is `out/neural/mnist-pixel-training.mp4`; `NEURAL_CANVAS_MODULE` can point at a
+bundled Canvas package without adding a website dependency.
 
 ```bash
 npm install

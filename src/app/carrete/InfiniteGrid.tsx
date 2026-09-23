@@ -1,11 +1,11 @@
-import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { flushSync } from 'react-dom';
 import { imageSource, type LoadedMedia } from './media';
 import type { CarreteSettings } from './settings';
 import type { MediaQuality } from './quality';
+import { createGridLayout, wrap } from './gridLayout';
 
-export const wrap = (value: number, size: number) => ((value % size) + size) % size;
-export const mediaIndex = (column: number, row: number, count: number) => wrap(column + row * 4, count);
+export { wrap } from './gridLayout';
 
 type Position = { x: number; y: number };
 type View = { width: number; height: number; cell: number; column: number; row: number };
@@ -46,8 +46,9 @@ const GridTile = memo(function GridTile({ tileKey, column, row, cell, media, ind
   </button>;
 });
 
-export default function InfiniteGrid({ media, reducedMotion, settings, replay, onOpen, selection, videoPositions, quality }: {
+export default function InfiniteGrid({ media, collection, reducedMotion, settings, replay, onOpen, selection, videoPositions, quality }: {
   media: LoadedMedia[];
+  collection: 'antonio' | 'personal';
   reducedMotion: boolean;
   settings: CarreteSettings;
   replay: number;
@@ -61,6 +62,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
   const openTile = useRef<(tile: HTMLButtonElement) => void>(() => {});
   const tappedTile = useRef<HTMLButtonElement | null>(null);
   const [view, setView] = useState<View>({ width: 0, height: 0, cell: 300, column: 0, row: 0 });
+  const layout = useMemo(() => createGridLayout(media.length), [media.length]);
 
   useEffect(() => {
     const element = viewport.current!;
@@ -72,14 +74,23 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
     let cell = 300;
     let origin = '';
     let position: Position = { x: 0, y: 0 };
+    let target: Position | null = null;
     let velocity: Position = { x: 0, y: 0 };
     let pointer: { id: number; x: number; y: number; startX: number; startY: number; time: number;
       dragging: boolean; tile: HTMLButtonElement | null } | null = null;
     const update = (now: number) => {
       frame = 0;
-      const elapsed = Math.min(lastFrame ? now - lastFrame : 0, 32);
+      const elapsed = Math.min(lastFrame ? now - lastFrame : 16, 32);
       lastFrame = now;
-      if (!pointer && !reducedMotion) {
+      if (target) {
+        const blend = reducedMotion ? 1 : 1 - Math.exp(-elapsed / 45);
+        position.x += (target.x - position.x) * blend;
+        position.y += (target.y - position.y) * blend;
+        if (Math.hypot(target.x - position.x, target.y - position.y) < .1) {
+          position = target;
+          target = null;
+        }
+      } else if (!pointer && !reducedMotion) {
         // Velocity is px/ms. Integrating exponential decay keeps the same
         // distance and feel at 60, 90, 120 Hz, or variable refresh rates.
         const decay = Math.exp(-elapsed / 190);
@@ -98,7 +109,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
         flushSync(() => setView({ width, height, cell, column, row }));
       }
       plane.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
-      if (!pointer && Math.hypot(velocity.x, velocity.y) > .01 && !reducedMotion) frame = requestAnimationFrame(update);
+      if (target || (!pointer && Math.hypot(velocity.x, velocity.y) > .01 && !reducedMotion)) frame = requestAnimationFrame(update);
       else lastFrame = 0;
     };
     const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
@@ -112,6 +123,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
       const nextWidth = entry.contentRect.width;
       const nextHeight = entry.contentRect.height;
       const nextCell = nextWidth < 600 ? 220 : 320;
+      target = null;
       position = width === 0 ? { x: nextWidth / 2 - nextCell * 1.5, y: nextHeight / 2 - nextCell * 1.5 }
         : { x: (position.x - width / 2) * nextCell / cell + nextWidth / 2,
           y: (position.y - height / 2) * nextCell / cell + nextHeight / 2 };
@@ -128,6 +140,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
       frame = 0;
       lastFrame = 0;
       velocity = { x: 0, y: 0 };
+      target = null;
       tappedTile.current = null;
       pointer = { id: event.pointerId, x: event.clientX, y: event.clientY,
         startX: event.clientX, startY: event.clientY, time: event.timeStamp, dragging: false,
@@ -168,7 +181,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
       tappedTile.current = tap;
       if (!tap) { lastFrame = performance.now(); schedule(); }
     };
-    const stop = () => { cancelDrag(); velocity = { x: 0, y: 0 }; };
+    const stop = () => { cancelDrag(); velocity = { x: 0, y: 0 }; target = null; };
     openTile.current = tile => {
       stop();
       cancelAnimationFrame(frame);
@@ -184,16 +197,18 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
     const wheel = (event: WheelEvent) => {
       if (event.ctrlKey || event.metaKey) return;
       event.preventDefault();
+      if (pointer) return;
       velocity = { x: 0, y: 0 };
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? height : 1;
-      position.x -= (event.shiftKey ? event.deltaY : event.deltaX) * unit;
-      position.y -= (event.shiftKey ? 0 : event.deltaY) * unit;
+      const horizontal = event.shiftKey && event.deltaX === 0;
+      target = { x: (target?.x ?? position.x) - (horizontal ? event.deltaY : event.deltaX) * unit,
+        y: (target?.y ?? position.y) - (horizontal ? 0 : event.deltaY) * unit };
       schedule();
     };
     const pan = (x: number, y: number, reset = false) => {
       velocity = { x: 0, y: 0 };
-      position = reset ? { x: width / 2 - cell * 1.5, y: height / 2 - cell * 1.5 }
-        : { x: position.x + x * cell * .8, y: position.y + y * cell * .8 };
+      target = reset ? { x: width / 2 - cell * 1.5, y: height / 2 - cell * 1.5 }
+        : { x: (target?.x ?? position.x) + x * cell * .8, y: (target?.y ?? position.y) + y * cell * .8 };
       schedule();
     };
     const key = (event: KeyboardEvent) => {
@@ -243,11 +258,8 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
 
   const columns = Math.ceil(view.width / view.cell) + 5;
   const rows = Math.ceil(view.height / view.cell) + 5;
-  const tiles = view.width > 0 ? Array.from({ length: columns * rows }, (_, slot) => {
-    const column = view.column + slot % columns;
-    const row = view.row + Math.floor(slot / columns);
-    return { key: `${column}:${row}`, column, row, index: mediaIndex(column, row, media.length) };
-  }) : [];
+  const tiles = useMemo(() => view.width > 0 ? layout(view.column, view.row, columns, rows) : [],
+    [layout, view.width, view.column, view.row, columns, rows]).slice();
   // Keep the actual selected node alive across viewport changes. Viewer navigation
   // can also reach a piece outside the virtual ring, so give it a temporary tile.
   if (selection && view.width > 0) {
@@ -259,7 +271,7 @@ export default function InfiniteGrid({ media, reducedMotion, settings, replay, o
       tiles.push({ key: `viewer:${selection.index}`, column: view.column - 1, row: view.row - 1, index: selection.index });
     }
   }
-  return <div ref={viewport} className="carrete-grid" style={{ '--fade-duration': `${settings.fadeDuration}ms` } as CSSProperties}
+  return <div ref={viewport} className="carrete-grid" data-collection={collection} style={{ '--fade-duration': `${settings.fadeDuration}ms` } as CSSProperties}
       onClick={event => {
         const tile = event.detail === 0 && event.target instanceof Element
           ? event.target.closest<HTMLButtonElement>('.carrete-tile') : tappedTile.current;
