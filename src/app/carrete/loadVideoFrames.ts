@@ -9,6 +9,8 @@ export type VideoFramesData = {
 };
 
 export async function loadVideoFrames(src: string, samples: number, signal: AbortSignal, onProgress: (progress: number) => void): Promise<VideoFramesData> {
+  signal.throwIfAborted();
+  onProgress(0);
   const dir = src.replace(/\.mp4$/, '-volume');
   const response = await fetch(`${dir}/index.json`, { signal });
   if (!response.ok) throw new Error('Samples could not be loaded.');
@@ -26,11 +28,16 @@ export async function loadVideoFrames(src: string, samples: number, signal: Abor
     const index = Math.round(i * (manifest.times.length - 1) / (samples - 1));
     const sheetIndex = Math.floor(index / (columns * rows)), cell = index % (columns * rows);
     if (!sheets.has(sheetIndex)) sheets.set(sheetIndex, await loadImage(`${dir}/${manifest.sheets[sheetIndex]}`, signal));
+    signal.throwIfAborted();
     ctx.drawImage(sheets.get(sheetIndex)!, cell % columns * width, Math.floor(cell / columns) * height, width, height, 0, 0, width, height);
     pixels.set(ctx.getImageData(0, 0, width, height).data, i * width * height * 4);
     times.push(manifest.times[index]);
-    onProgress(Math.round((i + 1) / samples * 100));
+    onProgress(Math.floor((i + 1) / samples * 100));
+    // Cached atlas decoding is otherwise one long task. Yield between batches
+    // so the percentage can paint and navigation/cancellation stays responsive.
+    if ((i + 1) % 8 === 0) await new Promise<void>(resolve => setTimeout(resolve, 0));
   }
+  signal.throwIfAborted();
   return { width, height, duration, pixels, times };
 }
 
@@ -51,6 +58,8 @@ export function videoEvent(video: HTMLVideoElement, event: 'loadeddata' | 'seeke
 }
 
 export async function sampleLocalVideo(src: string, samples: number, signal: AbortSignal, onProgress: (progress: number) => void): Promise<VideoFramesData> {
+  signal.throwIfAborted();
+  onProgress(0);
   const video = document.createElement('video'); video.muted = true; video.preload = 'auto';
   try {
     await videoEvent(video, 'loadeddata', signal, () => { video.src = src; });
@@ -66,7 +75,7 @@ export async function sampleLocalVideo(src: string, samples: number, signal: Abo
       if (Math.abs(video.currentTime - time) > .00001) await videoEvent(video, 'seeked', signal, () => { video.currentTime = time; });
       ctx.drawImage(video, 0, 0, width, height);
       pixels.set(ctx.getImageData(0, 0, width, height).data, i * width * height * 4); times.push(time);
-      onProgress(Math.round((i + 1) / samples * 100));
+      onProgress(Math.floor((i + 1) / samples * 100));
     }
     return { width, height, duration: video.duration, pixels, times };
   } finally { video.pause(); video.removeAttribute('src'); video.load(); }

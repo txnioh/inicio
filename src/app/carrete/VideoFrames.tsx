@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { loadVideoFrames, sampleLocalVideo, type VideoFramesData } from './loadVideoFrames';
 import FrameVolume from './FrameVolume';
 import FrameEditor from './FrameEditor';
+import LoadingProgress from './LoadingProgress';
 import { defaultFrameSettings } from './frameSettings';
 import type { MediaQuality } from './quality';
 
@@ -162,7 +163,7 @@ export default function VideoFrames({ src, initialTime, initialData, video, onSe
       {data && <FrameVolume data={data} time={time} settings={settings} ratio={data.width / data.height} video={entering ? null : active} />}
       {!data && <div className="carrete-frames-status" role="status">
         {error ? <><p>{error}</p><button className="carrete-text-button" onClick={() => setAttempt(value => value + 1)}>Retry</button></>
-          : <><p>Loading samples…</p><progress max={100} value={progress} aria-label="Loading samples" /><span>{progress}%</span></>}
+          : <LoadingProgress label="Loading frames" value={progress} />}
       </div>}
     </div>
     <FrameEditor settings={settings} onChange={setSettings} time={time} duration={data?.duration ?? (active && Number.isFinite(active.duration) ? active.duration : 1)} playing={playing}

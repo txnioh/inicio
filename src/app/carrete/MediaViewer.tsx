@@ -3,8 +3,8 @@ import { flushSync } from 'react-dom';
 import type { LoadedMedia } from './media';
 import { wrap } from './InfiniteGrid';
 import VideoFrames from './VideoFrames';
-import QualitySelector from './QualitySelector';
-import type { QualityControl } from './quality';
+import LoadingProgress from './LoadingProgress';
+import type { MediaQuality } from './quality';
 import { loadVideoFrames, type VideoFramesData } from './loadVideoFrames';
 
 const easing = 'cubic-bezier(.22,.8,.2,1)';
@@ -90,7 +90,7 @@ export default function MediaViewer({ media, index, initialSource: openingSource
   onSource: (source: HTMLButtonElement) => void;
   videoPositions: Map<string, number>;
   playerHost: HTMLDivElement;
-  quality: QualityControl;
+  quality: MediaQuality;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -104,6 +104,7 @@ export default function MediaViewer({ media, index, initialSource: openingSource
   const [ready, setReady] = useState(reducedMotion);
   const [frameView, setFrameView] = useState<{ index: number; time: number; data: VideoFramesData } | null>(null);
   const [loadingFrames, setLoadingFrames] = useState(false), [framesError, setFramesError] = useState('');
+  const [framesProgress, setFramesProgress] = useState(0);
   const frameLoad = useRef<AbortController | null>(null), modeTransition = useRef<ViewTransition | null>(null);
   const modeVersion = useRef(0);
   const exploringFrames = frameView?.index === index;
@@ -264,10 +265,12 @@ export default function MediaViewer({ media, index, initialSource: openingSource
     video.pause();
     const version = ++modeVersion.current, controller = new AbortController();
     frameLoad.current?.abort(); frameLoad.current = controller;
-    setLoadingFrames(true); setFramesError('');
+    setLoadingFrames(true); setFramesProgress(0); setFramesError('');
     try {
       // Keep the decoded video visible until the volume can be captured by the transition.
-      const data = await loadVideoFrames(item.src, quality.resolved === 'lite' ? 96 : 160, controller.signal, () => {});
+      const data = await loadVideoFrames(item.src, quality === 'lite' ? 96 : 160, controller.signal, progress => {
+        if (!controller.signal.aborted && modeVersion.current === version) setFramesProgress(progress);
+      });
       if (controller.signal.aborted || modeVersion.current !== version) return;
       changeMode(version, () => {
         source.current?.setAttribute('data-exploring-frames', 'true');
@@ -299,12 +302,15 @@ export default function MediaViewer({ media, index, initialSource: openingSource
       if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
     }}>
     <header className="carrete-header">
-      <div className="carrete-heading"><span>{personal ? 'Your Carrete' : 'Carrete'}</span><span className="carrete-count">{String(media.length).padStart(2, '0')}</span>{!personal && <span style={{ visibility: exploringFrames ? 'hidden' : undefined }}><QualitySelector quality={quality} /></span>}</div>
+      <div className="carrete-heading"><span>{personal ? 'Your Carrete' : 'Carrete'}</span><span className="carrete-count">{String(media.length).padStart(2, '0')}</span></div>
       <button className="minimal-basic-link carrete-text-button" onClick={close} autoFocus>Back</button>
     </header>
     {item.type === 'video' && <div className="carrete-viewer-modes" role="group" aria-label="Video view">
       <button ref={videoMode} className="carrete-text-button" aria-pressed={!exploringFrames} onClick={showVideo}>Video</button>
-      <button className="carrete-text-button" aria-pressed={exploringFrames} aria-busy={loadingFrames} onClick={showFrames}>Frames <span aria-hidden="true">{loadingFrames ? '…' : '↗'}</span></button>
+      <button className="carrete-text-button" aria-pressed={exploringFrames} aria-busy={loadingFrames} onClick={showFrames}>Frames <span aria-hidden="true" style={{ visibility: loadingFrames ? 'hidden' : undefined }}>↗</span></button>
+      {loadingFrames && <div className="carrete-frames-loading">
+        <LoadingProgress label="Loading frames" value={framesProgress} />
+      </div>}
       {framesError && <p className="carrete-mode-error" role="status">{framesError}</p>}
     </div>}
     <div ref={stage} className="carrete-viewer-stage" onClick={event => { if (event.target === event.currentTarget) close(); }}>
@@ -315,7 +321,7 @@ export default function MediaViewer({ media, index, initialSource: openingSource
       </div>
     </div>
     {exploringFrames && item.type === 'video' && <VideoFrames key={item.id} src={item.src} width={item.width} height={item.height}
-      quality={quality.resolved}
+      quality={quality}
       initialTime={frameView.time} initialData={frameView.data} video={activeVideo.current} onSeek={time => {
         if (activeVideo.current) activeVideo.current.currentTime = time;
         videoPositions.set(item.id, time);

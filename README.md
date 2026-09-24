@@ -34,6 +34,12 @@ Drag with a mouse or touch, or use a trackpad. Keyboard
 arrows pan, Home recenters, and Enter opens the central photograph. The viewer
 supports left/right arrows and Escape.
 
+The intro shows a small, muted percentage based on successfully decoded
+archive items. Opening Frames shows the same indicator beneath the mode switch,
+using the actual number of prepared samples; changing sample counts or loading
+a local video uses it too. Atlas processing yields between batches so progress
+can paint and cancellation stays responsive, including with cached files.
+
 The circles fade and grow into their orbit in sequence. Grid images use a short
 opacity fade, with no masks, staggered delays, or per-image visibility observers.
 Two extra rings of decoded tiles are prepared before the plane moves.
@@ -74,8 +80,9 @@ as the reference: Video source (Carrete or a local file, Samples), Timeline (tim
 play, speed and return to start), Transparent volume (depth, frame outline,
 density and brightness), and Camera (automatic rotation, reset and front view).
 Samples offers 96, 160 or 240 temporal samples at the same image resolution.
-The site's image-quality selector is hidden in this view; it only sets the initial
-sample count (96 for Lite, 160 for High), without reducing the source video's resolution.
+Carrete selects Lite or High automatically from the device and connection, with
+no quality selector or saved manual override. This sets the initial sample count
+(96 for Lite, 160 for High), without reducing the source video's resolution.
 Drag to orbit, scroll or pinch to zoom, use Left/Right to step through time,
 Space/Enter or a tap to play/pause, and R to reset the camera. Mobile has a compact
 play/scrub control. The **Video** switch returns to the archive player at the same

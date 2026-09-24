@@ -4,8 +4,8 @@ import InfiniteGrid from './InfiniteGrid';
 import MediaViewer from './MediaViewer';
 import OrbitLens from './OrbitLens';
 import EffectSettings from './EffectSettings';
-import QualitySelector from './QualitySelector';
 import PhotoLibrary from './PhotoLibrary';
+import LoadingProgress from './LoadingProgress';
 import usePersonalPhotos from './usePersonalPhotos';
 import { useMediaQuality } from './quality';
 import NowPlaying from '../components/NowPlaying';
@@ -44,6 +44,7 @@ export default function Carrete() {
   const [previews, setPreviews] = useState<LoadedMedia[]>([]);
   const [failed, setFailed] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
   const [entered, setEntered] = useState(false);
   const [introVisible, setIntroVisible] = useState(true);
   const [selected, setSelected] = useState<{ index: number; source: HTMLButtonElement } | null>(null);
@@ -116,6 +117,7 @@ export default function Carrete() {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
+    setLoadProgress(0);
     setFailed(0);
     const results = new Map<string, LoadedMedia>();
     let failures = 0;
@@ -124,9 +126,10 @@ export default function Carrete() {
       while (cursor < collection.length && !controller.signal.aborted) {
         const item = collection[cursor++];
         try {
-          const media = await loadMedia(item, controller.signal, quality.resolved);
+          const media = await loadMedia(item, controller.signal, quality);
           if (controller.signal.aborted) return;
           results.set(item.id, media);
+          setLoadProgress(results.size / collection.length * 100);
         } catch {
           if (!controller.signal.aborted) failures++;
         }
@@ -134,7 +137,7 @@ export default function Carrete() {
     }
     // Swap decoded images together, retaining the open item and old images if
     // an upgrade fails. Aborting a quality change also cancels its downloads.
-    void Promise.all(Array.from({ length: quality.resolved === 'lite' ? 2 : 4 }, worker)).then(() => {
+    void Promise.all(Array.from({ length: quality === 'lite' ? 2 : 4 }, worker)).then(() => {
       if (controller.signal.aborted) return;
       const previous = previousMedia.current;
       const next = collection.flatMap(item => {
@@ -153,7 +156,7 @@ export default function Carrete() {
       setLoading(false);
     });
     return () => controller.abort();
-  }, [attempt, quality.resolved]);
+  }, [attempt, quality]);
 
   useEffect(() => {
     if (!entered) return;
@@ -164,7 +167,7 @@ export default function Carrete() {
     return () => clearTimeout(timer);
   }, [entered, reducedMotion]);
 
-  return <main className={`carrete-page${entered ? ' has-entered' : ''}${selected ? ' has-viewer' : ''}`} tabIndex={-1} data-quality={quality.resolved}>
+  return <main className={`carrete-page${entered ? ' has-entered' : ''}${selected ? ' has-viewer' : ''}`} tabIndex={-1} data-quality={quality}>
     <header className="carrete-header">
       <div className="carrete-heading">
         <h1 className="carrete-title">{source === 'personal' ? 'Your Carrete' : 'Carrete by Antonio'}</h1>
@@ -172,27 +175,27 @@ export default function Carrete() {
       </div>
       <nav className="carrete-header-actions" aria-label="Carrete">
         <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-library" aria-haspopup="dialog">{source === 'personal' ? 'Photo library' : 'Your photos'}</button>
-        {source === 'antonio' && <QualitySelector quality={quality} />}
         {canConfigure && <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-settings" aria-haspopup="dialog">Settings</button>}
         <a className="minimal-basic-link" href="/">Back home</a>
       </nav>
     </header>
 
     {entered && <div className="carrete-explore">
-      <InfiniteGrid key={`${source}:${ordered.length}`} collection={source} media={ordered} reducedMotion={reducedMotion} quality={quality.resolved}
+      <InfiniteGrid key={`${source}:${ordered.length}`} collection={source} media={ordered} reducedMotion={reducedMotion} quality={quality}
         settings={settings} replay={gridReplay} onOpen={open}
         selection={selected} videoPositions={videoPositions} />
     </div>}
 
     {introVisible && <section className="carrete-intro" aria-label="Load camera roll" inert={entered}>
-      <OrbitLens key={orbitReplay} frames={frames} reducedMotion={reducedMotion} settings={settings} quality={quality.resolved} />
+      <OrbitLens key={orbitReplay} frames={frames} reducedMotion={reducedMotion} settings={settings} quality={quality} />
       <button className="carrete-intro-trigger" aria-label="Open camera roll" aria-describedby="carrete-entry-hint"
         disabled={!settled || !ordered.length} onClick={() => setEntered(true)} />
       <div className="carrete-intro-center">
         <h1>Carrete</h1>
-        <p id="carrete-entry-hint" className="carrete-entry-hint">
-          {!settled ? 'Loading…' : ordered.length > 0 ? 'Tap to explore' : 'No items available'}
-        </p>
+        <div id="carrete-entry-hint" className="carrete-entry-hint">
+          {!settled ? <LoadingProgress label="Loading Carrete" value={loadProgress} />
+            : ordered.length > 0 ? 'Tap to explore' : 'No items available'}
+        </div>
         {source === 'antonio' && settled && failed > 0 && <div className="carrete-load-error" role="status">
           <p>{failed === 1 ? 'One item could not be loaded.' : `${failed} items could not be loaded.`}</p>
           <button className="minimal-basic-link carrete-text-button" onClick={() => setAttempt(value => value + 1)}>Retry</button>
