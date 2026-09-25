@@ -22,7 +22,7 @@ type Gesture = typeof gestures[keyof typeof gestures][number] | 'play:angry';
 // only a fallback for when it cannot, e.g. off screen.
 const gestureMs = (gesture: Gesture) => gesture.startsWith('play:') ? 5_000 : 1_000;
 // These speak through the animation itself, so they say nothing.
-const silent = new Set<Gesture>(['play:chinese', 'play:fan', 'play:thumbsup']);
+const silent = new Set<Gesture>(['play:sixseven', 'play:chinese', 'play:skate', 'play:fan', 'play:thumbsup']);
 // Held this long without moving, the robot notices it is being pressed.
 const LONG_PRESS_MS = 700;
 // A press only turns into a drag past this distance, so a finger resting on
@@ -41,9 +41,7 @@ const lines = {
   surprised: ['uy, no te había visto', 'a ver a ver, qué ha sido eso', 'me has pillado desprevenido'],
   tickle: ['jajaja para para', 'eso son cosquillas y lo sabes', 'jajaja vale ya'],
   love: ['te quiero en binario, 01', 'contigo, sin ruido', 'me caes bien, que lo sepas'],
-  sixseven: ['six seven jajaja', 'seis siete, ya sabes', '6… 7, no lo puedo evitar'],
   backflip: ['mortal hacia atrás, toma ya', 'eso ha sido limpio, no?'],
-  skate: ['un ollie y a casa', 'skate por el footer, tipo'],
   rave: ['dónde está mi supertraje?', 'modo rave activado'],
   angry: ['vale vale, ya está bien', 'un clic vale, veinte no', 'que no soy un botón jajaja'],
   carried: ['con cuidadito, eh', 'a dónde vamos?', 'esto no lo tenía planeado', 'ojo que me mareo'],

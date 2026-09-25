@@ -698,7 +698,7 @@ export const animations: Animation[] = [
   },
   {
     // The "six seven" meme: palms up, weighing one against the other.
-    id: 'sixseven', label: '6 7', line: 'six seven jajaja', frames: 40,
+    id: 'sixseven', label: '6 7', line: '', frames: 40,
     draw: (ctx, f) => {
       const on = f >= 4 && f < 36;
       const up = Math.floor((f - 4) / 3) % 2 === 0;
@@ -755,7 +755,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'skate', label: 'Skate', line: 'un ollie y a casa', frames: 48,
+    id: 'skate', label: 'Skate', line: '', frames: 48,
     draw: (ctx, f) => {
       // Hop on, roll right and back with an ollie in the middle, hop off.
       const lift = f < 3 ? -f : f >= 45 ? -(47 - f) : -3;
