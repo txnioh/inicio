@@ -985,7 +985,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 }
 
 .minimal-footer-row {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
 }
@@ -1108,14 +1108,12 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   border: 0;
   border-radius: 12px;
   background: none;
-  cursor: grab;
+  /* No hand: it is a small creature, not a control. Pressing it squashes it;
+     only an actual drag moves it. */
+  cursor: default;
   touch-action: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-}
-
-.minimal-robot-button:active {
-  cursor: grabbing;
 }
 
 .minimal-robot-button:focus-visible {
@@ -1409,6 +1407,24 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   animation: minimalRobotDance 900ms ease-in-out infinite;
 }
 
+.minimal-footer-robot-gallery[data-expression='pressed'] .minimal-robot-expression {
+  transform: scale(1.1, 0.8);
+  transition: transform 120ms ease-out;
+}
+
+.minimal-footer-robot-gallery[data-expression='pressed'] .minimal-robot-eyes rect {
+  transform: scaleY(0.25);
+}
+
+/* Resting eyes follow the cursor; FooterRobotMark sets the offsets. */
+.minimal-footer-robot-gallery .minimal-robot-eyes {
+  transition: translate 160ms ease-out;
+}
+
+.minimal-footer-robot-gallery[data-expression='idle'] .minimal-robot-eyes {
+  translate: var(--robot-look-x, 0) var(--robot-look-y, 0);
+}
+
 .minimal-footer-robot-gallery[data-expression='carried'] .minimal-robot-expression {
   animation: minimalRobotShake 180ms ease-in-out infinite;
 }
@@ -1667,9 +1683,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
     transition: none !important;
   }
 
-  .minimal-robot-button,
-  .minimal-robot-button:active {
-    cursor: pointer;
+  .minimal-robot-button {
     touch-action: manipulation;
   }
 

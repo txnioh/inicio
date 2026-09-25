@@ -1,8 +1,10 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type RefObject } from 'react';
 import { useRobotSkin, type RobotSkin } from './robotSkin';
 import type { PixelPortal } from './robotAnimation';
 
 const pixelParts = () => import('./PixelRobotParts');
+// Fetch the pixel look ahead of a change of clothes, so it lands ready to wear.
+export const preloadPixelLook = () => { void pixelParts(); };
 const PixelRobotFace = lazy(() => pixelParts().then(module => ({ default: module.PixelRobotFace })));
 const PixelEffects = lazy(() => pixelParts().then(module => ({ default: module.PixelEffects })));
 const PixelSpeech = lazy(() => pixelParts().then(module => ({ default: module.PixelSpeech })));
@@ -48,12 +50,14 @@ export function RobotEffects({ mode, skin = 'classic' }: { mode: string; skin?: 
 
 // `skin` forces a skin (for previews); otherwise the visitor's choice is used.
 // `portal` plays the pixel skin's hole animation; `portalKey` restarts it.
-export function RobotFace({ expression = 'idle', skin, portal = null, portalKey = null, onActivityEnd }: {
+// `look` holds where the eyes point, in art pixels (x ±2, y ±1).
+export function RobotFace({ expression = 'idle', skin, portal = null, portalKey = null, onActivityEnd, look }: {
   expression?: string; skin?: RobotSkin; portal?: PixelPortal | null; portalKey?: number | null; onActivityEnd?: () => void;
+  look?: RefObject<[number, number]>;
 }) {
   const saved = useRobotSkin();
   if ((skin ?? saved) === 'pixel') return <Suspense fallback={<ClassicRobotFace />}>
-    <PixelRobotFace expression={expression} portal={portal} portalKey={portalKey} onActivityEnd={onActivityEnd} />
+    <PixelRobotFace expression={expression} portal={portal} portalKey={portalKey} onActivityEnd={onActivityEnd} look={look} />
   </Suspense>;
   return <ClassicRobotFace />;
 }

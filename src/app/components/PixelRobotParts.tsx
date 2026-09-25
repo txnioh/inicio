@@ -1,6 +1,6 @@
 // Pixel-art versions of the footer robot's face, effects and speech bubble.
 // Loaded only when the visitor picks the pixel skin.
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type RefObject } from 'react';
 import { drawFace, drawPortal, FPS, G, H, PORTAL_FRAMES, W } from '../robot/sprites';
 import { PIXEL_PORTAL_MS, type PixelPortal } from './robotAnimation';
 import { drawBubbleBox, layoutBubble } from '../robot/pixelFont';
@@ -8,8 +8,9 @@ import { drawBubbleBox, layoutBubble } from '../robot/pixelFont';
 // Effects and text share the robot's 1.5px art pixel.
 const TEXT_PIXEL = 1.5;
 
-export function PixelRobotFace({ expression, portal, portalKey, onActivityEnd }: {
+export function PixelRobotFace({ expression, portal, portalKey, onActivityEnd, look }: {
   expression: string; portal: PixelPortal | null; portalKey: number | null; onActivityEnd?: () => void;
+  look?: RefObject<[number, number]>;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const mood = useRef(expression);
@@ -20,12 +21,12 @@ export function PixelRobotFace({ expression, portal, portalKey, onActivityEnd }:
   onEnd.current = onActivityEnd;
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
-    const done = drawFace(ctx, mood.current, clock.current);
+    const done = drawFace(ctx, mood.current, clock.current, look?.current ?? undefined);
     if (done && ended.current !== mood.current) {
       ended.current = mood.current;
       onEnd.current?.();
     }
-  }, []);
+  }, [look]);
 
   useEffect(() => {
     const element = canvas.current;

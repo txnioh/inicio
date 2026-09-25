@@ -11,18 +11,37 @@ import { robotPortalPose, robotHoleFrames, PIXEL_PORTAL_MS } from './robotAnimat
 import { useRobotSkin } from './robotSkin';
 import RobotSkinReveal from './RobotSkinReveal';
 
-const gestures = ['wink', 'happy', 'surprised'] as const;
-type Gesture = typeof gestures[number];
+// Taps cycle through these. The pixel face also plays whole animations
+// from /robot (`play:`); the classic one only has CSS expressions.
+const gestures = {
+  classic: ['wink', 'happy', 'surprised'],
+  pixel: ['wink', 'happy', 'play:tickle', 'surprised', 'play:love'],
+} as const;
+type Gesture = typeof gestures[keyof typeof gestures][number] | 'play:angry';
+const gestureMs = (gesture: Gesture) => gesture === 'play:love' || gesture === 'play:angry' ? 2_000 : 1_000;
+// Held this long without moving, the robot notices it is being pressed.
+const LONG_PRESS_MS = 700;
+// This many taps in a short while is poking.
+const POKES = 5;
+const POKE_WINDOW_MS = 2_500;
 
 const lines = {
-  hello: ['oh, hi.', 'hola, ¿qué tal?', 'me encontraste.'],
-  wink: ['just between us.', 'queda entre nosotros.', 'beep. that means hello.'],
-  happy: ['that tickles.', 'qué bien que estés aquí.', 'small robot, good company.'],
-  surprised: ['oh!', 'uy, qué susto.', 'you have my attention.'],
-  carried: ['con cuidadito.', 'a little field trip?', 'así que esto es volar.'],
-  sleeping: ['just resting my pixels.', 'una siestecita.'],
-  wake: ['oh, hi again.', 'yo no estaba durmiendo.'],
-  music: ['esta me gusta.', 'tiny dance break.', 'un temita y seguimos.'],
+  hello: ['oh, hi.', 'hola, ¿qué tal?', 'me encontraste.', 'bip bop. hola.', '¿vienes a jugar?'],
+  wink: ['just between us.', 'queda entre nosotros.', 'beep. that means hello.', 'nuestro secreto.'],
+  happy: ['qué bien que estés aquí.', 'small robot, good company.', 'me alegras el píxel.'],
+  surprised: ['oh!', 'uy, qué susto.', 'you have my attention.', '¡no te vi venir!'],
+  tickle: ['that tickles.', '¡jajaja, para!', 'cosquillas no, porfa.'],
+  love: ['te quiero en binario: 01.', 'me caes muy bien.', 'corazón de 8 bits.'],
+  angry: ['¡vale, vale!', 'bip. bip. BIP.', 'tanto clic me marea.'],
+  carried: ['con cuidadito.', 'a little field trip?', 'así que esto es volar.', 'agárrame bien.', '¡mira, sin ruedas!'],
+  pressed: ['¿me estás apretando?', 'no soy un botón… ¿o sí?', 'aplastadito.', 'modo sándwich.'],
+  released: ['¡boing!', 'y vuelvo a mi forma.', 'uf, qué alivio.'],
+  sleeping: ['just resting my pixels.', 'una siestecita.', 'soñando con ovejas eléctricas.'],
+  wake: ['oh, hi again.', 'yo no estaba durmiendo.', '¡estoy despierto!', 'cinco minutitos más…'],
+  wardrobe: ['¿me cambio de ropa?', 'ooh, ese look es mío.', '¿me lo pruebo?'],
+  music: ['esta me gusta.', 'tiny dance break.', 'un temita y seguimos.', 'este ritmo me mueve los píxeles.'],
+  dressedPixel: ['¿qué tal me queda?', 'ahora en 8 bits.', 'modo píxel, activado.'],
+  dressedClassic: ['vuelta al clásico.', 'suavecito otra vez.', 'como siempre, pero mejor.'],
 } as const;
 type SpeechCue = keyof typeof lines;
 
@@ -40,6 +59,13 @@ const activities = {
   battery: ['un sorbito de batería y sigo.', 'recargando… ya estoy.'],
   boot: ['reinicio rápido. listo.', 'apagar y encender. un clásico.'],
   rebuild: ['me desmonto un momento.', 'vuelvo de una pieza, prometido.'],
+  stretch: ['estiramiento de píxeles.', 'crujido de bits.'],
+  coffee: ['un cafecito y sigo.', 'café de 8 bits.'],
+  wish: ['¡pide un deseo!', 'una estrella fugaz, ¿la viste?'],
+  bubble: ['pompas de jabón digital.', 'pop.'],
+  hiccup: ['¡hip! perdón.', 'hip… ¿alguien tiene agua?'],
+  lookaround: ['¿hay alguien por ahí?', 'solo echando un vistazo.'],
+  paint: ['pintando un píxel… o dos.', 'mi obra maestra.'],
 } satisfies Record<string, string[]>;
 type Activity = keyof typeof activities | 'dizzy';
 const clockLine = () => `ya son las ${new Intl.DateTimeFormat('es-ES', {
@@ -47,7 +73,11 @@ const clockLine = () => `ya son las ${new Intl.DateTimeFormat('es-ES', {
 }).format(new Date())} en madrid.`;
 type Speech = { text: string; announce: boolean; context?: boolean };
 
-export default function FooterRobotMark({ draggable = true, dressing = false }: { draggable?: boolean; dressing?: boolean }) {
+// `dressing` is true while a new look flies over from the wardrobe;
+// `dressedAt` marks when it lands; `eyeing` while the wardrobe is pointed at.
+export default function FooterRobotMark({ draggable = true, dressing = false, dressedAt = null, eyeing = false }: {
+  draggable?: boolean; dressing?: boolean; dressedAt?: number | null; eyeing?: boolean;
+}) {
   const rootRef = useRef<HTMLSpanElement>(null);
   const stageRef = useRef<HTMLSpanElement>(null);
   const entranceRef = useRef<HTMLSpanElement>(null);
@@ -60,6 +90,11 @@ export default function FooterRobotMark({ draggable = true, dressing = false }: 
   const previousMood = useRef({ active: false, sleeping: false, isPlaying: false });
   const nextGesture = useRef(0);
   const suppressClick = useRef(false);
+  const heldAt = useRef(0);
+  const taps = useRef<number[]>([]);
+  // Where the eyes point, in art pixels; read by the pixel face each frame.
+  const look = useRef<[number, number]>([0, 0]);
+  const [restless, setRestless] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
   const skin = useRobotSkin();
   const { isPlaying, playbackRequested } = useGlobalAudioPlayer();
@@ -261,12 +296,60 @@ export default function FooterRobotMark({ draggable = true, dressing = false }: 
     // The pixel robot keeps itself busy with activities before dozing off.
     const timer = window.setTimeout(() => setSleeping(true), skin === 'pixel' ? 40_000 : 12_000);
     return () => window.clearTimeout(timer);
-  }, [draggable, active, dressing, attentive, focused, held, carried, gesture, musicActive, anchor, skin]);
+  }, [draggable, active, dressing, attentive, focused, held, carried, gesture, musicActive, anchor, skin, restless]);
+
+  // The eyes follow the cursor anywhere on the page. Moving it also keeps
+  // the robot awake; it only dozes off once the cursor has been still.
+  useEffect(() => {
+    if (!draggable || reducedMotion) return;
+    let frame = 0;
+    let x: number | null = null;
+    let y = 0;
+    let nudged = 0;
+    const update = () => {
+      frame = 0;
+      const face = buttonRef.current?.querySelector('[data-robot-face]')?.getBoundingClientRect();
+      if (!face || x === null) return;
+      const dx = x - (face.left + face.width / 2);
+      const dy = y - (face.top + face.height / 2);
+      // Full deflection from 60px away; closer in, the eyes drift to the centre.
+      const reach = Math.max(Math.hypot(dx, dy), 60);
+      const next: [number, number] = [Math.round(dx / reach * 2), Math.max(-1, Math.min(1, Math.round(dy / reach * 1.6)))];
+      look.current = next;
+      stageRef.current?.style.setProperty('--robot-look-x', `${next[0] * 2.5}px`);
+      stageRef.current?.style.setProperty('--robot-look-y', `${next[1] * 2.5}px`);
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    const move = (event: PointerEvent) => {
+      x = event.clientX;
+      y = event.clientY;
+      schedule();
+      if (event.timeStamp - nudged > 1_000) {
+        nudged = event.timeStamp;
+        setRestless(value => value + 1);
+      }
+    };
+    window.addEventListener('pointermove', move, { passive: true });
+    window.addEventListener('scroll', schedule, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('scroll', schedule);
+    };
+  }, [draggable, reducedMotion]);
 
   useEffect(() => {
     if (!held) return;
-    const release = () => setHeld(false);
-    const timer = window.setTimeout(() => { if (!carried) say('carried', true); }, 250);
+    // Letting go after a long press without moving: it springs back.
+    const release = () => {
+      if (!suppressClick.current && Date.now() - heldAt.current >= LONG_PRESS_MS) {
+        suppressClick.current = true;
+        setGesture('happy');
+        say('released', true);
+      }
+      setHeld(false);
+    };
+    const timer = window.setTimeout(() => { if (!carried) say('pressed', true); }, LONG_PRESS_MS + 300);
     window.addEventListener('pointerup', release);
     window.addEventListener('pointercancel', release);
     return () => {
@@ -276,9 +359,26 @@ export default function FooterRobotMark({ draggable = true, dressing = false }: 
     };
   }, [held, carried, say]);
 
+  // Pointing at the wardrobe gets a remark, so its link to the robot is clear.
+  useEffect(() => {
+    if (!eyeing) return;
+    setSleeping(false);
+    say('wardrobe');
+  }, [eyeing, say]);
+
+  // A new look: a happy little wiggle and a word about it.
+  useEffect(() => {
+    if (dressedAt === null) return;
+    setSleeping(false);
+    setGesture('happy');
+    say(skin === 'pixel' ? 'dressedPixel' : 'dressedClassic', true);
+    // Only a new change of clothes should trigger this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dressedAt]);
+
   useEffect(() => {
     if (!active || !gesture) return;
-    const timer = window.setTimeout(() => setGesture(null), 1_000);
+    const timer = window.setTimeout(() => setGesture(null), gestureMs(gesture));
     return () => window.clearTimeout(timer);
   }, [active, gesture]);
 
@@ -294,7 +394,7 @@ export default function FooterRobotMark({ draggable = true, dressing = false }: 
 
 
   const expression = !active || !draggable || departing || dressing ? 'idle'
-    : held || carried ? 'carried'
+    : carried ? 'carried' : held ? 'pressed'
     : gesture ?? (anchor === 'guide' ? 'idle' : musicActive ? 'music'
       : activity ? `activity:${activity}` : sleeping ? 'sleeping' : 'idle');
 
@@ -341,6 +441,7 @@ export default function FooterRobotMark({ draggable = true, dressing = false }: 
             onPointerDown={(event) => {
               if (event.button !== 0 || !event.isPrimary) return;
               suppressClick.current = false;
+              heldAt.current = Date.now();
               if (!reducedMotion) setHeld(true);
               setSleeping(false);
               const bounds = event.currentTarget.getBoundingClientRect();
@@ -365,13 +466,22 @@ export default function FooterRobotMark({ draggable = true, dressing = false }: 
             }}
             onClick={(event) => {
               if (event.detail > 0 && suppressClick.current) return;
-              const next = gestures[nextGesture.current % gestures.length];
+              const now = Date.now();
+              taps.current = [...taps.current.filter(at => now - at < POKE_WINDOW_MS), now];
+              if (taps.current.length >= POKES) {
+                taps.current = [];
+                setGesture(skin === 'pixel' ? 'play:angry' : 'surprised');
+                say('angry', true);
+                return;
+              }
+              const cycle = gestures[skin];
+              const next = cycle[nextGesture.current % cycle.length];
               setGesture(next);
-              say(next, true);
+              say(next.replace('play:', '') as SpeechCue, true);
               nextGesture.current += 1;
             }}
           >
-            <RobotSkinReveal skin={skin} reducedMotion={reducedMotion} expression={expression} portal={portal} portalKey={arrival} onActivityEnd={endActivity} />
+            <RobotSkinReveal skin={skin} reducedMotion={reducedMotion} expression={expression} portal={portal} portalKey={arrival} onActivityEnd={endActivity} look={look} />
             <RobotEffects mode={expression} skin={skin} />
           </motion.button>
         </span>

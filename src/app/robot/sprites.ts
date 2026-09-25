@@ -580,6 +580,107 @@ export const animations: Animation[] = [
       });
     },
   },
+  {
+    id: 'stretch', label: 'Estirarse', line: 'estiramiento de píxeles.', frames: 36,
+    draw: (ctx, f) => {
+      // Up on tiptoe, hold it with a happy face, then settle with a squash.
+      const up = f < 6 ? 0 : f < 12 ? f - 5 : f < 24 ? 6 : f < 30 ? 29 - f : 0;
+      const tall = Math.min(3, up >> 1);
+      const settle = f === 30 || f === 31;
+      robot(ctx, {
+        dh: settle ? -1 : tall, dw: settle ? 2 : -tall, eyes: f < 6 ? 'open' : f < 24 ? (f < 18 ? 'closed' : 'happy') : blink(f, 32),
+      });
+      if (f >= 18 && f < 24) { sprite(ctx, G.sparkle, 5, 6, C.yellow); sprite(ctx, G.sparkle, 24, 5, C.yellow); }
+    },
+  },
+  {
+    id: 'coffee', label: 'Café', line: 'un cafecito y sigo.', frames: 48,
+    draw: (ctx, f) => {
+      const sip = f >= 18 && f < 30;
+      robot(ctx, { dx: sip ? 1 : 0, look: sip ? [0, 0] : [2, 0], eyes: sip ? 'closed' : f >= 30 && f < 40 ? 'happy' : 'open' });
+      sprite(ctx, ['#####.', '####.#', '####.#', '#####.', '.###..'], 24, GY - 5, '#c98e69');
+      sprite(ctx, ['####'], 24, GY - 5, '#8a5a3c');
+      rising(ctx, f, 16, 2, (p, rise, i) => alpha(ctx, 1 - p, () => sprite(ctx, ['#', '.', '#'], 25 + i * 2 + wave(p * 16, 8, 1), GY - 8 - rise, '#d8d7d2')));
+      if (f >= 30 && f < 40) sprite(ctx, G.heart, 4, 9 - ((f - 30) >> 2), C.pink);
+    },
+  },
+  {
+    id: 'wish', label: 'Deseo', line: '¡pide un deseo!', frames: 40,
+    draw: (ctx, f) => {
+      // A shooting star crosses above; the eyes follow it.
+      const t = Math.max(0, Math.min(1, (f - 4) / 22));
+      const sx = Math.round(1 + t * 28);
+      const sy = Math.round(2 + t * 5);
+      const flying = f >= 4 && f < 27;
+      robot(ctx, {
+        look: flying ? [Math.round(t * 4 - 2), -1] : [0, 0],
+        eyes: f >= 28 && f < 36 ? 'star' : f >= 36 ? blink(f, 37) : 'open',
+      });
+      if (flying) {
+        for (let k = 1; k <= 3; k++) alpha(ctx, 1 - k / 4, () => { ctx.fillStyle = C.yellow; ctx.fillRect(sx - k * 2, sy - Math.round(k * .5), 2, 1); });
+        sprite(ctx, G.plus, sx - 1, sy - 1, C.yellow);
+      }
+      if (f >= 27 && f < 31) sprite(ctx, G.sparkle, 28, 7, C.yellow);
+    },
+  },
+  {
+    id: 'bubble', label: 'Pompa', line: 'pop.', frames: 40,
+    draw: (ctx, f) => {
+      const popped = f >= 28;
+      const r = Math.min(3, 1 + ((f - 4) >> 3));
+      const rise = f < 12 ? 0 : (f - 12) >> 1;
+      const bx = 26, by = 14 - rise;
+      robot(ctx, { look: popped ? [0, 0] : [2, f < 12 ? 0 : -1], eyes: popped ? (f < 32 ? 'wide' : 'happy') : 'open', dy: f === 28 ? -1 : 0 });
+      if (f >= 4 && !popped) {
+        ctx.fillStyle = C.blue;
+        for (let a = 0; a < 16; a++) {
+          const x = Math.round(bx + Math.cos(a / 16 * Math.PI * 2) * r);
+          const y = Math.round(by + Math.sin(a / 16 * Math.PI * 2) * r);
+          ctx.fillRect(x, y, 1, 1);
+        }
+        ctx.fillStyle = C.eye;
+        if (r > 1) ctx.fillRect(bx - 1, by - 1, 1, 1);
+      }
+      if (popped && f < 34) {
+        const k = f - 28;
+        [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, -2], [2, 0], [-2, 0]].forEach(([x, y]) =>
+          alpha(ctx, 1 - k / 6, () => { ctx.fillStyle = C.blue; ctx.fillRect(bx + x * (2 + (k >> 1)), by + y * (2 + (k >> 1)), 1, 1); }));
+      }
+    },
+  },
+  {
+    id: 'hiccup', label: 'Hipo', line: '¡hip! perdón.', frames: 40,
+    draw: (ctx, f) => {
+      const hics = [6, 18, 30];
+      const k = hics.map(at => f - at).find(d => d >= 0 && d < 5);
+      const hop = k === undefined ? 0 : [-1, -2, -2, -1, 0][k];
+      const squash = k === 4;
+      robot(ctx, { dy: hop, dw: squash ? 2 : 0, dh: squash ? -1 : 0, eyes: k !== undefined && k < 3 ? 'wide' : f > 34 ? 'half' : 'open' });
+      if (k !== undefined && k < 4) sprite(ctx, G.bubble, 23, 8 + hop, C.ink);
+    },
+  },
+  {
+    id: 'lookaround', label: 'Curiosear', line: '¿hay alguien por ahí?', frames: 40,
+    draw: (ctx, f) => {
+      const look: [number, number] = f < 4 ? [0, 0] : f < 13 ? [-2, 0] : f < 15 ? [0, 0] : f < 24 ? [2, 0] : f < 32 ? [0, -1] : [0, 0];
+      robot(ctx, { look, dx: look[0] > 0 ? 1 : look[0] < 0 ? -1 : 0, eyes: f === 13 || f === 33 ? 'half' : f === 32 ? 'closed' : 'open' });
+      if (f >= 26 && f < 32) sprite(ctx, ['###', '..#', '.##', '...', '.#.'], 24, 4, C.ink);
+    },
+  },
+  {
+    id: 'paint', label: 'Pintar', line: 'pintando un píxel… o dos.', frames: 48,
+    draw: (ctx, f) => {
+      // One pixel of a heart every other frame, then admire it.
+      const art = eyes.heartBig.rows;
+      const cells = art.flatMap((row, y) => [...row].map((c, x) => c === '#' ? [x, y] : null)).filter(Boolean) as number[][];
+      const shown = Math.min(cells.length, Math.max(0, (f - 4) >> 1));
+      const done = shown === cells.length;
+      robot(ctx, { dx: -2, look: done ? [0, 0] : [2, (shown >> 2) % 2 ? 0 : 1], eyes: done && f > 40 ? 'happy' : 'open' });
+      cells.slice(0, shown).forEach(([x, y]) => { ctx.fillStyle = C.pink; ctx.fillRect(23 + x, 12 + y, 1, 1); });
+      if (!done && f >= 4 && f % 2) { const [x, y] = cells[shown]; ctx.fillStyle = C.ink; ctx.fillRect(23 + x, 11 + y, 1, 1); }
+      if (done && f % 4 < 2) sprite(ctx, G.sparkle, 28, 8, C.yellow);
+    },
+  },
 ];
 
 // A 64-frame routine: sway, two hops, a spin, headbanging and stretches.
@@ -610,18 +711,18 @@ function dance(f: number): Pose {
   return { dx: wave(t - 48, 8, 1), dw: tall ? -2 : 2, dh: tall ? 1 : -1, eyes: tall ? 'wide' : 'happy' };
 }
 
-// The footer robot's moods, drawn without a ground shadow. Activities play
-// an animation from the list once; this returns true when one has finished.
-export function drawFace(ctx: Ctx, expression: string, f: number) {
+// The footer robot's moods, drawn without a ground shadow. Activities (and
+// `play:` gestures) run an animation from the list once; this returns true
+// when one has finished. `look` points the resting eyes at the cursor.
+export function drawFace(ctx: Ctx, expression: string, f: number, look: [number, number] = [0, 0]) {
   ctx.clearRect(0, 0, W, H);
-  if (expression.startsWith('activity:')) {
-    const animation = animations.find(item => item.id === expression.slice(9));
-    if (animation) {
-      groundShadow = false;
-      animation.draw(ctx, Math.min(f, animation.frames - 1), { look: null, now: new Date() });
-      groundShadow = true;
-      return f >= animation.frames - 1;
-    }
+  const played = expression.startsWith('activity:') ? expression.slice(9) : expression.startsWith('play:') ? expression.slice(5) : null;
+  const animation = played && animations.find(item => item.id === played);
+  if (animation) {
+    groundShadow = false;
+    animation.draw(ctx, Math.min(f, animation.frames - 1), { look: null, now: new Date() });
+    groundShadow = true;
+    return f >= animation.frames - 1;
   }
   const pose: Pose = { shadow: false };
   if (expression === 'wink') Object.assign(pose, { dx: 1, eyes: ['open', 'closed'] });
@@ -629,8 +730,12 @@ export function drawFace(ctx: Ctx, expression: string, f: number) {
   else if (expression === 'surprised') Object.assign(pose, { dy: -1, eyes: 'wide' });
   else if (expression === 'sleeping') Object.assign(pose, { dw: f % 32 < 16 ? 0 : 2, dh: f % 32 < 16 ? 0 : -1, eyes: 'closed' });
   else if (expression === 'carried') Object.assign(pose, { dx: f % 2 ? 1 : -1, eyes: 'wide' });
+  // Pressed flat: a first squash, then squeezed eyes and a tiny tremble.
+  else if (expression === 'pressed') Object.assign(pose, f < 2
+    ? { dw: 2, dh: -1, look }
+    : { dw: 4, dh: -2, dx: f > 12 && f % 4 === 0 ? 1 : 0, eyes: ['greater', 'less'] });
   else if (expression === 'music') Object.assign(pose, dance(f));
-  else pose.eyes = blink(f % 64, 60); // Same rhythm as the classic face's 5.4s blink.
+  else Object.assign(pose, { look, eyes: blink(f % 64, 60) }); // Same rhythm as the classic face's 5.4s blink.
   robot(ctx, pose);
   return false;
 }

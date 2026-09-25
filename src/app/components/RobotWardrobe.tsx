@@ -1,103 +1,83 @@
-import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import FooterRobotMark from './FooterRobotMark';
-import { HANGER, PixelSprite, PixelTag } from './PixelSprite';
-import { RobotFace } from './RobotVisuals';
-import { robotSkins, setRobotSkin, useRobotSkin, type RobotSkin } from './robotSkin';
+import { HANGER, PIXEL_LOOK, PIXEL_LOOK_COLORS, PixelSprite, RAIL } from './PixelSprite';
+import { preloadPixelLook, RobotFace } from './RobotVisuals';
+import { setRobotSkin, useRobotSkin, type RobotSkin } from './robotSkin';
 import './robotWardrobe.css';
 
-const names: Record<RobotSkin, string> = { classic: 'Normal', pixel: 'Pixel' };
+// The look hops from the hanger onto the robot in whole-pixel steps, taking
+// longer and arcing higher the farther it has to go.
+const flightMs = (distance: number) => Math.round(Math.min(720, 280 + distance * .8));
+const flightLift = (distance: number) => Math.round(Math.min(48, 8 + distance * .1));
 
-// After a change the rail stays long enough to see the swap, then folds away.
-const CLOSE_AFTER_MS = 1300;
-const FOLD_MS = 240;
+// Each look in miniature and in its own style, as it hangs on the hanger.
+function Look({ skin }: { skin: RobotSkin }) {
+  return skin === 'pixel'
+    ? <PixelSprite className="robot-wardrobe-look" rows={PIXEL_LOOK} palette={PIXEL_LOOK_COLORS} unit={1} />
+    : <span className="robot-wardrobe-look robot-wardrobe-look-classic"><RobotFace skin="classic" /></span>;
+}
 
+// A wall rail beside the robot. Its hanger carries the look the robot is not
+// wearing; pressing it swaps them, so the old look ends up on the hanger.
 export default function RobotWardrobe() {
-  const id = useId();
   const worn = useRobotSkin();
-  const root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const [open, setOpen] = useState(false);
-  const [folding, setFolding] = useState(false);
-  const [changedAt, setChangedAt] = useState<number | null>(null);
+  const spare: RobotSkin = worn === 'pixel' ? 'classic' : 'pixel';
+  const outfit = useRef<HTMLSpanElement>(null);
+  const [flight, setFlight] = useState<{ skin: RobotSkin; x: number; y: number; ms: number } | null>(null);
+  const [eyeing, setEyeing] = useState(false);
+  const [dressedAt, setDressedAt] = useState<number | null>(null);
 
-  const close = useCallback((restoreFocus = false) => {
-    if (restoreFocus) trigger.current?.focus({ preventScroll: true });
-    setFolding(true);
-  }, []);
+  const dress = (skin: RobotSkin) => {
+    setRobotSkin(skin);
+    setDressedAt(Date.now());
+  };
 
   useEffect(() => {
-    if (!folding) return;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!flight) return;
     const timer = window.setTimeout(() => {
-      setOpen(false);
-      setFolding(false);
-      setChangedAt(null);
-    }, reduced ? 0 : FOLD_MS);
+      setFlight(null);
+      dress(flight.skin);
+    }, flight.ms);
     return () => window.clearTimeout(timer);
-  }, [folding]);
+  }, [flight]);
 
-  // Dismiss on Escape or a press anywhere else.
-  useEffect(() => {
-    if (!open) return;
-    root.current?.querySelector<HTMLInputElement>('input:checked')?.focus({ preventScroll: true });
-    const dismiss = (event: PointerEvent) => {
-      if (event.target instanceof Node && !root.current?.contains(event.target)) close();
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { event.preventDefault(); close(true); }
-    };
-    document.addEventListener('pointerdown', dismiss);
-    document.addEventListener('keydown', escape);
-    return () => {
-      document.removeEventListener('pointerdown', dismiss);
-      document.removeEventListener('keydown', escape);
-    };
-  }, [open, close]);
-
-  useEffect(() => {
-    if (changedAt === null) return;
-    const timer = window.setTimeout(() => close(), CLOSE_AFTER_MS);
-    return () => window.clearTimeout(timer);
-  }, [changedAt, close]);
-
-  const shown = open || folding;
+  const swap = () => {
+    if (flight) return;
+    preloadPixelLook();
+    const from = outfit.current?.getBoundingClientRect();
+    const to = document.querySelector('.minimal-robot-companion [data-robot-face]')?.getBoundingClientRect();
+    const x = to && from ? Math.round(to.left + to.width / 2 - (from.left + from.width / 2)) : 0;
+    const y = to && from ? Math.round(to.top + to.height / 2 - (from.top + from.height / 2)) : 0;
+    // Only fly to a robot that is on screen (it may be away at another perch).
+    const visible = to && to.bottom > 0 && to.top < innerHeight && to.right > 0 && to.left < innerWidth;
+    if (!visible || matchMedia('(prefers-reduced-motion: reduce)').matches) dress(spare);
+    else setFlight({ skin: spare, x, y, ms: flightMs(Math.hypot(x, y)) });
+  };
 
   return (
-    <div ref={root} className="robot-wardrobe">
-      <FooterRobotMark dressing={shown} />
-      <button ref={trigger} type="button" className="robot-wardrobe-trigger"
-        aria-label="Change the robot's look" title="Wardrobe"
-        aria-expanded={open && !folding} aria-controls={shown ? id : undefined}
-        onClick={() => (open && !folding ? close() : (setFolding(false), setOpen(true)))}>
-        <PixelSprite rows={HANGER} unit={1} />
+    <div className="robot-wardrobe">
+      <FooterRobotMark dressing={flight !== null} dressedAt={dressedAt} eyeing={eyeing && !flight} />
+      <button type="button" className="robot-wardrobe-hook" onClick={swap}
+        onPointerEnter={() => { preloadPixelLook(); setEyeing(true); }} onPointerLeave={() => setEyeing(false)}
+        onFocus={() => { preloadPixelLook(); setEyeing(true); }} onBlur={() => setEyeing(false)}
+        onPointerDown={preloadPixelLook}
+        aria-label={`Dress the robot in its ${spare} look`} title="Wardrobe">
+        <PixelSprite className="robot-wardrobe-rail" rows={RAIL} unit={1} />
+        {/* Remounted on every change so the empty hanger swings again. */}
+        <span key={dressedAt ?? 0} className="robot-wardrobe-hanger" data-settling={dressedAt ? '' : undefined}>
+          <span ref={outfit} className="robot-wardrobe-outfit">
+            {flight
+              ? <span className="robot-wardrobe-flight" style={{
+                '--x': `${flight.x}px`, '--y': `${flight.y}px`, '--flight-ms': `${flight.ms}ms`,
+                '--lift': `${flightLift(Math.hypot(flight.x, flight.y))}px`,
+              } as CSSProperties}>
+                <Look skin={flight.skin} />
+              </span>
+              : <span key={spare} className="robot-wardrobe-hung"><Look skin={spare} /></span>}
+          </span>
+          <PixelSprite className="robot-wardrobe-wire" rows={HANGER} unit={1} />
+        </span>
       </button>
-      {shown && (
-        <div id={id} className="robot-wardrobe-rail" role="radiogroup" aria-label="Robot look"
-          data-folding={folding || undefined} data-changed={changedAt !== null || undefined}>
-          <span className="robot-wardrobe-bar" aria-hidden="true" />
-          {robotSkins.map((option, index) => {
-            const onRobot = option === worn;
-            return (
-              <label key={option} className="robot-wardrobe-slot" style={{ '--i': index } as CSSProperties}
-                data-worn={onRobot || undefined}>
-                <input className="minimal-hidden-nav" type="radio" name={id} value={option} checked={onRobot}
-                  onChange={() => { setRobotSkin(option); setChangedAt(Date.now()); }}
-                  aria-label={onRobot ? `${names[option]}, wearing it` : names[option]} />
-                <span className="robot-wardrobe-hanger">
-                  <PixelSprite className="robot-wardrobe-wire" rows={HANGER} />
-                  {/* Both looks stay on the rail; the worn one dithers away. */}
-                  <span className="robot-wardrobe-outfit" data-away={onRobot || undefined}>
-                    <span className="minimal-footer-robot-gallery" data-skin={option} data-expression="idle" aria-hidden="true">
-                      <span className="minimal-robot-option"><RobotFace skin={option} /></span>
-                    </span>
-                  </span>
-                  <PixelTag key={String(onRobot)} className="robot-wardrobe-tag" text={onRobot ? 'wearing' : names[option]} dotted={onRobot} />
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
