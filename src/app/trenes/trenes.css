@@ -158,6 +158,16 @@ body:has(.trenes-page),
   touch-action: manipulation;
 }
 
+/* Pixel cursors (see cursors.ts), with the system ones as fallback. */
+.trenes-card,
+.trenes-map[data-pointing] {
+  cursor: var(--cursor-hand, pointer);
+}
+
+.trenes-seven-off {
+  opacity: .08;
+}
+
 .trenes-board {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -179,7 +189,6 @@ body:has(.trenes-page),
   background: var(--trenes-card);
   color: light-dark(#111, #e0e0e0);
   text-align: left;
-  cursor: pointer;
   clip-path: var(--pixel-corners);
   touch-action: manipulation;
   transition: background-color 240ms ease, color 240ms ease, box-shadow 160ms ease;
@@ -194,54 +203,15 @@ body:has(.trenes-page),
   align-items: flex-start;
 }
 
-/* Your train: the card doubles in width and grows a ticket stub, torn off
-   along a perforated pixel line. */
-.trenes-board li[data-pass] {
-  grid-column: span 2;
-}
-
-.trenes-card[data-pass] {
-  flex-direction: row;
-  gap: 16px;
-}
-
-.trenes-pass {
-  position: relative;
+.trenes-card-clock {
   display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 6px;
-  padding-left: 18px;
 }
 
-.trenes-pass::before {
-  content: '';
-  position: absolute;
-  top: -12px;
-  bottom: -14px;
-  left: 0;
-  width: 2px;
-  background: repeating-linear-gradient(currentColor 0 2px, transparent 2px 6px);
-  opacity: .25;
-}
-
-.trenes-pass > .px-text:first-child {
-  margin-bottom: 2px;
-}
-
-.trenes-pass[data-tone='go'] .trenes-pass-go { color: light-dark(#cf852b, #d98e37); }
-.trenes-pass[data-tone='run'] .trenes-pass-go { color: var(--trenes-late); }
-.trenes-pass[data-tone='gone'] .trenes-pass-go { color: var(--trenes-muted); }
-
-.trenes-pass[data-tone='go'] .trenes-pass-go,
-.trenes-pass[data-tone='run'] .trenes-pass-go {
-  animation: trenes-blink 1s steps(2, jump-none) infinite;
-}
-
-.trenes-card[data-state='boarding'] .trenes-pass .trenes-pass-go,
-.trenes-card[data-state='closing'] .trenes-pass .trenes-pass-go {
-  color: #fdfdfc;
+.trenes-card-clock[data-late] .trenes-card-scheduled {
+  color: var(--trenes-muted);
+  background: linear-gradient(currentColor, currentColor) 0 6px / 100% 2px no-repeat;
 }
 
 .trenes-card-head {
@@ -270,7 +240,7 @@ body:has(.trenes-page),
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 6px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .trenes-late {
@@ -285,7 +255,7 @@ body:has(.trenes-page),
 }
 
 .trenes-card-destination {
-  margin-top: 6px;
+  margin-top: 14px;
 }
 
 .trenes-card-stops {
@@ -307,14 +277,6 @@ body:has(.trenes-page),
 .trenes-card[data-state='boarding'] .trenes-tag,
 .trenes-card[data-state='closing'] .trenes-tag {
   background: rgba(253, 253, 252, .2);
-}
-
-.trenes-card[data-focused]:not([data-state='boarding'], [data-state='closing']) {
-  box-shadow: inset 0 0 0 2px light-dark(#cfcec8, #3c3b38);
-}
-
-.trenes-card[data-focused][data-state='announced'] {
-  box-shadow: inset 0 0 0 2px var(--track);
 }
 
 .trenes-card[aria-pressed='true'] {
@@ -434,7 +396,7 @@ body:has(.trenes-page),
   display: block;
   max-width: 100%;
   image-rendering: pixelated;
-  cursor: ew-resize;
+  cursor: var(--cursor-drag, ew-resize);
   touch-action: none;
 }
 
@@ -464,8 +426,7 @@ body:has(.trenes-page),
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .trenes-board li:nth-child(n + 5),
-  .trenes-board[data-has-pass] li:nth-child(n + 4) {
+  .trenes-board li:nth-child(n + 5) {
     display: none;
   }
 }
@@ -475,8 +436,7 @@ body:has(.trenes-page),
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .trenes-board li:nth-child(n + 4),
-  .trenes-board[data-has-pass] li:nth-child(n + 3) {
+  .trenes-board li:nth-child(n + 4) {
     display: none;
   }
 }
@@ -496,48 +456,21 @@ body:has(.trenes-page),
     gap: 4px;
   }
 
-  .trenes-board li:nth-child(n + 4),
-  .trenes-board[data-has-pass] li:nth-child(n + 3) {
+  .trenes-board li:nth-child(n + 4) {
     display: list-item;
-  }
-
-  .trenes-board li[data-pass] {
-    grid-column: auto;
   }
 
   .trenes-card-main {
     display: contents;
   }
 
-  .trenes-card[data-pass] {
+  .trenes-card {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
     grid-template-areas:
       'time destination track'
       'time service track'
-      'pass pass pass';
-  }
-
-  .trenes-pass {
-    grid-area: pass;
-    margin-top: 6px;
-    padding: 12px 0 2px;
-  }
-
-  .trenes-pass::before {
-    top: 0;
-    right: -12px;
-    bottom: auto;
-    left: -12px;
-    width: auto;
-    height: 2px;
-    background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 6px);
-  }
-
-  .trenes-card {
-    display: grid;
-    grid-template-columns: 136px minmax(0, 1fr) auto;
-    grid-template-areas:
-      'time destination track'
-      'time service track';
+      'eta eta track';
     column-gap: 12px;
     row-gap: 6px;
     align-items: start;
@@ -548,8 +481,31 @@ body:has(.trenes-page),
     display: contents;
   }
 
+  /* The status line gets its own row, so long ones never collide. */
   .trenes-card-time {
+    display: contents;
+  }
+
+  .trenes-card-time > :first-child {
     grid-area: time;
+    margin-top: 3px;
+  }
+
+  /* A late train's two times stack, so every destination lines up. */
+  .trenes-card-clock {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .trenes-card-time > :last-child {
+    grid-area: eta;
+  }
+
+  /* Destinations at three-quarter size: still whole pixels. */
+  .trenes-card-destination .px-text {
+    width: auto;
+    height: 24px;
   }
 
   .trenes-card-destination {

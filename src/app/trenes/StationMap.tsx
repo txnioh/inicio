@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent, type RefObject } from 'react';
 import { drawText, measure } from './pixelType';
-import { ANNOUNCE, ARRIVE, BOARD, CLOSE, ENTER, LEAVE, TRACKS, around, clock, dateLabel, upcoming, type Train } from './schedule';
+import { ANNOUNCE, ARRIVE, BOARD, ENTER, LEAVE, TRACKS, around, clock, dateLabel, upcoming, type Train } from './schedule';
 import { isDark } from './theme';
 
 // Top-down plan of the hall, drawn on a small grid and scaled up by whole
@@ -22,6 +22,30 @@ const HALL_H = 12;
 const TRAIN = 23;
 const STOP = BUMPER - TRAIN;
 const OUT = -TRAIN - 2;
+
+// Each service has its own silhouette, readable without colour: high speed
+// has long pointed noses, long distance four short rounded cars, and the
+// regional train is two cars with flat cabs. `gaps` are the coupler rows,
+// `doors` the rows (from its top) where the doors are.
+type Shape = { length: number; gaps: number[]; nose: (j: number, length: number) => [number, number] | null; doors: number[]; lights: number };
+const full: [number, number] = [0, 5];
+const SHAPES: Record<Train['service'], Shape> = {
+  AV: {
+    length: TRAIN, gaps: [7, 15], doors: [2, 10, 18], lights: 1,
+    nose: (j, n) => (j === 0 || j === n - 1 ? [2, 1] : j === 1 || j === n - 2 ? [1, 3] : null),
+  },
+  LD: {
+    length: TRAIN, gaps: [5, 12, 17], doors: [2, 10, 18], lights: 0,
+    nose: (j, n) => (j === 0 || j === n - 1 ? [1, 3] : null),
+  },
+  MD: {
+    length: 15, gaps: [7], doors: [2, 10], lights: 0,
+    nose: () => null,
+  },
+};
+const shapeOf = (train: Train) => SHAPES[train.service] ?? SHAPES.AV;
+// Every train stops against the buffers, so shorter ones stop lower down.
+const stopOf = (train: Train) => BUMPER - shapeOf(train).length;
 
 // Each track keeps one colour, shared by its card, its sign and the walk to it.
 export const trackColors = ['#3f9b64', '#3f73c8', '#7866d0', '#cf852b'];
@@ -52,11 +76,13 @@ const LIGHT = {
   signalGo: '#3f9b64',
   signalStop: '#d0574a',
   held: '#e0a030',
-  person: '#6f6e6a',
   clock: '#111111',
   date: '#646460',
   night: 'rgba(38, 46, 72, .34)',
   lamp: '#f0c05a',
+  shade: '#e1dfd8',
+  steam: '#cfcdc6',
+  segOff: 'rgba(0, 0, 0, .05)',
 };
 
 // The same station with the lights down, for dark mode: the ground sinks,
@@ -86,11 +112,13 @@ const DARK: typeof LIGHT = {
   signalGo: '#49a46d',
   signalStop: '#d35c48',
   held: '#e8aa3a',
-  person: '#b6b5af',
   clock: '#e0e0e0',
   date: '#9e9e9b',
   night: 'rgba(4, 6, 14, .5)',
   lamp: '#f0c05a',
+  shade: '#272623',
+  steam: '#5c5b56',
+  segOff: 'rgba(255, 255, 255, .05)',
 };
 
 // Swapped at the start of each frame, so the helpers below paint with the
@@ -101,32 +129,9 @@ const groupX = (group: number) => LEFT + group * (GROUP + GAP);
 export const trackX = (track: number) => groupX(Math.floor((track - 1) / 2)) + ((track - 1) % 2 ? TRACK + ISLAND : 0);
 const islandMid = (track: number) => groupX(Math.floor((track - 1) / 2)) + TRACK + ISLAND / 2;
 
-// On foot. Passengers walk at this pace, in grid pixels per minute, and so
-// does the "how long to your platform" estimate: what you see is what it says.
-const SPEED = 45;
 const DOORS = [2, 10, 18];
 
 type Point = [number, number];
-type Route = { length: number; at: (distance: number) => Point };
-
-function route(points: Point[]): Route {
-  const lengths = points.slice(1).map((point, i) => Math.abs(point[0] - points[i][0]) + Math.abs(point[1] - points[i][1]));
-  return {
-    length: lengths.reduce((a, b) => a + b, 0),
-    at(distance) {
-      for (let i = 0; i < lengths.length; i++) {
-        if (distance <= lengths[i] || i === lengths.length - 1) {
-          const t = lengths[i] ? Math.min(1, distance / lengths[i]) : 1;
-          const [ax, ay] = points[i];
-          const [bx, by] = points[i + 1];
-          return [ax + (bx - ax) * t, ay + (by - ay) * t];
-        }
-        distance -= lengths[i];
-      }
-      return points[points.length - 1];
-    },
-  };
-}
 
 // Where the platform meets the train's doors. Odd tracks run on the left of
 // their island, so their doors face its left edge; even tracks, its right.
@@ -137,27 +142,8 @@ function platform(track: number) {
   return { edge: left ? ix : ix + ISLAND - 1, stand: left ? ix + 1 : ix + ISLAND - 2, column: islandMid(track) };
 }
 
-// The bottom two rows of the concourse, under its labels, are the walkway.
+// The bottom rows of the concourse, under its labels, are the walkway.
 const WALKWAY = HALL + HALL_H - 3;
-
-// From the entrance along the concourse, up the island's stairs and across
-// to a door of the train on `track`; or the other way round, out to the exit.
-const routes = new Map<string, Route>();
-function walkRoute(track: number, door: number, lane: number, leaving: boolean) {
-  const key = `${track}${door}${lane}${leaving}`;
-  let found = routes.get(key);
-  if (!found) {
-    const { stand, column } = platform(track);
-    const hallY = WALKWAY + (lane % 2);
-    const x = column + (lane % 3) - 1;
-    const doorY = STOP + DOORS[door];
-    found = route(leaving
-      ? [[stand, doorY], [x, doorY], [x, hallY], [W - 5, hallY]]
-      : [[4, hallY], [x, hallY], [x, doorY], [stand, doorY]]);
-    routes.set(key, found);
-  }
-  return found;
-}
 
 // The route drawn for the focused train, pixel by pixel: to the middle door.
 const walkPaths = new Map<number, { points: Point[]; edge: number; doorY: number }>();
@@ -175,36 +161,6 @@ function walkPath(track: number) {
     found = { points, edge, doorY };
     walkPaths.set(track, found);
   }
-  return found;
-}
-
-// Minutes on foot from the entrance to a train on `track`.
-export const walkMinutes = (track: number) => walkRoute(track, 1, 0, false).length / SPEED;
-
-type Walker = { from: number; to: number; route: Route };
-const crowds = new Map<string, { boarding: Walker[]; leaving: Walker[] }>();
-
-// Who gets off when a train comes in, and who gets on before it leaves, the
-// same people every time for a given train.
-function crowd(train: Train) {
-  let found = crowds.get(train.id);
-  if (found) return found;
-  let seed = [...train.id].reduce((hash, char) => Math.imul(hash ^ char.charCodeAt(0), 16777619), 2166136261) >>> 0;
-  const rand = () => ((seed = Math.imul(seed ^ (seed >>> 15), 2246822507) + 0x6d2b79f5 >>> 0) / 4294967296);
-  const count = { AV: 28, LD: 20, MD: 14 }[train.service];
-  const boarding = Array.from({ length: count }, (_, i) => {
-    const way = walkRoute(train.track, i % 3, Math.floor(rand() * 6), false);
-    const at = train.departure + BOARD + .3 + rand() * (CLOSE - BOARD - .8);
-    return { from: at - way.length / SPEED, to: at, route: way };
-  });
-  const leaving = Array.from({ length: count }, (_, i) => {
-    const way = walkRoute(train.track, i % 3, Math.floor(rand() * 6), true);
-    const at = train.departure + ARRIVE + ENTER + .3 + rand() * 2.5;
-    return { from: at, to: at + way.length / SPEED, route: way };
-  });
-  found = { boarding, leaving };
-  crowds.set(train.id, found);
-  if (crowds.size > 80) crowds.delete(crowds.keys().next().value!);
   return found;
 }
 
@@ -245,10 +201,18 @@ function trainY(train: Train, now: number, still: boolean) {
   const since = now - (train.departure + ARRIVE);
   const after = now - train.departure;
   if (since < 0 || after > LEAVE) return null;
-  if (still) return after >= 0 ? null : STOP;
-  if (since < ENTER) return OUT + (STOP - OUT) * easeOut(since / ENTER);
-  if (after > 0) return STOP + (OUT - STOP) * easeIn(after / LEAVE);
-  return STOP;
+  const stop = stopOf(train);
+  if (still) return after >= 0 ? null : stop;
+  if (since < ENTER) return OUT + (stop - OUT) * easeOut(since / ENTER);
+  if (after > 0) return stop + (OUT - stop) * easeIn(after / LEAVE);
+  return stop;
+}
+
+// Which way a train is moving: 1 coming in (down), -1 leaving (up), 0 still.
+function motion(train: Train, now: number) {
+  if (now - (train.departure + ARRIVE) < ENTER) return 1;
+  if (now > train.departure) return -1;
+  return 0;
 }
 
 function drawHall(ctx: CanvasRenderingContext2D) {
@@ -267,6 +231,9 @@ function drawHall(ctx: CanvasRenderingContext2D) {
       ctx.fillRect(ix + 1, y, 1, 1);
       ctx.fillRect(ix + ISLAND - 2, y, 1, 1);
     }
+    // The canopy's shadow: a 25% ordered dither over the platform.
+    ctx.fillStyle = C.shade;
+    for (let y = TOP + 2; y < BUMPER + 1; y += 2) for (let x2 = ix + 2; x2 < ix + ISLAND - 2; x2 += 2) ctx.fillRect(x2, y, 1, 1);
     ctx.fillStyle = C.pillar;
     for (let y = TOP + 6; y < BUMPER - 2; y += 8) ctx.fillRect(ix + ISLAND / 2 - 1, y, 2, 2);
     // Stairs down to the concourse.
@@ -295,28 +262,88 @@ function drawHall(ctx: CanvasRenderingContext2D) {
   drawText(ctx, 'salida →', W - 7 - measure('salida →'), HALL + 1, C.label);
 }
 
-function drawTrain(ctx: CanvasRenderingContext2D, train: Train, y: number, color: string | null, doorsOpen: boolean) {
+function drawTrain(ctx: CanvasRenderingContext2D, train: Train, y: number, color: string | null, doorsOpen: boolean, moving = 0) {
   const x = trackX(train.track) + 1;
   const body = color ?? C.train;
+  const shape = shapeOf(train);
+  const n = shape.length;
   const px = (dx: number, dy: number, w: number, fill: string) => {
     ctx.fillStyle = fill;
     ctx.fillRect(x + dx, y + dy, w, 1);
   };
-  for (let j = 0; j < TRAIN; j++) {
-    const car = j % 8;
-    // A one-row gap with a coupler between the three cars.
-    if (car === 7) { px(2, j, 1, body); continue; }
-    const nose = j === 0 || j === TRAIN - 1;
-    px(nose ? 1 : 0, j, nose ? 3 : 5, body);
-    if (!nose && car % 2 === 1 && car < 6) px(2, j, 1, color ? 'rgba(255,255,255,.35)' : C.vent);
+  let car = 0;
+  for (let j = 0; j < n; j++) {
+    // A one-row gap with a coupler between cars.
+    if (shape.gaps.includes(j)) { px(2, j, 1, body); car = 0; continue; }
+    const [dx, w] = shape.nose(j, n) ?? full;
+    px(dx, j, w, body);
+    if (w === 5 && car % 2 === 1 && !shape.gaps.includes(j + 1)) px(2, j, 1, color ? 'rgba(255,255,255,.35)' : C.vent);
+    car++;
+  }
+  // Flat cabs get a dark windscreen.
+  if (train.service === 'MD') for (const j of [1, n - 2]) px(1, j, 3, color ? 'rgba(0,0,0,.25)' : C.vent);
+  // Head and tail lights while it moves: white at the front, red behind.
+  if (moving) {
+    const front = moving > 0 ? n - 1 - shape.lights : shape.lights;
+    const back = moving > 0 ? shape.lights : n - 1 - shape.lights;
+    for (const [row, fill] of [[front, '#fff6d8'], [back, '#e0563f']] as const) {
+      px(1, row, 1, fill);
+      px(3, row, 1, fill);
+    }
   }
   if (!doorsOpen) return;
   // Doors open on the platform side.
   const side = (train.track - 1) % 2 ? 0 : 4;
   const door = color ? '#fdfdfc' : C.door;
-  for (const dy of [2, 10, 18]) {
+  for (const dy of shape.doors) {
     px(side, dy, 1, door);
     px(side, dy + 1, 1, door);
+  }
+}
+
+// A few pixels of steam left behind at the buffers as a train pulls out,
+// thinning in steps.
+function drawSteam(ctx: CanvasRenderingContext2D, train: Train, now: number) {
+  const t = (now - train.departure) / .4;
+  if (t <= 0 || t >= 1) return;
+  const x = trackX(train.track);
+  let seed = [...train.id].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), 2166136261) >>> 0;
+  const rand = () => ((seed = Math.imul(seed ^ (seed >>> 13), 1274126177) >>> 0) / 4294967296);
+  ctx.fillStyle = C.steam;
+  ctx.globalAlpha = Math.ceil((1 - t) * 3) / 3;
+  for (let i = 0; i < 7; i++) {
+    const dx = Math.round(rand() * 6 + (rand() - .5) * t * 6);
+    const dy = Math.round(-rand() * 4 - t * (2 + rand() * 4));
+    if (rand() > t * .8) ctx.fillRect(x + dx, BUMPER - 1 + dy, 1, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Seven-segment digits, 5×9, with the unlit segments faintly visible like a
+// real display. `scramble` shows a random digit where the time just changed.
+const SEGMENTS: Record<string, [number, number, number, number][]> = {
+  a: [[1, 0, 3, 1]], b: [[4, 1, 1, 3]], c: [[4, 5, 1, 3]], d: [[1, 8, 3, 1]],
+  e: [[0, 5, 1, 3]], f: [[0, 1, 1, 3]], g: [[1, 4, 3, 1]],
+};
+const DIGITS: Record<string, string> = {
+  0: 'abcdef', 1: 'bc', 2: 'abged', 3: 'abgcd', 4: 'fgbc', 5: 'afgcd', 6: 'afgedc', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg',
+};
+
+function drawSeven(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, on: string, off: string, colon: boolean) {
+  for (const char of text) {
+    if (char === ':') {
+      ctx.fillStyle = colon ? on : off;
+      ctx.fillRect(x, y + 2, 1, 1);
+      ctx.fillRect(x, y + 6, 1, 1);
+      x += 2;
+      continue;
+    }
+    const lit = DIGITS[char] ?? '';
+    for (const [segment, rects] of Object.entries(SEGMENTS)) {
+      ctx.fillStyle = lit.includes(segment) ? on : off;
+      for (const [dx, dy, w, h] of rects) ctx.fillRect(x + dx, y + dy, w, h);
+    }
+    x += 6;
   }
 }
 
@@ -427,6 +454,7 @@ export default function StationMap({ now, showClock, simulated, focus, reducedMo
     const reveal = reducedMotion ? null : introHall(hall.current);
     let raf = 0;
     let lastMinute = NaN;
+    let shown = { text: '', previous: '', at: -Infinity };
     let movingBefore = new Set<number>();
     const frame = (time: number) => {
       raf = requestAnimationFrame(frame);
@@ -457,7 +485,7 @@ export default function StationMap({ now, showClock, simulated, focus, reducedMo
         ctx.beginPath();
         ctx.rect(0, TOP + 1, W, BUMPER - TOP - 1);
         ctx.clip();
-        for (const track of SLEEPERS) drawTrain(ctx, { track } as Train, snap(parked), null, false);
+        for (const track of SLEEPERS) drawTrain(ctx, { track, service: 'AV' } as Train, snap(parked), null, false);
         ctx.restore();
       }
       if (night > 0) {
@@ -503,8 +531,14 @@ export default function StationMap({ now, showClock, simulated, focus, reducedMo
       // The clock blinks on, like a display powering up.
       const clockOn = intro > INTRO.clock + 160 || (intro > INTRO.clock && Math.floor(intro / 55) % 2 === 0);
       if (clockRef.current.showClock && clockOn) {
-        drawText(ctx, clock(minute), 5, TOP + 2, C.clock, 'big');
-        drawText(ctx, clockRef.current.simulated ? 'simulada' : 'ahora', 5, TOP + 10, C.label);
+        const text = clock(minute);
+        if (text !== shown.text) shown = { text, previous: shown.text, at: time };
+        const scrambling = !reducedMotion && time - shown.at < 140 && shown.previous;
+        const face = scrambling
+          ? [...text].map((char, i) => (char !== shown.previous[i] && char !== ':' ? String(Math.floor(Math.random() * 10)) : char)).join('')
+          : text;
+        drawSeven(ctx, face, 5, TOP + 1, C.clock, C.segOff, reducedMotion || Math.floor(time / 500) % 2 === 0);
+        drawText(ctx, clockRef.current.simulated ? 'simulada' : 'ahora', 5, TOP + 11, C.label);
         const [weekday, ...date] = dateLabel(minute).split(' ');
         drawText(ctx, weekday, W - 5 - measure(weekday), TOP + 1, C.date);
         drawText(ctx, date.join(' '), W - 5 - measure(date.join(' ')), TOP + 10, C.label);
@@ -527,23 +561,10 @@ export default function StationMap({ now, showClock, simulated, focus, reducedMo
         const t = minute - train.departure;
         const isBoarding = t >= BOARD && t < 0;
         if (isBoarding) boarding.add(train.track);
-        drawTrain(ctx, train, y, train.id === focused?.id ? trackColor(train.track) : null, isBoarding);
+        drawTrain(ctx, train, y, train.id === focused?.id ? trackColor(train.track) : null, isBoarding, reducedMotion ? 0 : motion(train, minute));
       });
+      for (const train of trains) if (!reducedMotion) drawSteam(ctx, train, minute);
       ctx.restore();
-      // People: getting off towards the exit as a train comes in, and
-      // walking in from the entrance to board before it leaves.
-      if (intro > INTRO.trains + 700) {
-        for (const train of trains) {
-          if (!busy.has(train.track)) continue;
-          const { boarding, leaving } = crowd(train);
-          ctx.fillStyle = train.id === focused?.id ? trackColor(train.track) : C.person;
-          for (const walker of [...leaving, ...boarding]) {
-            if (minute < walker.from || minute >= walker.to) continue;
-            const [x, y] = walker.route.at((minute - walker.from) * SPEED);
-            ctx.fillRect(snap(x), snap(y), 1, 1);
-          }
-        }
-      }
       // Signals: green while a train is moving in or out.
       const moving = new Set<number>();
       for (const train of trains) {
@@ -611,7 +632,8 @@ export default function StationMap({ now, showClock, simulated, focus, reducedMo
       style={{ width: W * scale / dpr, height: H * scale / dpr }}
       onPointerMove={event => {
         const train = trainAt(event);
-        event.currentTarget.style.cursor = train ? 'pointer' : '';
+        if (train) event.currentTarget.dataset.pointing = '';
+        else delete event.currentTarget.dataset.pointing;
         onHover(train);
       }}
       onPointerLeave={() => onHover(null)}

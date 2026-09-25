@@ -52,13 +52,6 @@ export function chime(mine = false) {
   }
 }
 
-// A quick "hurry" double blip, for when it's time to leave for your train.
-export function nudge() {
-  if (!ready('chime', 0)) return;
-  tone(880, 0, .07, .04);
-  tone(880, .11, .07, .04);
-}
-
 export function click() {
   if (!ready('click', 180) || !context) return;
   const length = Math.floor(context.sampleRate * .012);

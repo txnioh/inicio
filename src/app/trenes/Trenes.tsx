@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import DayStrip from './DayStrip';
 import { PixelSprite } from '../components/PixelSprite';
-import PixelText from './PixelText';
-import { ANNOUNCE, ARRIVE, BOARD, CLOSE, around, clock, dateLabel, madridOffset, phase, serviceNames, upcoming, type Train } from './schedule';
-import { chime, click, nudge, setSound } from './sound';
+import { cursors } from './cursors';
+import PixelText, { FlipText } from './PixelText';
+import SevenSeg from './SevenSeg';
+import { ANNOUNCE, ARRIVE, BOARD, around, clock, dateLabel, madridOffset, phase, serviceNames, type Train } from './schedule';
+import { chime, click, setSound } from './sound';
 import { setScheme, useScheme } from './theme';
-import StationMap, { trackColor, useCrispScale, walkMinutes, W as MAP_W } from './StationMap';
+import StationMap, { trackColor, useCrispScale, W as MAP_W } from './StationMap';
 import './trenes.css';
 
 function useReducedMotion() {
@@ -101,47 +103,6 @@ function describe(train: Train, now: number) {
   return `${clock(train.scheduled)}, ${serviceNames[train.service]} ${train.number} a ${train.destination}${late}, ${where}${doing}.`;
 }
 
-const PIN_KEY = 'trenes-mi-tren';
-const AVERAGE_WALK = 3.5;
-
-type Tone = 'calm' | 'go' | 'run' | 'gone';
-
-// When to set off for your train: doors close two minutes before it leaves,
-// and the walk to its platform takes what the map says it takes. Before the
-// platform is announced, plan for an average walk.
-function leaveBy(train: Train, now: number): { text: string; tone: Tone; walk: number } {
-  const announced = phase(train, now) !== 'scheduled';
-  const walk = announced ? walkMinutes(train.track) : AVERAGE_WALK;
-  const margin = train.departure + CLOSE - walk - now;
-  if (now >= train.departure + CLOSE) return { text: 'puertas cerradas', tone: 'gone', walk };
-  if (margin > 3) return { text: `sal en ${Math.ceil(margin)} min`, tone: 'calm', walk };
-  if (margin > 0) return { text: 'sal ya', tone: 'go', walk };
-  return { text: 'corre', tone: 'run', walk };
-}
-
-function countdown(minutes: number) {
-  const seconds = Math.max(0, Math.floor(minutes * 60));
-  const h = Math.floor(seconds / 3600);
-  const m = String(Math.floor(seconds / 60) % 60).padStart(2, '0');
-  const ss = String(seconds % 60).padStart(2, '0');
-  return h ? `${h}:${m}:${ss}` : `${m}:${ss}`;
-}
-
-// Your train, pinned: a ticket that counts down and tells you when to go.
-function Pass({ train, now }: { train: Train; now: number }) {
-  const state = phase(train, now);
-  const plan = leaveBy(train, now);
-  const where = state === 'scheduled' ? 'vía por asignar' : `vía ${train.track}`;
-  return (
-    <span className="trenes-pass" data-tone={plan.tone}>
-      <PixelText className="trenes-muted" text="mi tren · sale en" />
-      <PixelText text={countdown(train.departure - now)} font="big" unit={4} />
-      <PixelText className="trenes-pass-go" text={plan.text} unit={3} reveal />
-      <PixelText className="trenes-muted" text={`¤ ${Math.ceil(plan.walk)} min a pie · ${where}`} />
-    </span>
-  );
-}
-
 function Card({ index, train, now, focused, pinned, onPick }: {
   index: number;
   train: Train;
@@ -154,12 +115,11 @@ function Card({ index, train, now, focused, pinned, onPick }: {
   const live = state === 'boarding' || state === 'closing';
   const progress = live ? Math.min(1, (now - train.departure - BOARD) / -BOARD) : 0;
   return (
-    <li data-id={train.id} data-pass={pinned || undefined} style={{ '--i': index } as CSSProperties}>
+    <li data-id={train.id} style={{ '--i': index } as CSSProperties}>
       <button
         type="button"
         className="trenes-card"
         data-state={state}
-        data-pass={pinned || undefined}
         data-focused={focused || undefined}
         aria-pressed={pinned}
         aria-label={describe(train, now)}
@@ -167,32 +127,40 @@ function Card({ index, train, now, focused, pinned, onPick }: {
         onClick={() => onPick(train)}
       >
         <span className="trenes-card-main">
+        {/* Where it goes leads; when and from where follow, smaller. Stops
+            only show for your train and the ones boarding now. */}
         <span className="trenes-card-head">
           <span className="trenes-card-time">
-            <PixelText text={clock(train.scheduled)} font="big" unit={3} reveal />
-            <PixelText className="trenes-muted" text={eta(train, now)} />
+            {/* A late train keeps its place: the timetabled time is struck
+                through and the expected one sits beside it. */}
+            <span className="trenes-card-clock" data-late={train.delay > 0 || undefined}>
+              <PixelText className="trenes-card-scheduled" text={clock(train.scheduled)} font="big" unit={2} reveal />
+              {train.delay > 0 && <PixelText className="trenes-late" text={clock(train.departure)} font="big" unit={2} reveal />}
+            </span>
+            <FlipText className="trenes-muted" text={eta(train, now)} />
           </span>
           <span className="trenes-card-track">
             <PixelText className="trenes-muted" text="vía" />
-            <PixelText text={state === 'scheduled' ? '-' : String(train.track)} font="big" unit={3} reveal />
+            <FlipText text={state === 'scheduled' ? '-' : String(train.track)} font="big" unit={3} />
           </span>
+        </span>
+        <span className="trenes-card-destination">
+          <PixelText text={train.destination} unit={4} reveal />
         </span>
         <span className="trenes-card-service">
           <span className="trenes-tag"><PixelText text={train.service} /></span>
           <PixelText className="trenes-muted" text={train.number} />
-          {train.delay > 0 && <PixelText className="trenes-late" text={`+${train.delay} · ${clock(train.departure)}`} />}
+          {train.delay > 0 && <PixelText className="trenes-late" text={`+${train.delay} min`} />}
         </span>
-        <span className="trenes-card-destination">
-          <PixelText text={train.destination} unit={3} reveal />
+        {(pinned || live) && (
+          <span className="trenes-card-stops">
+            {(train.stops.length ? train.stops : ['Directo']).flatMap((stop, index) => [
+              index > 0 && <PixelText key={`${stop}-dot`} className="trenes-muted" text="·" />,
+              <PixelText key={stop} className="trenes-muted" text={stop} />,
+            ])}
+          </span>
+        )}
         </span>
-        <span className="trenes-card-stops">
-          {(train.stops.length ? train.stops : ['Directo']).flatMap((stop, index) => [
-            index > 0 && <PixelText key={`${stop}-dot`} className="trenes-muted" text="·" />,
-            <PixelText key={stop} className="trenes-muted" text={stop} />,
-          ])}
-        </span>
-        </span>
-        {pinned && <Pass train={train} now={now} />}
         <span className="trenes-progress" aria-hidden="true" style={{ '--progress': progress } as CSSProperties} />
       </button>
     </li>
@@ -205,15 +173,8 @@ export default function Trenes() {
   const [speed, setSpeedState] = useState(reducedMotion ? 0 : 1);
   const [minute, setMinute] = useState(sim.current.minute);
   const [hovered, setHovered] = useState<Train | null>(null);
-  // Your train survives a reload, for as long as it hasn't left.
-  const [pinned, setPinned] = useState<Train | null>(() => {
-    try {
-      const id = localStorage.getItem(PIN_KEY);
-      return around(sim.current.minute).find(train => train.id === id && train.departure > sim.current.minute) ?? null;
-    } catch {
-      return null;
-    }
-  });
+  // The card you clicked: its train is the one the plan shows the way to.
+  const [pinned, setPinned] = useState<Train | null>(null);
   const [sound, setSoundState] = useState(false);
   const scheme = useScheme();
 
@@ -271,9 +232,9 @@ export default function Trenes() {
   }, [now, speed]);
 
   const pin = pinned && pinned.departure > minute ? pinned : null;
-  // Your ticket leads the board and takes two columns.
-  const next = upcoming(minute, 5);
-  const trains = pin ? [pin, ...next.filter(train => train.id !== pin.id).slice(0, 3)] : next;
+  // Like a real board, in timetable order: a late train holds its place
+  // (and stays on top while it waits) instead of jumping behind later ones.
+  const trains = around(minute).filter(train => train.departure > minute).sort((a, b) => a.scheduled - b.scheduled).slice(0, 5);
   const live = trains.find(train => phase(train, minute) === 'boarding' || phase(train, minute) === 'closing');
   const focus = hovered ?? pin ?? live ?? trains.find(train => phase(train, minute) === 'announced') ?? null;
   const offTime = Math.abs(minute - realMinute()) > 1.5;
@@ -302,21 +263,11 @@ export default function Trenes() {
 
   const pick = (train: Train) => setPinned(current => current?.id === train.id ? null : train);
 
-  useEffect(() => {
-    try {
-      if (pin) localStorage.setItem(PIN_KEY, pin.id);
-      else localStorage.removeItem(PIN_KEY);
-    } catch {
-      // Private windows may refuse storage; the pin then lasts for this visit.
-    }
-  }, [pin]);
-
   useEffect(() => setSound(sound), [sound]);
 
-  // Station announcements: a chime as boarding opens (your own train gets
-  // its own tune) and a nudge when it's time to set off. Jumps through time
-  // stay silent.
-  const heard = useRef({ minute, phases: new Map<string, string>(), tone: '' });
+  // Station announcements: a chime as boarding opens, with its own tune for
+  // the train you picked. Jumps through time stay silent.
+  const heard = useRef({ minute, phases: new Map<string, string>() });
   useEffect(() => {
     const before = heard.current;
     const jumped = Math.abs(minute - before.minute) > 3;
@@ -326,9 +277,7 @@ export default function Trenes() {
       phases.set(train.id, state);
       if (!jumped && state === 'boarding' && before.phases.has(train.id) && before.phases.get(train.id) !== 'boarding') chime(train.id === pin?.id);
     }
-    const tone = pin ? leaveBy(pin, minute).tone : '';
-    if (!jumped && tone === 'go' && before.tone === 'calm') nudge();
-    heard.current = { minute, phases, tone };
+    heard.current = { minute, phases };
   });
 
   useEffect(() => {
@@ -344,7 +293,7 @@ export default function Trenes() {
   });
 
   return (
-    <main className="minimal-portfolio-page trenes-page" tabIndex={-1}>
+    <main className="minimal-portfolio-page trenes-page" tabIndex={-1} style={cursors as CSSProperties}>
       <div className="minimal-portfolio-shell trenes-shell">
         <header className="trenes-header">
           <a className="minimal-basic-link minimal-reveal-line" href="/">Index</a>
@@ -355,7 +304,7 @@ export default function Trenes() {
         <section className="trenes-station" aria-label="Estación">
           <div className="trenes-clock minimal-reveal-line" hidden={!compact}>
             <span className="trenes-clock-now" role="img" aria-label={`Son las ${clock(minute)}, ${dateLabel(minute)}`}>
-              <PixelText text={clock(minute)} font="big" unit={4} />
+              <SevenSeg text={clock(minute)} unit={4} />
               <PixelText className="trenes-muted" text={offTime ? 'hora simulada' : 'hora actual'} />
             </span>
             <PixelText className="trenes-date" text={dateLabel(minute)} unit={2} />
@@ -376,7 +325,7 @@ export default function Trenes() {
             />
           </div>
 
-          <ol ref={board} data-has-pass={pin ? '' : undefined} className="trenes-board" style={{ '--tick': speed > 1 ? '250ms' : '1s' } as CSSProperties} data-arriving={arriving || undefined} aria-label="Próximas salidas">
+          <ol ref={board} className="trenes-board" style={{ '--tick': speed > 1 ? '250ms' : '1s' } as CSSProperties} data-arriving={arriving || undefined} aria-label="Próximas salidas">
             {trains.map((train, index) => (
               <Card
                 index={index}
