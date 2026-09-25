@@ -990,15 +990,6 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   gap: 8px;
 }
 
-.minimal-footer-skin {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 14px;
-  color: #70706a;
-  font-size: 12px;
-}
-
 .robot-skin-selector {
   display: flex;
   min-width: 0;
@@ -1192,7 +1183,8 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   transform: translateY(-50%) rotate(-45deg);
 }
 
-.minimal-robot-option > svg {
+.minimal-robot-option > svg,
+.robot-skin-layer > svg {
   display: block;
   width: 28px;
   height: 21px;

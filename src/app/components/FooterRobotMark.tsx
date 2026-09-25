@@ -9,6 +9,7 @@ import useRobotGuide from './useRobotGuide';
 import { RobotFace, RobotEffects, RobotSpeech } from './RobotVisuals';
 import { robotPortalPose, robotHoleFrames, PIXEL_PORTAL_MS } from './robotAnimation';
 import { useRobotSkin } from './robotSkin';
+import RobotSkinReveal from './RobotSkinReveal';
 
 const gestures = ['wink', 'happy', 'surprised'] as const;
 type Gesture = typeof gestures[number];
@@ -46,7 +47,7 @@ const clockLine = () => `ya son las ${new Intl.DateTimeFormat('es-ES', {
 }).format(new Date())} en madrid.`;
 type Speech = { text: string; announce: boolean; context?: boolean };
 
-export default function FooterRobotMark({ draggable = true }: { draggable?: boolean }) {
+export default function FooterRobotMark({ draggable = true, dressing = false }: { draggable?: boolean; dressing?: boolean }) {
   const rootRef = useRef<HTMLSpanElement>(null);
   const stageRef = useRef<HTMLSpanElement>(null);
   const entranceRef = useRef<HTMLSpanElement>(null);
@@ -83,10 +84,10 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
     setSpeech(previous => text ? { text: text.toLocaleLowerCase(), announce, context: true } : previous?.context ? null : previous);
   }, []);
   const { x: positionX, y: positionY, mounted, active, anchor, departing, departureMs } = useRobotGuide({
-    home: rootRef, stage: stageRef, enabled: draggable, grabbed: held || carried, playing: musicActive,
+    home: rootRef, stage: stageRef, enabled: draggable, grabbed: held || carried || dressing, playing: musicActive,
     reducedMotion, explain, portalMs: skin === 'pixel' ? PIXEL_PORTAL_MS : undefined,
   });
-  const shownSpeech = !departing && visibleSpeech === speech ? visibleSpeech : null;
+  const shownSpeech = !dressing && !departing && visibleSpeech === speech ? visibleSpeech : null;
 
   useLayoutEffect(() => {
     const changed = previousAnchor.current !== anchor;
@@ -142,7 +143,7 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
   }, [speak]);
 
   // Pixel skin: when left alone at home, pick a new activity every so often.
-  const idleAtHome = skin === 'pixel' && draggable && active && !reducedMotion && anchor === 'home'
+  const idleAtHome = skin === 'pixel' && draggable && active && !dressing && !reducedMotion && anchor === 'home'
     && !departing && !attentive && !focused && !held && !carried && !gesture && !musicActive && !sleeping;
   useEffect(() => {
     if (!idleAtHome || activity) return;
@@ -159,8 +160,8 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
 
   // Being handled, dancing or leaving interrupts whatever it was doing.
   useEffect(() => {
-    if (skin !== 'pixel' || held || carried || gesture || musicActive || departing || !active) setActivity(null);
-  }, [skin, held, carried, gesture, musicActive, departing, active]);
+    if (skin !== 'pixel' || dressing || held || carried || gesture || musicActive || departing || !active) setActivity(null);
+  }, [skin, dressing, held, carried, gesture, musicActive, departing, active]);
 
   // A safety net in case the face never reports the end (e.g. off screen).
   useEffect(() => {
@@ -256,11 +257,11 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
 
   useEffect(() => {
     setSleeping(false);
-    if (!draggable || !active || attentive || focused || held || carried || gesture || musicActive || anchor === 'guide') return;
+    if (!draggable || !active || dressing || attentive || focused || held || carried || gesture || musicActive || anchor === 'guide') return;
     // The pixel robot keeps itself busy with activities before dozing off.
     const timer = window.setTimeout(() => setSleeping(true), skin === 'pixel' ? 40_000 : 12_000);
     return () => window.clearTimeout(timer);
-  }, [draggable, active, attentive, focused, held, carried, gesture, musicActive, anchor, skin]);
+  }, [draggable, active, dressing, attentive, focused, held, carried, gesture, musicActive, anchor, skin]);
 
   useEffect(() => {
     if (!held) return;
@@ -292,7 +293,7 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
   }, [active, reducedMotion, dragControls, dragX, dragY]);
 
 
-  const expression = !active || !draggable || departing ? 'idle'
+  const expression = !active || !draggable || departing || dressing ? 'idle'
     : held || carried ? 'carried'
     : gesture ?? (anchor === 'guide' ? 'idle' : musicActive ? 'music'
       : activity ? `activity:${activity}` : sleeping ? 'sleeping' : 'idle');
@@ -370,7 +371,7 @@ export default function FooterRobotMark({ draggable = true }: { draggable?: bool
               nextGesture.current += 1;
             }}
           >
-            <RobotFace expression={expression} portal={portal} portalKey={arrival} onActivityEnd={endActivity} />
+            <RobotSkinReveal skin={skin} reducedMotion={reducedMotion} expression={expression} portal={portal} portalKey={arrival} onActivityEnd={endActivity} />
             <RobotEffects mode={expression} skin={skin} />
           </motion.button>
         </span>

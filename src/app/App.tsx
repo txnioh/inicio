@@ -1,10 +1,9 @@
 import { lazy, Suspense, type ReactNode } from 'react';
-import FooterRobotMark from './components/FooterRobotMark';
 import InkWritingLink from './components/InkWritingLink';
 import LocalTime from './components/LocalTime';
 import PageEnter from './components/PageEnter';
 import ProjectShowcase from './components/ProjectShowcase';
-import RobotSkinSelector from './components/RobotSkinSelector';
+import RobotWardrobe from './components/RobotWardrobe';
 import { VinylPlayer } from './components/VinylPlayer';
 import usePageNavigation from './usePageNavigation';
 
@@ -88,11 +87,7 @@ export function Home({ arrived }: { arrived: boolean }) {
           <footer className="minimal-footer">
             <div className="minimal-footer-row minimal-reveal-line">
               <p><LocalTime /> in Madrid, Spain</p>
-              <FooterRobotMark />
-            </div>
-            <div className="minimal-footer-skin minimal-reveal-line">
-              <span aria-hidden="true">Robot</span>
-              <RobotSkinSelector />
+              <RobotWardrobe />
             </div>
           </footer>
         </div>

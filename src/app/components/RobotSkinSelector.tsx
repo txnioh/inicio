@@ -1,8 +1,10 @@
 import { useId } from 'react';
 import { RobotFace } from './RobotVisuals';
-import { robotSkins, setRobotSkin, useRobotSkin } from './robotSkin';
+import { robotSkins, setRobotSkin, useRobotSkin, type RobotSkin } from './robotSkin';
 
-export default function RobotSkinSelector({ previews = false }: { previews?: boolean }) {
+export default function RobotSkinSelector({ previews = false, onSelect }: {
+  previews?: boolean; onSelect?: (skin: RobotSkin) => void;
+}) {
   const name = useId();
   const skin = useRobotSkin();
 
@@ -16,7 +18,7 @@ export default function RobotSkinSelector({ previews = false }: { previews?: boo
             name={name}
             value={option}
             checked={skin === option}
-            onChange={() => setRobotSkin(option)}
+            onChange={() => { setRobotSkin(option); onSelect?.(option); }}
           />
           <span className="robot-skin-choice">
             {previews && (
