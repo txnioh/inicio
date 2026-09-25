@@ -252,11 +252,11 @@ const blink = (f: number, at: number): Eye => f === at || f === at + 2 ? 'half' 
 
 export const animations: Animation[] = [
   {
-    id: 'idle', label: 'Reposo', line: 'oh, hi.', frames: 48,
+    id: 'idle', label: 'Reposo', line: 'ey, qué pasa', frames: 48,
     draw: (ctx, f, env) => robot(ctx, { eyes: blink(f, 42), look: env.look ?? idleLook(f) }),
   },
   {
-    id: 'wink', label: 'Guiño', line: 'just between us.', frames: 24,
+    id: 'wink', label: 'Guiño', line: 'esto queda entre nosotros', frames: 24,
     draw: (ctx, f) => {
       const on = f >= 3 && f < 17;
       robot(ctx, { dx: on ? 1 : 0, eyes: on ? ['open', f < 5 ? 'half' : 'closed'] : 'open' });
@@ -264,7 +264,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'happy', label: 'Feliz', line: 'qué bien que estés aquí.', frames: 24,
+    id: 'happy', label: 'Feliz', line: 'esto sí que sí', frames: 24,
     draw: (ctx, f) => {
       const t = f % 12;
       const hop = [0, -1, -2, -3, -3, -2, -1, 0, 0, 0, 0, 0][t];
@@ -274,7 +274,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'surprised', label: 'Sorpresa', line: 'uy, qué susto.', frames: 24,
+    id: 'surprised', label: 'Sorpresa', line: 'uy, no te había visto', frames: 24,
     draw: (ctx, f) => {
       const hop = f > 3 && f < 9 ? [-1, -2, -3, -2, -1][f - 4] : 0;
       const squash = f === 3 || f === 9;
@@ -283,7 +283,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'sleep', label: 'Dormir', line: 'just resting my pixels.', frames: 48,
+    id: 'sleep', label: 'Dormir', line: 'cinco minutitos más', frames: 48,
     draw: (ctx, f) => {
       const inhale = f % 24 < 12;
       robot(ctx, { dh: inhale ? 0 : -1, dw: inhale ? 0 : 2, eyes: 'closed', screen: '#3f3f3d' });
@@ -291,14 +291,14 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'music', label: 'Bailar', line: 'tiny dance break.', frames: 64,
+    id: 'music', label: 'Bailar', line: 'este temazo no se salta', frames: 64,
     draw: (ctx, f) => {
       robot(ctx, dance(f));
       rising(ctx, f, 16, 2, (p, rise, i) => sprite(ctx, G.note, (i ? 25 : 4) + wave(p * 16, 8, 1), 11 - rise, C.purple));
     },
   },
   {
-    id: 'carried', label: 'En brazos', line: 'así que esto es volar.', frames: 12,
+    id: 'carried', label: 'En brazos', line: 'con cuidadito, eh', frames: 12,
     draw: (ctx, f) => {
       const dx = f % 2 ? 1 : -1;
       robot(ctx, { dx, dy: -4 + (f % 4 < 2 ? 0 : -1), eyes: 'wide', shadow: 8 });
@@ -309,7 +309,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'love', label: 'Amor', line: 'small robot, good company.', frames: 24,
+    id: 'love', label: 'Amor', line: 'contigo, sin ruido', frames: 24,
     draw: (ctx, f) => {
       const big = f % 12 < 3;
       robot(ctx, { dy: big ? -1 : 0, eyes: big ? 'heartBig' : 'heart' });
@@ -317,7 +317,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'dizzy', label: 'Mareo', line: 'todo da vueltas…', frames: 24,
+    id: 'dizzy', label: 'Mareo', line: 'todo da vueltas, tipo mucho', frames: 24,
     draw: (ctx, f) => {
       const stars = [0, 1, 2].map(i => {
         const a = f / 24 * Math.PI * 2 + i * Math.PI * 2 / 3;
@@ -329,7 +329,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'angry', label: 'Enfado', line: 'bip. bip. BIP.', frames: 24,
+    id: 'angry', label: 'Enfado', line: 'vale vale, ya está bien', frames: 24,
     draw: (ctx, f) => {
       const hot = f % 8 < 4;
       robot(ctx, { dx: f % 2 ? 1 : 0, eyes: ['angryL', 'angryR'], screen: hot ? '#5a3c39' : C.screen, eyeColor: hot ? '#ffd9d3' : C.eye });
@@ -337,7 +337,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'sad', label: 'Tristeza', line: 'un abrazo de píxeles, porfa.', frames: 36,
+    id: 'sad', label: 'Tristeza', line: 'hoy no es mi día, la verdad', frames: 36,
     draw: (ctx, f) => {
       robot(ctx, { eyes: ['sadL', 'sadR'] });
       const p = (f % 18) / 18;
@@ -345,7 +345,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'tickle', label: 'Cosquillas', line: 'that tickles.', frames: 12,
+    id: 'tickle', label: 'Cosquillas', line: 'jajaja para para', frames: 12,
     draw: (ctx, f) => {
       robot(ctx, { dx: f % 2 ? 1 : -1, dy: f % 3 ? 0 : -1, eyes: ['greater', 'less'] });
       if (f % 6 < 3) { sprite(ctx, G.sparkle, 3, 10, C.yellow); sprite(ctx, G.plus, 26, 13, C.yellow); }
@@ -353,7 +353,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'think', label: 'Pensar', line: 'mmm… déjame pensar.', frames: 48,
+    id: 'think', label: 'Pensar', line: 'lo suyo sería…', frames: 48,
     draw: (ctx, f) => {
       const idea = f >= 34;
       robot(ctx, { eyes: idea ? 'wide' : f % 16 === 8 ? 'half' : 'open', look: idea ? [0, 0] : [1, -1], dy: idea && f < 38 ? -1 : 0 });
@@ -371,7 +371,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'scan', label: 'Escáner', line: 'escaneando… todo en orden.', frames: 36,
+    id: 'scan', label: 'Escáner', line: 'todo en su sitio, sin ruido', frames: 36,
     draw: (ctx, f) => {
       const scanning = f < 22;
       robot(ctx, {
@@ -386,7 +386,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'loading', label: 'Cargando', line: 'un segundito…', frames: 16,
+    id: 'loading', label: 'Cargando', line: 'dame un seg que cargo', frames: 16,
     draw: (ctx, f) => robot(ctx, {
       eyes: 'none',
       fx: (c, s) => {
@@ -402,7 +402,7 @@ export const animations: Animation[] = [
     }),
   },
   {
-    id: 'glitch', label: 'Glitch', line: 'b-b-beep.', frames: 24,
+    id: 'glitch', label: 'Glitch', line: 'eso no ha pasado', frames: 24,
     draw: (ctx, f) => {
       const hit = f % 12 >= 7;
       const frame = offscreen(c => robot(c, { eyes: hit ? ['open', 'half'] : blink(f, 3), shadow: false, screen: hit && f % 2 ? '#3d4a58' : C.screen }));
@@ -422,7 +422,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'boot', label: 'Encender', line: 'sistema listo.', frames: 48,
+    id: 'boot', label: 'Encender', line: 'apagar y encender, clásico', frames: 48,
     draw: (ctx, f) => {
       const off = f < 4 || f >= 44;
       robot(ctx, {
@@ -458,7 +458,7 @@ export const animations: Animation[] = [
   },
   {
     // Hours, then minutes: two chunky digits fit on the screen at a time.
-    id: 'clock', label: 'Hora', line: 'hora de Madrid.', frames: 36,
+    id: 'clock', label: 'Hora', line: 'hora de madrid', frames: 36,
     draw: (ctx, f, env) => {
       const [hh, mm] = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Madrid' })
         .format(env.now).split(':');
@@ -476,7 +476,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'portal', label: 'Portal', line: 'vuelvo enseguida.', frames: 40,
+    id: 'portal', label: 'Portal', line: 'vuelvo enseguida', frames: 40,
     draw: (ctx, f) => {
       if (f >= 4 && f < 4 + PORTAL_FRAMES) drawPortal(ctx, 'leaving', f - 4);
       else if (f >= 22 && f < 22 + PORTAL_FRAMES) drawPortal(ctx, 'arriving', f - 22);
@@ -484,7 +484,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'party', label: 'Fiesta', line: '¡fiesta de píxeles!', frames: 24,
+    id: 'party', label: 'Fiesta', line: 'fiesta de píxeles, dale', frames: 24,
     draw: (ctx, f) => {
       const colors = [C.purple, C.pink, C.yellow, C.green, C.blue];
       const rand = random(7);
@@ -499,7 +499,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'battery', label: 'Sin batería', line: 'batería al 1%…', frames: 60,
+    id: 'battery', label: 'Sin batería', line: 'al 1%, como siempre', frames: 60,
     draw: (ctx, f) => {
       const low = f < 30;
       robot(ctx, {
@@ -517,7 +517,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'code', label: 'Programar', line: 'compilando ideas.', frames: 32,
+    id: 'code', label: 'Programar', line: 'arreglando, no mitigando', frames: 32,
     draw: (ctx, f) => {
       robot(ctx, {
         eyes: 'none',
@@ -539,7 +539,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'sneeze', label: 'Estornudo', line: '¡achís!', frames: 36,
+    id: 'sneeze', label: 'Estornudo', line: 'achís, alergia a los bugs', frames: 36,
     draw: (ctx, f) => {
       const build = f < 14;
       const burst = f >= 14 && f < 18;
@@ -560,7 +560,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'rebuild', label: 'Desmontar', line: 'me desmonto y vuelvo.', frames: 48,
+    id: 'rebuild', label: 'Desmontar', line: 'vamos a hacerlo de nuevo', frames: 48,
     draw: (ctx, f) => {
       if (f < 6 || f >= 42) {
         robot(ctx, { eyes: f >= 42 && f < 45 ? blink(f, 42) : 'open', dy: f === 42 ? -1 : 0 });
@@ -581,7 +581,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'stretch', label: 'Estirarse', line: 'estiramiento de píxeles.', frames: 36,
+    id: 'stretch', label: 'Estirarse', line: 'estirando los píxeles', frames: 36,
     draw: (ctx, f) => {
       // Up on tiptoe, hold it with a happy face, then settle with a squash.
       const up = f < 6 ? 0 : f < 12 ? f - 5 : f < 24 ? 6 : f < 30 ? 29 - f : 0;
@@ -594,7 +594,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'coffee', label: 'Café', line: 'un cafecito y sigo.', frames: 48,
+    id: 'coffee', label: 'Café', line: 'café primero, commits después', frames: 48,
     draw: (ctx, f) => {
       const sip = f >= 18 && f < 30;
       robot(ctx, { dx: sip ? 1 : 0, look: sip ? [0, 0] : [2, 0], eyes: sip ? 'closed' : f >= 30 && f < 40 ? 'happy' : 'open' });
@@ -605,7 +605,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'wish', label: 'Deseo', line: '¡pide un deseo!', frames: 40,
+    id: 'wish', label: 'Deseo', line: 'pide un deseo, rápido', frames: 40,
     draw: (ctx, f) => {
       // A shooting star crosses above; the eyes follow it.
       const t = Math.max(0, Math.min(1, (f - 4) / 22));
@@ -624,7 +624,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'bubble', label: 'Pompa', line: 'pop.', frames: 40,
+    id: 'bubble', label: 'Pompa', line: 'pop', frames: 40,
     draw: (ctx, f) => {
       const popped = f >= 28;
       const r = Math.min(3, 1 + ((f - 4) >> 3));
@@ -649,7 +649,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'hiccup', label: 'Hipo', line: '¡hip! perdón.', frames: 40,
+    id: 'hiccup', label: 'Hipo', line: 'hip… perdón', frames: 40,
     draw: (ctx, f) => {
       const hics = [6, 18, 30];
       const k = hics.map(at => f - at).find(d => d >= 0 && d < 5);
@@ -660,7 +660,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'lookaround', label: 'Curiosear', line: '¿hay alguien por ahí?', frames: 40,
+    id: 'lookaround', label: 'Curiosear', line: 'hay alguien por ahí?', frames: 40,
     draw: (ctx, f) => {
       const look: [number, number] = f < 4 ? [0, 0] : f < 13 ? [-2, 0] : f < 15 ? [0, 0] : f < 24 ? [2, 0] : f < 32 ? [0, -1] : [0, 0];
       robot(ctx, { look, dx: look[0] > 0 ? 1 : look[0] < 0 ? -1 : 0, eyes: f === 13 || f === 33 ? 'half' : f === 32 ? 'closed' : 'open' });
@@ -668,7 +668,7 @@ export const animations: Animation[] = [
     },
   },
   {
-    id: 'paint', label: 'Pintar', line: 'pintando un píxel… o dos.', frames: 48,
+    id: 'paint', label: 'Pintar', line: 'no escatimes en detalles', frames: 48,
     draw: (ctx, f) => {
       // One pixel of a heart every other frame, then admire it.
       const art = eyes.heartBig.rows;

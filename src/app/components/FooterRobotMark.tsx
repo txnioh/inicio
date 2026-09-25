@@ -21,56 +21,61 @@ type Gesture = typeof gestures[keyof typeof gestures][number] | 'play:angry';
 const gestureMs = (gesture: Gesture) => gesture === 'play:love' || gesture === 'play:angry' ? 2_000 : 1_000;
 // Held this long without moving, the robot notices it is being pressed.
 const LONG_PRESS_MS = 700;
+// A press only turns into a drag past this distance, so a finger resting on
+// the robot (or a slightly shaky click) never moves it.
+const DRAG_FROM = { mouse: 4, touch: 10 };
 // This many taps in a short while is poking.
 const POKES = 5;
 const POKE_WINDOW_MS = 2_500;
 
+// Everything the robot says, in Antonio's own way of talking: lowercase,
+// Spain Spanish, short and a bit cheeky. The pixel font has no quotes.
 const lines = {
-  hello: ['oh, hi.', 'hola, ¿qué tal?', 'me encontraste.', 'bip bop. hola.', '¿vienes a jugar?'],
-  wink: ['just between us.', 'queda entre nosotros.', 'beep. that means hello.', 'nuestro secreto.'],
-  happy: ['qué bien que estés aquí.', 'small robot, good company.', 'me alegras el píxel.'],
-  surprised: ['oh!', 'uy, qué susto.', 'you have my attention.', '¡no te vi venir!'],
-  tickle: ['that tickles.', '¡jajaja, para!', 'cosquillas no, porfa.'],
-  love: ['te quiero en binario: 01.', 'me caes muy bien.', 'corazón de 8 bits.'],
-  angry: ['¡vale, vale!', 'bip. bip. BIP.', 'tanto clic me marea.'],
-  carried: ['con cuidadito.', 'a little field trip?', 'así que esto es volar.', 'agárrame bien.', '¡mira, sin ruedas!'],
-  pressed: ['¿me estás apretando?', 'no soy un botón… ¿o sí?', 'aplastadito.', 'modo sándwich.'],
-  released: ['¡boing!', 'y vuelvo a mi forma.', 'uf, qué alivio.'],
-  sleeping: ['just resting my pixels.', 'una siestecita.', 'soñando con ovejas eléctricas.'],
-  wake: ['oh, hi again.', 'yo no estaba durmiendo.', '¡estoy despierto!', 'cinco minutitos más…'],
-  wardrobe: ['¿me cambio de ropa?', 'ooh, ese look es mío.', '¿me lo pruebo?'],
-  music: ['esta me gusta.', 'tiny dance break.', 'un temita y seguimos.', 'este ritmo me mueve los píxeles.'],
-  dressedPixel: ['¿qué tal me queda?', 'ahora en 8 bits.', 'modo píxel, activado.'],
-  dressedClassic: ['vuelta al clásico.', 'suavecito otra vez.', 'como siempre, pero mejor.'],
+  hello: ['ey, qué pasa', 'hola hola', 'vale, me has encontrado', 'vienes a jugar, no?', 'a ver, qué se cuenta'],
+  wink: ['esto queda entre nosotros', 'tú no has visto nada', 'guiño guiño, ya sabes'],
+  happy: ['esto sí que sí', 'me alegra verte por aquí', 'buen rollo nivel máximo'],
+  surprised: ['uy, no te había visto', 'a ver a ver, qué ha sido eso', 'me has pillado desprevenido'],
+  tickle: ['jajaja para para', 'eso son cosquillas y lo sabes', 'jajaja vale ya'],
+  love: ['te quiero en binario, 01', 'contigo, sin ruido', 'me caes bien, que lo sepas'],
+  angry: ['vale vale, ya está bien', 'un clic vale, veinte no', 'que no soy un botón jajaja'],
+  carried: ['con cuidadito, eh', 'a dónde vamos?', 'esto no lo tenía planeado', 'ojo que me mareo'],
+  pressed: ['eso aprieta, eh', 'que no soy un botón', 'modo sándwich activado', 'vale, ya me has aplastado'],
+  released: ['boing', 'vale, vuelvo a mi forma', 'uf, qué alivio'],
+  sleeping: ['cinco minutitos', 'recargando píxeles', 'zzz… sin ruido porfa'],
+  wake: ['estaba despierto, lo prometo', 'vale vale, ya estoy', 'no dormía, tipo descansaba'],
+  music: ['esta me flipa', 'dale, que suene', 'este temazo no se salta'],
+  wardrobe: ['me cambio de look?', 'ese me queda mejor, no?', 'a ver qué tal me queda'],
+  dressedPixel: ['qué tal me queda?', 'en pixel art, como debe ser', 'menos píxeles pero más gordos'],
+  dressedClassic: ['vuelta al original', 'lo de siempre, que funciona', 'más redondito otra vez'],
 } as const;
 type SpeechCue = keyof typeof lines;
 
 // Pixel skin: things the robot gets up to on its own at home, each an
 // animation from /robot with a line that explains it.
 const activities = {
-  scan: ['escaneando la página… todo en orden.', 'revisando que no falte ningún píxel.'],
-  think: ['mmm… se me ocurre algo.', 'pensando en la próxima animación.'],
-  code: ['haciendo un commit pequeñito.', 'compilando ideas.'],
+  scan: ['revisando que no falte ningún píxel', 'escaneando… todo en su sitio'],
+  think: ['dame un seg, que estoy pensando', 'lo suyo sería…'],
+  code: ['haciendo un commit pequeñito', 'arreglando el error, no mitigándolo'],
   clock: [],
-  glitch: ['perdón, ha sido un glitch.', 'eso no ha pasado.'],
-  loading: ['cargando ideas…', 'un segundito, que pienso.'],
-  sneeze: ['¡achís! polvo digital.', 'perdón. alergia a los bugs.'],
-  love: ['me gusta que estés por aquí.', 'small robot, good company.'],
-  battery: ['un sorbito de batería y sigo.', 'recargando… ya estoy.'],
-  boot: ['reinicio rápido. listo.', 'apagar y encender. un clásico.'],
-  rebuild: ['me desmonto un momento.', 'vuelvo de una pieza, prometido.'],
-  stretch: ['estiramiento de píxeles.', 'crujido de bits.'],
-  coffee: ['un cafecito y sigo.', 'café de 8 bits.'],
-  wish: ['¡pide un deseo!', 'una estrella fugaz, ¿la viste?'],
-  bubble: ['pompas de jabón digital.', 'pop.'],
-  hiccup: ['¡hip! perdón.', 'hip… ¿alguien tiene agua?'],
-  lookaround: ['¿hay alguien por ahí?', 'solo echando un vistazo.'],
-  paint: ['pintando un píxel… o dos.', 'mi obra maestra.'],
+  glitch: ['eso no ha pasado', 'se ha quedado pillado, ya está'],
+  loading: ['cargando… un segundito', 'dame un seg que cargo'],
+  sneeze: ['achís, perdón', 'alergia a los bugs'],
+  love: ['me gusta que estés por aquí', 'buena compañía, sin ruido'],
+  battery: ['un sorbito de batería y sigo', 'al 1%, como siempre'],
+  boot: ['apagar y encender, lo de siempre', 'reinicio rápido y listo'],
+  rebuild: ['vamos a hacerlo de nuevo', 'me desmonto y lo rehago todo'],
+  stretch: ['estirando los píxeles', 'mucho rato quieto, eh'],
+  coffee: ['un cafecito y seguimos', 'café primero, commits después'],
+  wish: ['pide un deseo, rápido', 'has visto eso?'],
+  bubble: ['pop', 'una pompa, porque sí'],
+  hiccup: ['hip… perdón', 'hip… alguien tiene agua?'],
+  lookaround: ['hay alguien por ahí?', 'solo echando un vistazo'],
+  paint: ['pintando en pixel art', 'no escatimes en detalles'],
 } satisfies Record<string, string[]>;
 type Activity = keyof typeof activities | 'dizzy';
 const clockLine = () => `ya son las ${new Intl.DateTimeFormat('es-ES', {
   hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Madrid',
-}).format(new Date())} en madrid.`;
+}).format(new Date())} en madrid, eh`;
 type Speech = { text: string; announce: boolean; context?: boolean };
 
 // `dressing` is true while a new look flies over from the wardrobe;
@@ -91,6 +96,7 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
   const nextGesture = useRef(0);
   const suppressClick = useRef(false);
   const heldAt = useRef(0);
+  const pressFrom = useRef({ x: 0, y: 0, touch: false });
   const taps = useRef<number[]>([]);
   // Where the eyes point, in art pixels; read by the pixel face each frame.
   const look = useRef<[number, number]>([0, 0]);
@@ -111,6 +117,7 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
   const [held, setHeld] = useState(false);
   const [speech, setSpeech] = useState<Speech | null>(null);
   const [visibleSpeech, setVisibleSpeech] = useState<Speech | null>(null);
+  const revealed = useRef<Speech | null>(null);
   const [constraints, setConstraints] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
   const dragControls = useDragControls();
   const dragX = useMotionValue(0);
@@ -211,9 +218,18 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
       setSpeech(null);
       return;
     }
-    if (!speech || departing) return;
+    if (!speech) return;
+    // A line already said stays behind when the robot leaves its perch;
+    // one still waiting to be shown is said at the new perch instead.
+    if (departing) {
+      if (revealed.current === speech) setSpeech(null);
+      return;
+    }
     const delay = speech.context ? 160 : 650;
-    const reveal = window.setTimeout(() => setVisibleSpeech(speech), delay);
+    const reveal = window.setTimeout(() => {
+      revealed.current = speech;
+      setVisibleSpeech(speech);
+    }, delay);
     const dismiss = speech.context ? undefined : window.setTimeout(
       () => setSpeech(null), delay + Math.max(3_600, speech.text.length * 55),
     );
@@ -329,11 +345,14 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
         setRestless(value => value + 1);
       }
     };
+    // On touch screens there is no hover: the eyes look where you tap.
     window.addEventListener('pointermove', move, { passive: true });
+    window.addEventListener('pointerdown', move, { passive: true });
     window.addEventListener('scroll', schedule, { passive: true });
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerdown', move);
       window.removeEventListener('scroll', schedule);
     };
   }, [draggable, reducedMotion]);
@@ -349,15 +368,24 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
       }
       setHeld(false);
     };
+    // Start dragging only once the pointer has really travelled.
+    const move = (event: PointerEvent) => {
+      if (carried || suppressClick.current || !event.isPrimary) return;
+      const { x, y, touch } = pressFrom.current;
+      if (Math.hypot(event.clientX - x, event.clientY - y) < (touch ? DRAG_FROM.touch : DRAG_FROM.mouse)) return;
+      dragControls.start(event);
+    };
     const timer = window.setTimeout(() => { if (!carried) say('pressed', true); }, LONG_PRESS_MS + 300);
+    window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', release);
     window.addEventListener('pointercancel', release);
     return () => {
       window.clearTimeout(timer);
+      window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', release);
       window.removeEventListener('pointercancel', release);
     };
-  }, [held, carried, say]);
+  }, [held, carried, say, dragControls]);
 
   // Pointing at the wardrobe gets a remark, so its link to the robot is clear.
   useEffect(() => {
@@ -419,6 +447,7 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
             aria-label="Play with the robot"
             drag={active && !reducedMotion}
             dragControls={dragControls}
+            dragListener={false}
             dragConstraints={constraints}
             dragElastic={0}
             dragMomentum={false}
@@ -442,6 +471,7 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
               if (event.button !== 0 || !event.isPrimary) return;
               suppressClick.current = false;
               heldAt.current = Date.now();
+              pressFrom.current = { x: event.clientX, y: event.clientY, touch: event.pointerType !== 'mouse' };
               if (!reducedMotion) setHeld(true);
               setSleeping(false);
               const bounds = event.currentTarget.getBoundingClientRect();
@@ -454,6 +484,8 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
               });
             }}
             onPointerCancel={() => { suppressClick.current = true; setHeld(false); }}
+            // No long-press menu or magnifier on touch screens: holding squashes it.
+            onContextMenu={(event) => event.preventDefault()}
             onDragStart={() => {
               suppressClick.current = true;
               setGesture(null);
