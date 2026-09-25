@@ -1,0 +1,604 @@
+/* Only this page follows the system's dark setting; the rest of the site
+   stays light. Every colour below is light-dark(<light>, <dark>). */
+html:has(.trenes-page),
+body:has(.trenes-page),
+.minimal-portfolio-page.trenes-page {
+  /* Set from script: the visitor's pick, or the system's. */
+  color-scheme: var(--trenes-scheme, light dark);
+  background: light-dark(#fdfdfc, #121212);
+  color: light-dark(#111111, #e0e0e0);
+}
+
+.trenes-page .minimal-basic-link::before {
+  background: light-dark(#d9d9d9, #3a3a37);
+}
+
+.trenes-page {
+  /* Corners cut in 2px steps, so boxes read as pixel art too. */
+  --pixel-corners: polygon(
+    4px 0, calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px),
+    0 4px, 2px 4px, 2px 2px, 4px 2px
+  );
+  --trenes-card: light-dark(#f4f3ef, #1b1a18);
+  --trenes-muted: light-dark(#8e8e8a, #86857f);
+  --trenes-late: light-dark(#c9533f, #d35c48);
+}
+
+.trenes-shell {
+  max-width: 1072px;
+}
+
+.trenes-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 550px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.trenes-header .minimal-basic-link {
+  align-self: flex-start;
+  margin-bottom: 28px;
+  color: light-dark(rgba(0, 0, 0, .4), rgba(238, 238, 238, .4));
+}
+
+.trenes-header h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.09px;
+}
+
+.trenes-header p {
+  margin: 0;
+  color: light-dark(rgba(0, 0, 0, .4), rgba(238, 238, 238, .4));
+  font-weight: 460;
+}
+
+.px-text {
+  display: block;
+  flex: none;
+  fill: currentColor;
+  overflow: visible;
+}
+
+.px-text[data-reveal] path {
+  animation: trenes-pixels-in 140ms var(--d, 0ms) ease-out both;
+}
+
+@keyframes trenes-pixels-in {
+  from { opacity: 0; }
+}
+
+/* Arrival, in order: header lines, the plan (which then builds itself in
+   pixels), the cards, the controls. Boxes move smoothly; the pixel feel
+   comes from what happens inside them. */
+.trenes-header .minimal-reveal-line:nth-child(2) { --reveal-delay: 60ms; }
+.trenes-header .minimal-reveal-line:nth-child(3) { --reveal-delay: 120ms; }
+.trenes-clock.minimal-reveal-line { --reveal-delay: 160ms; }
+.trenes-controls.minimal-reveal-line { --reveal-delay: 900ms; }
+.trenes-hint.minimal-reveal-line { --reveal-delay: 1000ms; }
+
+.trenes-enter {
+  animation: trenes-stage-in 700ms 120ms cubic-bezier(.16, 1, .3, 1) backwards;
+}
+
+@keyframes trenes-stage-in {
+  from { opacity: 0; transform: translateY(6px) scale(.995); }
+}
+
+.trenes-board li {
+  animation: trenes-card-in 640ms cubic-bezier(.16, 1, .3, 1) backwards;
+}
+
+/* On the first load the cards wait for the plan, and their pixels dissolve
+   in once each card has landed. Later cards come straight in. */
+.trenes-board[data-arriving] li {
+  animation-delay: calc(520ms + var(--i, 0) * 70ms);
+}
+
+.trenes-board[data-arriving] .px-text[data-reveal] path {
+  animation-delay: calc(var(--d, 0ms) + 620ms + var(--i, 0) * 70ms);
+}
+
+@keyframes trenes-card-in {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+.trenes-muted {
+  color: var(--trenes-muted);
+}
+
+.trenes-station {
+  margin-top: 28px;
+}
+
+.trenes-clock {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+  color: light-dark(#111, #e0e0e0);
+}
+
+.trenes-clock[hidden] {
+  display: none;
+}
+
+.trenes-clock-now {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trenes-date {
+  color: light-dark(#646460, #9e9e9b);
+}
+
+.trenes-stage {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 10px;
+  background-color: light-dark(#f7f6f2, #181815);
+  background-image:
+    linear-gradient(light-dark(#87867f0d, #7f7e780d) 1px, transparent 1px),
+    linear-gradient(90deg, light-dark(#87867f0d, #7f7e780d) 1px, transparent 1px);
+  background-size: 16px 16px;
+  clip-path: var(--pixel-corners);
+}
+
+.trenes-map {
+  display: block;
+  max-width: 100%;
+  image-rendering: pixelated;
+  touch-action: manipulation;
+}
+
+.trenes-board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trenes-card {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px 12px 14px;
+  border: 0;
+  background: var(--trenes-card);
+  color: light-dark(#111, #e0e0e0);
+  text-align: left;
+  cursor: pointer;
+  clip-path: var(--pixel-corners);
+  touch-action: manipulation;
+  transition: background-color 240ms ease, color 240ms ease, box-shadow 160ms ease;
+}
+
+.trenes-card-main {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Your train: the card doubles in width and grows a ticket stub, torn off
+   along a perforated pixel line. */
+.trenes-board li[data-pass] {
+  grid-column: span 2;
+}
+
+.trenes-card[data-pass] {
+  flex-direction: row;
+  gap: 16px;
+}
+
+.trenes-pass {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding-left: 18px;
+}
+
+.trenes-pass::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  bottom: -14px;
+  left: 0;
+  width: 2px;
+  background: repeating-linear-gradient(currentColor 0 2px, transparent 2px 6px);
+  opacity: .25;
+}
+
+.trenes-pass > .px-text:first-child {
+  margin-bottom: 2px;
+}
+
+.trenes-pass[data-tone='go'] .trenes-pass-go { color: light-dark(#cf852b, #d98e37); }
+.trenes-pass[data-tone='run'] .trenes-pass-go { color: var(--trenes-late); }
+.trenes-pass[data-tone='gone'] .trenes-pass-go { color: var(--trenes-muted); }
+
+.trenes-pass[data-tone='go'] .trenes-pass-go,
+.trenes-pass[data-tone='run'] .trenes-pass-go {
+  animation: trenes-blink 1s steps(2, jump-none) infinite;
+}
+
+.trenes-card[data-state='boarding'] .trenes-pass .trenes-pass-go,
+.trenes-card[data-state='closing'] .trenes-pass .trenes-pass-go {
+  color: #fdfdfc;
+}
+
+.trenes-card-head {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.trenes-card-time {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trenes-card-track {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.trenes-card-service {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin-top: 12px;
+}
+
+.trenes-late {
+  color: var(--trenes-late);
+}
+
+.trenes-tag {
+  padding: 2px 4px 0;
+  background: light-dark(#2b2b29, #d0d0ce);
+  color: light-dark(#fdfdfc, #121212);
+  clip-path: polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px), 0 2px, 2px 2px);
+}
+
+.trenes-card-destination {
+  margin-top: 6px;
+}
+
+.trenes-card-stops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 4px;
+  margin-top: 2px;
+}
+
+/* Boarding: the card takes its track's colour, the same one lit on the map. */
+.trenes-card[data-state='boarding'],
+.trenes-card[data-state='closing'] {
+  --trenes-muted: rgba(253, 253, 252, .72);
+  --trenes-late: #fdfdfc;
+  background: var(--track);
+  color: #fdfdfc;
+}
+
+.trenes-card[data-state='boarding'] .trenes-tag,
+.trenes-card[data-state='closing'] .trenes-tag {
+  background: rgba(253, 253, 252, .2);
+}
+
+.trenes-card[data-focused]:not([data-state='boarding'], [data-state='closing']) {
+  box-shadow: inset 0 0 0 2px light-dark(#cfcec8, #3c3b38);
+}
+
+.trenes-card[data-focused][data-state='announced'] {
+  box-shadow: inset 0 0 0 2px var(--track);
+}
+
+.trenes-card[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 2px light-dark(#111, #e0e0e0);
+}
+
+.trenes-card[aria-pressed='true'][data-state='boarding'],
+.trenes-card[aria-pressed='true'][data-state='closing'] {
+  box-shadow: inset 0 0 0 2px #fdfdfc;
+}
+
+.trenes-card:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px light-dark(#111, #e0e0e0);
+}
+
+/* How much of the boarding window has gone. It glides between updates,
+   which arrive once a second (or four times at the faster speeds). */
+.trenes-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: rgba(253, 253, 252, .55);
+  opacity: 0;
+  transform: scaleX(var(--progress));
+  transform-origin: left;
+  transition: transform var(--tick, 1s) linear, opacity 240ms ease;
+}
+
+.trenes-card[data-state='boarding'] .trenes-progress,
+.trenes-card[data-state='closing'] .trenes-progress {
+  opacity: 1;
+}
+
+.trenes-card[data-state='closing'] .trenes-card-time .trenes-muted {
+  animation: trenes-blink 1s steps(2, jump-none) infinite;
+}
+
+@keyframes trenes-blink {
+  50% { opacity: 0; }
+}
+
+/* Speed, the day strip and a way back to now, on one line. */
+.trenes-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.trenes-speeds {
+  display: flex;
+  flex: none;
+  gap: 4px;
+}
+
+.trenes-controls button {
+  min-width: 40px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid light-dark(#e7e7e3, #252523);
+  border-radius: 8px;
+  background: light-dark(#fdfdfc, #121212);
+  color: light-dark(#444, #bababa);
+  font-weight: 460;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
+}
+
+.trenes-controls button[aria-checked='true'] {
+  border-color: light-dark(#cfcec8, #3c3b38);
+  background: light-dark(#f7f6f2, #181815);
+  color: light-dark(#111, #e0e0e0);
+}
+
+.trenes-controls .trenes-now,
+.trenes-controls .trenes-icon {
+  flex: none;
+}
+
+.trenes-controls .trenes-icon {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  padding: 0;
+  color: light-dark(#646460, #9e9e9b);
+}
+
+.trenes-controls .trenes-sound {
+  color: light-dark(#a3a29d, #64635f);
+}
+
+.trenes-controls .trenes-sound[aria-pressed='true'] {
+  border-color: light-dark(#cfcec8, #3c3b38);
+  background: light-dark(#f7f6f2, #181815);
+  color: light-dark(#111, #e0e0e0);
+}
+
+.trenes-controls .trenes-now:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.trenes-timeline {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  justify-content: center;
+}
+
+.trenes-strip {
+  display: block;
+  max-width: 100%;
+  image-rendering: pixelated;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.trenes-controls button:focus-visible,
+.trenes-strip:focus-visible {
+  outline: 2px solid light-dark(#111, #e0e0e0);
+  outline-offset: 2px;
+}
+
+.trenes-hint {
+  margin: 10px 0 0;
+  color: light-dark(rgba(0, 0, 0, .32), rgba(238, 238, 238, .32));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .trenes-controls button:not(:disabled):hover {
+    border-color: light-dark(#cfcec8, #3c3b38);
+    color: light-dark(#111, #e0e0e0);
+  }
+
+}
+
+@media (max-width: 1000px) {
+  .trenes-board {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .trenes-board li:nth-child(n + 5),
+  .trenes-board[data-has-pass] li:nth-child(n + 4) {
+    display: none;
+  }
+}
+
+@media (max-width: 800px) {
+  .trenes-board {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .trenes-board li:nth-child(n + 4),
+  .trenes-board[data-has-pass] li:nth-child(n + 3) {
+    display: none;
+  }
+}
+
+/* On phones the board turns into rows: time, where to, and the track. */
+@media (max-width: 640px) {
+  .trenes-shell {
+    padding: 32px 16px 40px;
+  }
+
+  .trenes-stage {
+    padding: 10px 0 8px;
+  }
+
+  .trenes-board {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .trenes-board li:nth-child(n + 4),
+  .trenes-board[data-has-pass] li:nth-child(n + 3) {
+    display: list-item;
+  }
+
+  .trenes-board li[data-pass] {
+    grid-column: auto;
+  }
+
+  .trenes-card-main {
+    display: contents;
+  }
+
+  .trenes-card[data-pass] {
+    grid-template-areas:
+      'time destination track'
+      'time service track'
+      'pass pass pass';
+  }
+
+  .trenes-pass {
+    grid-area: pass;
+    margin-top: 6px;
+    padding: 12px 0 2px;
+  }
+
+  .trenes-pass::before {
+    top: 0;
+    right: -12px;
+    bottom: auto;
+    left: -12px;
+    width: auto;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 6px);
+  }
+
+  .trenes-card {
+    display: grid;
+    grid-template-columns: 136px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'time destination track'
+      'time service track';
+    column-gap: 12px;
+    row-gap: 6px;
+    align-items: start;
+    padding: 10px 12px;
+  }
+
+  .trenes-card-head {
+    display: contents;
+  }
+
+  .trenes-card-time {
+    grid-area: time;
+  }
+
+  .trenes-card-destination {
+    grid-area: destination;
+    margin: 0;
+  }
+
+  .trenes-card-service {
+    grid-area: service;
+    margin: 0;
+  }
+
+  .trenes-card-stops {
+    display: none;
+  }
+
+  .trenes-card-track {
+    grid-area: track;
+    align-self: center;
+  }
+
+  .trenes-controls {
+    flex-wrap: wrap;
+    gap: 12px 8px;
+  }
+
+  .trenes-timeline {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .trenes-controls .trenes-theme {
+    margin-left: auto;
+  }
+
+  .trenes-hint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-text[data-reveal] path,
+  .trenes-enter,
+  .trenes-board li,
+  .trenes-card[data-state='closing'] .trenes-card-time .trenes-muted {
+    animation: none;
+  }
+
+  .trenes-card {
+    transition: none;
+  }
+}

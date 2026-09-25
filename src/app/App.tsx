@@ -9,6 +9,7 @@ import usePageNavigation from './usePageNavigation';
 
 const Neural = lazy(() => import('./neural/Neural'));
 const Robot = lazy(() => import('./robot/Robot'));
+const Trenes = lazy(() => import('./trenes/Trenes'));
 
 function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
   return (
@@ -22,6 +23,7 @@ export default function App() {
   const { path, Article, Carrete, arrived } = usePageNavigation();
   if (path === '/neural') return <Suspense fallback={<main style={{ position: 'fixed', inset: 0, background: '#000' }} aria-label="Cargando la red neuronal" />}><Neural /></Suspense>;
   if (path === '/robot') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Cargando el robot" />}><Robot /></Suspense>;
+  if (path === '/trenes') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Cargando la estación" />}><Trenes /></Suspense>;
   if (path === '/') return <Home arrived={arrived} />;
   if (path === '/carrete') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading camera roll" />}><Carrete /></Suspense>;
   if (path === '/writing/ink') return <Suspense fallback={<main className="minimal-portfolio-page"><div className="minimal-portfolio-shell" role="status">Loading article…</div></main>}><Article /></Suspense>;
