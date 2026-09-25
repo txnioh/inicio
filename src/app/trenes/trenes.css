@@ -1,12 +1,20 @@
 /* This page can switch to dark (the rest of the site stays light). It opens
-   light; the toggle sets --trenes-scheme. Every colour below is
-   light-dark(<light>, <dark>). */
+   light; the toggle marks <html> with data-trenes-scheme="dark". Every
+   colour below is light-dark(<light>, <dark>). The scheme is set with plain
+   declarations, not a variable: the production build lowers light-dark()
+   to variables that only static color-scheme values can switch. */
 html:has(.trenes-page),
 body:has(.trenes-page),
 .minimal-portfolio-page.trenes-page {
-  color-scheme: var(--trenes-scheme, light);
+  color-scheme: light;
   background: light-dark(#fdfdfc, #121212);
   color: light-dark(#111111, #e0e0e0);
+}
+
+html[data-trenes-scheme='dark'],
+html[data-trenes-scheme='dark'] body,
+html[data-trenes-scheme='dark'] .minimal-portfolio-page.trenes-page {
+  color-scheme: dark;
 }
 
 .trenes-page .minimal-basic-link::before {

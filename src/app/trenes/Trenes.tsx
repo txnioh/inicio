@@ -180,8 +180,8 @@ export default function Trenes() {
 
   // The page's colours are light-dark() pairs; this picks which half applies.
   useEffect(() => {
-    document.documentElement.style.setProperty('--trenes-scheme', scheme);
-    return () => { document.documentElement.style.removeProperty('--trenes-scheme'); };
+    document.documentElement.dataset.trenesScheme = scheme;
+    return () => { delete document.documentElement.dataset.trenesScheme; };
   }, [scheme]);
   const [arriving, setArriving] = useState(true);
   const board = useRef<HTMLOListElement>(null);
