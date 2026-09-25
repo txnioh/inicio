@@ -21,6 +21,8 @@ const C = {
   green: '#8fcfa3',
   red: '#e0786c',
   hole: '#555551',
+  hand: '#77776f',
+  paper: '#fdfdfc',
 };
 
 type Ctx = CanvasRenderingContext2D;
@@ -238,6 +240,19 @@ export function drawPortal(ctx: Ctx, kind: 'leaving' | 'arriving', f: number) {
   robot(ctx, { dy: sink, dw: squash ? 2 : 0, dh: squash ? -1 : 0, eyes, shadow: false });
   ctx.restore();
 }
+
+// A 4×4 Bayer matrix, for dithered fades.
+export const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+
+// Floating hands for gestures: an open palm facing up and a thumbs-up.
+const PALM: Sprite = ['#.#.#', '#####', '.###.'];
+const THUMB: Sprite = ['.#...', '.##..', '.##..', '#####', '#####', '#####', '.###.'];
+// 7×7 characters for the robot speaking Chinese.
+const HANZI: Record<'hao' | 'zhong' | 'wen', Sprite> = {
+  hao: ['.#..###', '####..#', '.#...#.', '#.#####', '#.#.#..', '.#..#..', '#.#.##.'],
+  zhong: ['...#...', '#######', '#..#..#', '#..#..#', '#######', '...#...', '...#...'],
+  wen: ['...#...', '#######', '.#...#.', '..#.#..', '...#...', '..#.#..', '##...##'],
+};
 
 export type Animation = {
   id: string;
@@ -679,6 +694,193 @@ export const animations: Animation[] = [
       cells.slice(0, shown).forEach(([x, y]) => { ctx.fillStyle = C.pink; ctx.fillRect(23 + x, 12 + y, 1, 1); });
       if (!done && f >= 4 && f % 2) { const [x, y] = cells[shown]; ctx.fillStyle = C.ink; ctx.fillRect(23 + x, 11 + y, 1, 1); }
       if (done && f % 4 < 2) sprite(ctx, G.sparkle, 28, 8, C.yellow);
+    },
+  },
+  {
+    // The "six seven" meme: palms up, weighing one against the other.
+    id: 'sixseven', label: '6 7', line: 'six seven jajaja', frames: 40,
+    draw: (ctx, f) => {
+      const on = f >= 4 && f < 36;
+      const up = Math.floor((f - 4) / 3) % 2 === 0;
+      robot(ctx, {
+        dw: 2, dh: 1, dy: on && f % 3 === 0 ? -1 : 0, eyes: on ? 'none' : 'open',
+        fx: (c, s) => { if (on) [6, 7].forEach((d, i) => sprite(c, DIGITS[d], s.cx - 4 + i * 4, s.cy - 2, C.eye)); },
+      });
+      if (!on) return;
+      sprite(ctx, PALM, 2, up ? 11 : 14, C.hand);
+      sprite(ctx, PALM, 25, up ? 14 : 11, C.hand);
+    },
+  },
+  {
+    id: 'backflip', label: 'Mortal', line: 'mortal hacia atrás, toma ya', frames: 36,
+    draw: (ctx, f) => {
+      if (f < 5) { robot(ctx, { dw: f > 1 ? 2 : 0, dh: f > 1 ? -2 : 0, eyes: f > 1 ? 'closed' : 'open' }); return; }
+      if (f < 17) {
+        // Airborne: the whole body turns a quarter at a time, crisp at every step.
+        const k = f - 5;
+        const dy = [-2, -4, -6, -7, -8, -8, -8, -7, -6, -4, -2, 0][k];
+        const quarter = k < 2 ? 0 : k < 10 ? ((k - 2) >> 1) + 1 : 4;
+        const body = offscreen(c => robot(c, { shadow: false, eyes: 'wide' }));
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.translate(16, 16 + dy);
+        ctx.rotate(-quarter * Math.PI / 2);
+        ctx.drawImage(body, -16, -16);
+        ctx.restore();
+        if (k >= 2 && k < 10) sprite(ctx, ['#', '.', '#'], quarter % 2 ? 6 : 25, 9 + dy, C.ink);
+        return;
+      }
+      const landing = f < 19;
+      robot(ctx, { dw: landing ? 2 : 0, dh: landing ? -1 : 0, eyes: landing ? 'closed' : 'happy', dy: f === 20 ? -1 : 0 });
+      if (f >= 19 && f < 28 && f % 4 < 2) { sprite(ctx, G.sparkle, 4, 9, C.yellow); sprite(ctx, G.sparkle, 25, 8, C.yellow); }
+    },
+  },
+  {
+    id: 'chinese', label: 'Chino', line: '', frames: 44,
+    draw: (ctx, f) => {
+      const talk = f >= 4 && f < 40;
+      robot(ctx, { dx: -3, dy: talk && f % 4 < 2 ? -1 : 0, eyes: talk && f % 8 >= 6 ? 'half' : 'open', look: [1, -1] });
+      if (f < 4) return;
+      // A little bubble: 中文, then 好!
+      ctx.fillStyle = C.paper;
+      ctx.fillRect(15, 1, 15, 9);
+      ctx.fillStyle = '#cfcec8';
+      ctx.fillRect(15, 0, 15, 1); ctx.fillRect(15, 10, 15, 1);
+      ctx.fillRect(14, 1, 1, 9); ctx.fillRect(30, 1, 1, 9);
+      ctx.fillRect(16, 11, 1, 1);
+      const [a, b] = f < 22 ? [HANZI.zhong, HANZI.wen] : [HANZI.hao, G.bang];
+      const from = f < 22 ? 4 : 22;
+      if (f >= from + 1) sprite(ctx, a, 15, 2, C.screen);
+      if (f >= from + 4) sprite(ctx, b, f < 22 ? 23 : 25, f < 22 ? 2 : 3, f < 22 ? C.screen : C.red);
+    },
+  },
+  {
+    id: 'skate', label: 'Skate', line: 'un ollie y a casa', frames: 48,
+    draw: (ctx, f) => {
+      // Hop on, roll right and back with an ollie in the middle, hop off.
+      const lift = f < 3 ? -f : f >= 45 ? -(47 - f) : -3;
+      const x = Math.round(Math.sin(f / 48 * Math.PI * 2) * 5);
+      const k = f - 20;
+      const air = k >= 0 && k < 10 ? [-1, -3, -4, -5, -5, -4, -3, -1, 0, 0][k] : 0;
+      const heading = Math.cos(f / 48 * Math.PI * 2) >= 0 ? 1 : -1;
+      robot(ctx, { dx: x, dy: lift + air, eyes: air ? (k < 5 ? 'wide' : 'happy') : 'open', look: [heading, 0] });
+      if (f >= 2 && f < 46) {
+        const bx = CX - 6 + x, by = GY - 3 + air;
+        sprite(ctx, ['#..........#', '.##########.'], bx, by, C.purple);
+        sprite(ctx, ['..#......#..'], bx, by + 2, C.yellow);
+        if (!air && Math.abs(Math.cos(f / 48 * Math.PI * 2)) > .4) {
+          ctx.fillStyle = '#d8d7d2';
+          const tail = heading > 0 ? bx - 4 : bx + 13;
+          ctx.fillRect(tail, 13 + lift, 3, 1);
+          ctx.fillRect(tail + heading, 16 + lift, 3, 1);
+        }
+      }
+    },
+  },
+  {
+    id: 'fan', label: 'Abanico', line: '', frames: 44,
+    draw: (ctx, f) => {
+      robot(ctx, { dx: -3, eyes: f >= 13 ? 'happy' : 'open', look: f < 13 ? [2, -1] : [0, 0] });
+      // A folding fan held at the right: it opens rib by rib, then fans.
+      // Paper panels alternate two reds on an outer band; wooden ribs run
+      // from the pivot to the edge.
+      const open = Math.min(1, Math.max(0, (f - 3) / 8));
+      const sway = f >= 13 ? Math.round(Math.sin((f - 13) / 6 * Math.PI * 2)) * .16 : 0;
+      const px = 26, py = 20, r = 8, ribs = 7;
+      const right = -.2 + sway, span = open * 2.5, left = right - span;
+      for (let y = py - r; y <= py; y++) for (let x = px - r; x <= Math.min(W - 1, px + r); x++) {
+        const d = Math.hypot(x - px, y - py);
+        const a = Math.atan2(y - py, x - px);
+        if (d > r + .4 || a > right + .05 || a < left - .05) continue;
+        const t = span ? (a - left) / span * ribs : 0;
+        const onRib = span && Math.abs(t - Math.round(t)) < (d < 4 ? .5 : .16);
+        if (d < 4 && !onRib) continue;
+        ctx.fillStyle = onRib ? '#8a5a3c' : Math.floor(t) % 2 ? C.red : '#f2b3a8';
+        ctx.fillRect(x, y, 1, 1);
+      }
+      ctx.fillStyle = '#8a5a3c';
+      ctx.fillRect(px, py, 1, 2);
+      if (f >= 13) rising(ctx, f, 8, 2, (p, _rise, i) => alpha(ctx, 1 - p, () => {
+        ctx.fillStyle = C.blue;
+        ctx.fillRect(Math.round(20 - p * 10), 9 + i * 3, 2, 1);
+      }));
+    },
+  },
+  {
+    // Frozone's ice-blue shades, then a rave: the lights go out around the
+    // robot, a disco ball drops in and coloured beams sweep the floor.
+    id: 'rave', label: 'Gafas rave', line: 'dónde está mi supertraje?', frames: 48,
+    draw: (ctx, f) => {
+      const party = f >= 10;
+      const beat = party && f % 4 < 2;
+      const colors = [C.purple, C.pink, C.blue, C.green, C.yellow];
+      // Darkness: a dithered pool that grows in, and shrinks away at the end.
+      const dark = Math.min(1, Math.max(0, (f - 6) / 5)) * Math.min(1, Math.max(0, (47 - f) / 4));
+      const inDark = new Uint8Array(W * H);
+      if (dark > 0) {
+        ctx.fillStyle = '#17161c';
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+          const d = Math.hypot((x - 15.5) / 16, (y - 12) / 12.5) / dark;
+          if (d < .78 || (d < 1 && BAYER[y % 4][x % 4] / 16 > (d - .78) / .22)) { ctx.fillRect(x, y, 1, 1); inDark[y * W + x] = 1; }
+        }
+      }
+      // Light only shows where it is dark.
+      const light = (x: number, y: number, w = 1) => {
+        for (let i = x; i < x + w; i++) if (i >= 0 && i < W && inDark[y * W + i]) ctx.fillRect(i, y, 1, 1);
+      };
+      if (party && dark > .5) {
+        // Three beams from the ball, swinging, each landing in a pool of colour.
+        const ballY = Math.min(2, f - 10);
+        for (let i = 0; i < 3; i++) {
+          const angle = Math.sin(f / 7 + i * 2.1) * .75;
+          const color = pick((f >> 2) + i, colors);
+          let lx = 16;
+          alpha(ctx, .5, () => {
+            ctx.fillStyle = color;
+            // A cone: one pixel wide at the ball, widening towards the floor.
+            for (let y = ballY + 2; y <= GY; y++) {
+              lx = Math.round(16 + Math.tan(angle) * (y - ballY - 1));
+              const w = 1 + ((y - ballY) >> 3);
+              light(lx - (w >> 1), y, w);
+            }
+          });
+          alpha(ctx, .75, () => { ctx.fillStyle = color; light(lx - 2, GY, 5); light(lx - 1, GY + 1, 3); });
+        }
+        // The disco ball, its facets glinting in turn, on a thread.
+        ctx.fillStyle = '#5c5c59';
+        if (ballY > 0) ctx.fillRect(16, 0, 1, ballY);
+        sprite(ctx, ['.##.', '####', '####', '.##.'], 15, ballY, '#c9c8c2');
+        const glint = f % 4;
+        ctx.fillStyle = C.eye;
+        ctx.fillRect(15 + (glint & 1) + 1, ballY + (glint >> 1) + 1, 1, 1);
+        // Strobe twinkles in the dark.
+        if (f % 3 === 0) {
+          const rand = random(f);
+          for (let i = 0; i < 3; i++) { ctx.fillStyle = pick(i + f, colors); ctx.fillRect(2 + Math.floor(rand() * 28), 3 + Math.floor(rand() * 8), 1, 1); }
+        }
+      }
+      const s = robot(ctx, { dy: beat ? -1 : 0, dw: beat ? 2 : 0, dh: beat ? -1 : 0, eyes: f < 8 ? 'open' : 'none', screen: party ? '#55545a' : C.screen });
+      if (f < 3) return;
+      // A slim ice-blue visor slides down from above the head onto the eyes,
+      // a glint sweeping across it; in the dark it glows with the beams.
+      const top = s.y + 2 - Math.max(0, 8 - (f - 3));
+      const wide = s.w + 2;
+      const band = [`.${'#'.repeat(wide - 2)}.`, '#'.repeat(wide), `..${'#'.repeat(wide - 4)}..`];
+      sprite(ctx, band, s.x - 1, top, party ? pick(f >> 2, ['#7cc7ea', '#a9a2f0', '#7cc7ea', '#f0a9c4']) : '#7cc7ea');
+      sprite(ctx, [band[0]], s.x - 1, top, '#c9ecfb');
+      const glint = s.x + ((f * 2) % (s.w + 10)) - 5;
+      ctx.fillStyle = C.eye;
+      for (let i = 0; i < 2; i++) if (glint + i > s.x && glint + i < s.x + s.w - 1) ctx.fillRect(glint + i, top + 1 - i, 1, 1);
+    },
+  },
+  {
+    id: 'thumbsup', label: 'Pulgar arriba', line: '', frames: 32,
+    draw: (ctx, f) => {
+      const pop = f < 3 ? 0 : Math.min(1, (f - 3) / 3);
+      const y = Math.round(21 - pop * 10) + (f >= 12 && f < 24 && f % 6 < 3 ? -1 : 0);
+      robot(ctx, { dx: -3, eyes: f >= 6 && f < 26 ? ['open', 'closed'] : 'open' });
+      if (f >= 3 && f < 29) sprite(ctx, THUMB, 23, y, C.hand);
+      if (f >= 8 && f < 24 && f % 4 < 2) sprite(ctx, G.sparkle, 28, y - 3, C.yellow);
     },
   },
 ];

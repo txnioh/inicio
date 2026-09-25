@@ -1,52 +1,62 @@
+/* The robot's page: no boxes, no borders. Everything is drawn in whole
+   pixels and scaled by whole numbers, so the pixel art stays crisp. */
 .robot-shell {
   max-width: 640px;
+}
+
+.robot-page svg,
+.robot-page canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.robot-page .px-text { fill: currentColor; }
+
+.robot-page button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #a3a29d;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.robot-page button:focus-visible,
+.robot-skin input:focus-visible + svg {
+  outline: 2px solid #111;
+  outline-offset: 3px;
 }
 
 .robot-header {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
   font-size: 14px;
   line-height: 20px;
 }
 
 .robot-header .minimal-basic-link {
   align-self: flex-start;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
   color: rgba(0, 0, 0, .4);
 }
 
-.robot-header h1 {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: -0.09px;
-}
-
+.robot-header h1,
 .robot-header p {
   margin: 0;
-  color: rgba(0, 0, 0, .4);
-  font-weight: 460;
 }
 
+.robot-header h1 { color: #111; }
+.robot-header p { color: #a3a29d; }
+
+/* The stage: just the robot under its spotlight, nothing around it. */
 .robot-stage {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 40px;
-  border-radius: 4px;
-  background-color: #f7f6f2;
-  background-image:
-    linear-gradient(#87867f0d 1px, transparent 1px),
-    linear-gradient(90deg, #87867f0d 1px, transparent 1px);
-  background-size: 16px 16px;
-  overflow: hidden;
-}
-
-.robot-stage canvas {
-  display: block;
-  image-rendering: pixelated;
+  margin-top: 48px;
 }
 
 .robot-stage canvas:last-child {
@@ -54,162 +64,110 @@
   touch-action: manipulation;
 }
 
+.robot-deck {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin-top: 28px;
+}
+
 .robot-controls {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  font-size: 13px;
+  gap: 4px;
 }
 
 .robot-controls button,
-.robot-grid button {
-  border: 1px solid #e7e7e3;
-  border-radius: 8px;
-  background: #fdfdfc;
-  color: #444;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.robot-controls button {
-  min-width: 36px;
+.robot-download {
+  width: 32px;
   height: 32px;
-  padding: 0 10px;
-  font-weight: 460;
 }
 
-.robot-controls button:last-child {
-  margin-left: auto;
-}
+.robot-download { justify-self: end; }
 
-.robot-meta {
-  display: flex;
-  gap: 8px;
-  margin-left: 8px;
-  color: rgba(0, 0, 0, .4);
-  font-variant-numeric: tabular-nums;
-}
-
-.robot-meta strong {
+.robot-name {
+  margin: 0;
   color: #111;
-  font-weight: 500;
 }
 
-.robot-hint {
-  margin: 10px 0 0;
-  color: rgba(0, 0, 0, .32);
-  font-size: 12px;
-  line-height: 18px;
+.robot-timeline {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
 }
 
-.robot-skins {
-  margin-top: 40px;
-  font-size: 14px;
-  line-height: 20px;
+.robot-ruler {
+  width: calc(var(--frames) * 4px);
+  height: 10px;
+  cursor: ew-resize;
+  touch-action: none;
 }
 
-.robot-skins h2 {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 500;
+.robot-counter {
+  width: 46px;
+  height: 16px;
 }
 
-.robot-skins p {
-  margin: 0;
-  color: rgba(0, 0, 0, .4);
-  font-weight: 460;
-}
-
-.robot-skins .robot-skin-selector {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 12px;
-  padding: 0;
-  border: 0;
-}
-
-.robot-skins .robot-skin-choice {
+/* The skin: two words and an arrow. */
+.robot-skin {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
   gap: 20px;
-  height: 72px;
-  padding: 0 20px 0 28px;
-  border: 1px solid #e7e7e3;
-  border-radius: 8px;
-  background: #fdfdfc;
-  color: #444;
-  font-size: 13px;
+  margin: 48px 0 0;
+  padding: 0;
+  border: 0;
+  color: #a3a29d;
+}
+
+.robot-skin-title { margin-right: 4px; color: #c4c3bd; }
+
+.robot-skin label {
   cursor: pointer;
   touch-action: manipulation;
-  transition: border-color 160ms ease, background-color 160ms ease;
 }
 
-.robot-skins input:checked + .robot-skin-choice {
-  border-color: #cfcec8;
-  background: #f7f6f2;
-  color: #111;
-}
+.robot-skin label[data-on] { color: #111; }
 
-.robot-skins .minimal-footer-robot-gallery {
-  scale: 2;
-  transform-origin: left center;
-  margin-right: 28px;
-}
-
-.robot-skins input:focus-visible + .robot-skin-choice {
-  outline: 2px solid #111;
-  outline-offset: 2px;
-}
-
+/* The gallery: a contact sheet of every animation, no frames around them.
+   The one on stage gets pixel corner brackets. */
 .robot-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin: 40px 0 0;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 4px;
+  margin: 28px 0 0;
   padding: 0;
   list-style: none;
 }
 
 .robot-grid button {
-  display: flex;
+  --corner: transparent;
   width: 100%;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 6px 8px;
-  font-size: 12px;
-  transition: border-color 160ms ease, background-color 160ms ease;
+  padding: 8px 0;
+  background:
+    linear-gradient(var(--corner), var(--corner)) top left / 8px 2px,
+    linear-gradient(var(--corner), var(--corner)) top left / 2px 8px,
+    linear-gradient(var(--corner), var(--corner)) top right / 8px 2px,
+    linear-gradient(var(--corner), var(--corner)) top right / 2px 8px,
+    linear-gradient(var(--corner), var(--corner)) bottom left / 8px 2px,
+    linear-gradient(var(--corner), var(--corner)) bottom left / 2px 8px,
+    linear-gradient(var(--corner), var(--corner)) bottom right / 8px 2px,
+    linear-gradient(var(--corner), var(--corner)) bottom right / 2px 8px;
+  background-repeat: no-repeat;
 }
 
-.robot-grid button[aria-pressed='true'] {
-  border-color: #cfcec8;
-  background: #f7f6f2;
-  color: #111;
-}
+.robot-grid button[aria-pressed='true'] { --corner: #111; }
 
 .robot-grid canvas {
-  width: 100%;
-  max-width: 128px;
-  aspect-ratio: 4 / 3;
-  image-rendering: pixelated;
-}
-
-.robot-controls button:focus-visible,
-.robot-grid button:focus-visible {
-  outline: 2px solid #111;
-  outline-offset: 2px;
+  width: 64px;
+  height: 48px;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .robot-controls button:hover,
-  .robot-skins label:hover .robot-skin-choice,
-  .robot-grid button:hover {
-    border-color: #cfcec8;
-    color: #111;
-  }
+  .robot-download:hover,
+  .robot-skin label:hover { color: #111; }
+  .robot-grid button:hover:not([aria-pressed='true']) { --corner: #d2d1cb; }
 }
 
 @media (max-width: 640px) {
@@ -217,26 +175,6 @@
     padding: 32px 16px 40px;
   }
 
-  .robot-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .robot-skins .robot-skin-choice {
-    gap: 8px;
-    padding: 0 12px 0 18px;
-  }
-
-  .robot-hint {
-    display: none;
-  }
-}
-
-@media (max-width: 380px) {
-  .robot-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .robot-meta span {
-    display: none;
-  }
+  .robot-stage { margin-top: 32px; }
+  .robot-grid { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); }
 }

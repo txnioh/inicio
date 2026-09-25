@@ -990,48 +990,6 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   gap: 8px;
 }
 
-.robot-skin-selector {
-  display: flex;
-  min-width: 0;
-  gap: 2px;
-  margin: 0;
-  padding: 3px;
-  border: 1px solid #e7e7e3;
-  border-radius: 9px;
-}
-
-.robot-skin-selector label {
-  position: relative;
-  min-width: 0;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.robot-skin-choice {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 32px;
-  padding: 0 12px;
-  border-radius: 6px;
-  color: #70706a;
-  font-size: 12px;
-}
-
-.robot-skin-selector input:checked + .robot-skin-choice {
-  background: #eeeee9;
-  color: #111;
-}
-
-.robot-skin-selector input:focus-visible + .robot-skin-choice {
-  outline: 2px solid #777771;
-  outline-offset: 2px;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .robot-skin-selector label:hover .robot-skin-choice { color: #111; }
-}
-
 .minimal-footer p {
   width: auto;
   margin: 0;

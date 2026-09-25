@@ -29,8 +29,7 @@ const mix = (a, b, p) => a + (b - a) * p;
 const canvas = createCanvas(W, H), ctx = canvas.getContext('2d');
 const previous = createCanvas(W, H), previousCtx = previous.getContext('2d');
 // Must match the order of `activities` in FooterRobotMark.
-const ACTIVITIES = ['scan', 'think', 'code', 'clock', 'glitch', 'loading', 'sneeze', 'love', 'battery', 'boot', 'rebuild',
-  'stretch', 'coffee', 'wish', 'bubble', 'hiccup', 'lookaround', 'paint'];
+const ACTIVITIES = ['coffee', 'paint', 'wish', 'sneeze', 'glitch'];
 
 const browser = await chromium.launch({ headless: true, channel: 'chrome', args: ['--mute-audio'] });
 const context = await browser.newContext({ viewport: { width: VIEW_W, height: VIEW_H }, deviceScaleFactor: DPR, colorScheme: 'light' });

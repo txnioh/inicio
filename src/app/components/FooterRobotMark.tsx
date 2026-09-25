@@ -15,10 +15,14 @@ import RobotSkinReveal from './RobotSkinReveal';
 // from /robot (`play:`); the classic one only has CSS expressions.
 const gestures = {
   classic: ['wink', 'happy', 'surprised'],
-  pixel: ['wink', 'happy', 'play:tickle', 'surprised', 'play:love'],
+  pixel: ['play:sixseven', 'play:backflip', 'play:chinese', 'play:skate', 'play:fan', 'play:rave', 'play:thumbsup'],
 } as const;
 type Gesture = typeof gestures[keyof typeof gestures][number] | 'play:angry';
-const gestureMs = (gesture: Gesture) => gesture === 'play:love' || gesture === 'play:angry' ? 2_000 : 1_000;
+// Played animations end when the face says so (see endActivity); this is
+// only a fallback for when it cannot, e.g. off screen.
+const gestureMs = (gesture: Gesture) => gesture.startsWith('play:') ? 5_000 : 1_000;
+// These speak through the animation itself, so they say nothing.
+const silent = new Set<Gesture>(['play:chinese', 'play:fan', 'play:thumbsup']);
 // Held this long without moving, the robot notices it is being pressed.
 const LONG_PRESS_MS = 700;
 // A press only turns into a drag past this distance, so a finger resting on
@@ -37,6 +41,10 @@ const lines = {
   surprised: ['uy, no te había visto', 'a ver a ver, qué ha sido eso', 'me has pillado desprevenido'],
   tickle: ['jajaja para para', 'eso son cosquillas y lo sabes', 'jajaja vale ya'],
   love: ['te quiero en binario, 01', 'contigo, sin ruido', 'me caes bien, que lo sepas'],
+  sixseven: ['six seven jajaja', 'seis siete, ya sabes', '6… 7, no lo puedo evitar'],
+  backflip: ['mortal hacia atrás, toma ya', 'eso ha sido limpio, no?'],
+  skate: ['un ollie y a casa', 'skate por el footer, tipo'],
+  rave: ['dónde está mi supertraje?', 'modo rave activado'],
   angry: ['vale vale, ya está bien', 'un clic vale, veinte no', 'que no soy un botón jajaja'],
   carried: ['con cuidadito, eh', 'a dónde vamos?', 'esto no lo tenía planeado', 'ojo que me mareo'],
   pressed: ['eso aprieta, eh', 'que no soy un botón', 'modo sándwich activado', 'vale, ya me has aplastado'],
@@ -51,31 +59,16 @@ const lines = {
 type SpeechCue = keyof typeof lines;
 
 // Pixel skin: things the robot gets up to on its own at home, each an
-// animation from /robot with a line that explains it.
+// animation from /robot with a line that explains it. The newest ones play
+// on a tap instead; the plainer ones stay in the /robot gallery.
 const activities = {
-  scan: ['revisando que no falte ningún píxel', 'escaneando… todo en su sitio'],
-  think: ['dame un seg, que estoy pensando', 'lo suyo sería…'],
-  code: ['haciendo un commit pequeñito', 'arreglando el error, no mitigándolo'],
-  clock: [],
-  glitch: ['eso no ha pasado', 'se ha quedado pillado, ya está'],
-  loading: ['cargando… un segundito', 'dame un seg que cargo'],
-  sneeze: ['achís, perdón', 'alergia a los bugs'],
-  love: ['me gusta que estés por aquí', 'buena compañía, sin ruido'],
-  battery: ['un sorbito de batería y sigo', 'al 1%, como siempre'],
-  boot: ['apagar y encender, lo de siempre', 'reinicio rápido y listo'],
-  rebuild: ['vamos a hacerlo de nuevo', 'me desmonto y lo rehago todo'],
-  stretch: ['estirando los píxeles', 'mucho rato quieto, eh'],
   coffee: ['un cafecito y seguimos', 'café primero, commits después'],
-  wish: ['pide un deseo, rápido', 'has visto eso?'],
-  bubble: ['pop', 'una pompa, porque sí'],
-  hiccup: ['hip… perdón', 'hip… alguien tiene agua?'],
-  lookaround: ['hay alguien por ahí?', 'solo echando un vistazo'],
   paint: ['pintando en pixel art', 'no escatimes en detalles'],
+  wish: ['pide un deseo, rápido', 'has visto eso?'],
+  sneeze: ['achís, perdón', 'alergia a los bugs'],
+  glitch: ['eso no ha pasado', 'se ha quedado pillado, ya está'],
 } satisfies Record<string, string[]>;
 type Activity = keyof typeof activities | 'dizzy';
-const clockLine = () => `ya son las ${new Intl.DateTimeFormat('es-ES', {
-  hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Madrid',
-}).format(new Date())} en madrid, eh`;
 type Speech = { text: string; announce: boolean; context?: boolean };
 
 // `dressing` is true while a new look flies over from the wardrobe;
@@ -195,7 +188,7 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
       const phrases: string[] = activities[next];
       lastActivity.current = next;
       setActivity(next);
-      speak(next === 'clock' ? clockLine() : phrases[Math.floor(Math.random() * phrases.length)]);
+      speak(phrases[Math.floor(Math.random() * phrases.length)]);
     }, 7_000 + Math.random() * 5_000);
     return () => window.clearTimeout(timer);
   }, [idleAtHome, activity, speak]);
@@ -270,8 +263,9 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
       }
       const left = Math.max(8, Math.min(center - width / 2, window.innerWidth - width - 8));
       const below = face.top < height + 16;
-      // The pixel bubble's tail is shorter, so it can sit a little closer.
-      const gap = root.dataset.skin === 'pixel' ? 5 : 8;
+      // The pixel bubble's tail is shorter, so it can sit a little closer;
+      // activities (flips, lasers, a bubble of their own) need headroom.
+      const gap = (root.dataset.skin === 'pixel' ? 5 : 8) + (root.dataset.expression?.startsWith('activity:') ? 12 : 0);
       bubble.style.left = `${left - origin.left}px`;
       bubble.style.top = `${(below ? face.bottom + gap : face.top - height - gap) - origin.top}px`;
       bubble.style.setProperty('--robot-speech-tail', `${Math.max(12, Math.min(center - left, width - 12))}px`);
@@ -427,7 +421,10 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
       : activity ? `activity:${activity}` : sleeping ? 'sleeping' : 'idle');
 
 
-  const endActivity = useCallback(() => setActivity(null), []);
+  const endActivity = useCallback(() => {
+    setActivity(null);
+    setGesture(current => current?.startsWith('play:') ? null : current);
+  }, []);
   const portal = skin !== 'pixel' || !active || reducedMotion ? null
     : departing ? 'leaving' : arrival !== null ? 'arriving' : null;
 
@@ -509,7 +506,7 @@ export default function FooterRobotMark({ draggable = true, dressing = false, dr
               const cycle = gestures[skin];
               const next = cycle[nextGesture.current % cycle.length];
               setGesture(next);
-              say(next.replace('play:', '') as SpeechCue, true);
+              if (!silent.has(next)) say(next.replace('play:', '') as SpeechCue, true);
               nextGesture.current += 1;
             }}
           >
