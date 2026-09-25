@@ -26,10 +26,11 @@ const realMinute = () => {
   return (ms + madridOffset(ms)) / 60000;
 };
 
-// `?hora=19:30` opens the station at that time today, to share a moment.
+// `?time=19:30` opens the station at that time today, to share a moment
+// (`?hora=` still works for older links).
 const startMinute = () => {
   const now = realMinute();
-  const match = /^(\d{1,2}):(\d{2})$/.exec(new URLSearchParams(location.search).get('hora') ?? '');
+  const match = /^(\d{1,2}):(\d{2})$/.exec((new URLSearchParams(location.search).get('time') ?? new URLSearchParams(location.search).get('hora')) ?? '');
   if (!match || Number(match[1]) > 23 || Number(match[2]) > 59) return now;
   return Math.floor(now / 1440) * 1440 + Number(match[1]) * 60 + Number(match[2]);
 };
@@ -55,6 +56,12 @@ const SPEAKER_OFF = [
   '...#.....',
 ];
 
+// The clock only ever runs at one speed; the station is a time-lapse.
+const SPEED = 60;
+
+const PLAY = ['#......', '###....', '#####..', '#######', '#####..', '###....', '#......'];
+const PAUSE = ['##.##', '##.##', '##.##', '##.##', '##.##', '##.##', '##.##'];
+
 const SUN = [
   '....#....',
   '.#.....#.',
@@ -77,30 +84,23 @@ const MOON = [
   '...###..',
 ];
 
-const speeds = [
-  { value: 0, label: 'Pausa' },
-  { value: 1, label: '1×' },
-  { value: 10, label: '10×' },
-  { value: 60, label: '60×' },
-];
-
 function eta(train: Train, now: number) {
   const state = phase(train, now);
   const left = Math.max(1, Math.ceil(train.departure - now));
-  if (state === 'closing') return 'cierre de puertas';
-  // While it pulls in and its passengers get off, say where it comes from.
-  if (now >= train.departure + ARRIVE && now < train.departure + ANNOUNCE) return `llegando de ${train.origin}`;
-  if (state === 'boarding') return `embarque · ${left} min`;
-  if (left < 60) return `en ${left} min`;
-  return `en ${Math.floor(left / 60)} h ${String(left % 60).padStart(2, '0')}`;
+  if (state === 'closing') return 'doors closing';
+  // While it pulls in and empties, say where it comes from.
+  if (now >= train.departure + ARRIVE && now < train.departure + ANNOUNCE) return `arriving from ${train.origin}`;
+  if (state === 'boarding') return `boarding · ${left} min`;
+  if (left < 60) return `in ${left} min`;
+  return `in ${Math.floor(left / 60)} h ${String(left % 60).padStart(2, '0')}`;
 }
 
 function describe(train: Train, now: number) {
   const state = phase(train, now);
-  const where = state === 'scheduled' ? 'vía por asignar' : `vía ${train.track}`;
-  const late = train.delay ? `, con ${train.delay} minutos de retraso` : '';
-  const doing = state === 'boarding' ? ', embarcando' : state === 'closing' ? ', cerrando puertas' : '';
-  return `${clock(train.scheduled)}, ${serviceNames[train.service]} ${train.number} a ${train.destination}${late}, ${where}${doing}.`;
+  const where = state === 'scheduled' ? 'platform to be announced' : `platform ${train.track}`;
+  const late = train.delay ? `, ${train.delay} minutes late` : '';
+  const doing = state === 'boarding' ? ', boarding' : state === 'closing' ? ', doors closing' : '';
+  return `${clock(train.scheduled)}, ${serviceNames[train.service]} ${train.number} to ${train.destination}${late}, ${where}${doing}.`;
 }
 
 function Card({ index, train, now, focused, pinned, onPick }: {
@@ -140,7 +140,7 @@ function Card({ index, train, now, focused, pinned, onPick }: {
             <FlipText className="trenes-muted" text={eta(train, now)} />
           </span>
           <span className="trenes-card-track">
-            <PixelText className="trenes-muted" text="vía" />
+            <PixelText className="trenes-muted" text="plat" />
             <FlipText text={state === 'scheduled' ? '-' : String(train.track)} font="big" unit={3} />
           </span>
         </span>
@@ -154,7 +154,7 @@ function Card({ index, train, now, focused, pinned, onPick }: {
         </span>
         {(pinned || live) && (
           <span className="trenes-card-stops">
-            {(train.stops.length ? train.stops : ['Directo']).flatMap((stop, index) => [
+            {(train.stops.length ? train.stops : ['Non-stop']).flatMap((stop, index) => [
               index > 0 && <PixelText key={`${stop}-dot`} className="trenes-muted" text="·" />,
               <PixelText key={stop} className="trenes-muted" text={stop} />,
             ])}
@@ -169,8 +169,8 @@ function Card({ index, train, now, focused, pinned, onPick }: {
 
 export default function Trenes() {
   const reducedMotion = useReducedMotion();
-  const sim = useRef({ real: performance.now(), minute: startMinute(), speed: 1 });
-  const [speed, setSpeedState] = useState(reducedMotion ? 0 : 1);
+  const sim = useRef({ real: performance.now(), minute: startMinute(), speed: reducedMotion ? 0 : SPEED });
+  const [playing, setPlayingState] = useState(!reducedMotion);
   const [minute, setMinute] = useState(sim.current.minute);
   const [hovered, setHovered] = useState<Train | null>(null);
   // The card you clicked: its train is the one the plan shows the way to.
@@ -204,9 +204,9 @@ export default function Trenes() {
     setMinute(minute);
   }, []);
 
-  const setSpeed = (value: number) => {
-    retime(now(), value);
-    setSpeedState(value);
+  const setPlaying = (value: boolean) => {
+    retime(now(), value ? SPEED : 0);
+    setPlayingState(value);
   };
 
   useEffect(() => {
@@ -216,20 +216,20 @@ export default function Trenes() {
 
   useEffect(() => {
     const title = document.title;
-    document.title = 'Trenes';
+    document.title = 'Trains';
     return () => { document.title = title; };
   }, []);
 
   useEffect(() => {
-    if (reducedMotion) setSpeed(0);
+    if (reducedMotion) setPlaying(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reducedMotion]);
 
   // The board only needs a few updates a second; the canvases read the clock directly.
   useEffect(() => {
-    const interval = setInterval(() => setMinute(now()), speed > 1 ? 250 : 1000);
+    const interval = setInterval(() => setMinute(now()), 250);
     return () => clearInterval(interval);
-  }, [now, speed]);
+  }, [now]);
 
   const pin = pinned && pinned.departure > minute ? pinned : null;
   // Like a real board, in timetable order: a late train holds its place
@@ -285,7 +285,7 @@ export default function Trenes() {
       if (event.target instanceof HTMLElement && event.target.closest('input, textarea, [role="slider"]')) return;
       if (event.key === ' ' && !(event.target instanceof HTMLButtonElement)) {
         event.preventDefault();
-        setSpeed(sim.current.speed ? 0 : 1);
+        setPlaying(!sim.current.speed);
       } else if (event.key === 'Escape') setPinned(null);
     };
     window.addEventListener('keydown', onKey);
@@ -297,15 +297,15 @@ export default function Trenes() {
       <div className="minimal-portfolio-shell trenes-shell">
         <header className="trenes-header">
           <a className="minimal-basic-link minimal-reveal-line" href="/">Index</a>
-          <h1 className="minimal-reveal-line">Trenes</h1>
-          <p className="minimal-reveal-line">Salidas de una estación imaginaria con ocho vías, en pixel art.</p>
+          <h1 className="minimal-reveal-line">Trains</h1>
+          <p className="minimal-reveal-line">Departures from an imaginary eight-platform station, in pixel art.</p>
         </header>
 
-        <section className="trenes-station" aria-label="Estación">
+        <section className="trenes-station" aria-label="Station">
           <div className="trenes-clock minimal-reveal-line" hidden={!compact}>
-            <span className="trenes-clock-now" role="img" aria-label={`Son las ${clock(minute)}, ${dateLabel(minute)}`}>
+            <span className="trenes-clock-now" role="img" aria-label={`It's ${clock(minute)}, ${dateLabel(minute)}`}>
               <SevenSeg text={clock(minute)} unit={4} />
-              <PixelText className="trenes-muted" text={offTime ? 'hora simulada' : 'hora actual'} />
+              <PixelText className="trenes-muted" text={playing ? `time ×${SPEED}` : 'paused'} />
             </span>
             <PixelText className="trenes-date" text={dateLabel(minute)} unit={2} />
           </div>
@@ -314,7 +314,7 @@ export default function Trenes() {
             <StationMap
               now={now}
               showClock={!compact}
-              simulated={offTime}
+              label={playing ? `×${SPEED}` : 'paused'}
               focus={focus}
               reducedMotion={reducedMotion}
               onHover={setHovered}
@@ -325,7 +325,7 @@ export default function Trenes() {
             />
           </div>
 
-          <ol ref={board} className="trenes-board" style={{ '--tick': speed > 1 ? '250ms' : '1s' } as CSSProperties} data-arriving={arriving || undefined} aria-label="Próximas salidas">
+          <ol ref={board} className="trenes-board" style={{ '--tick': '250ms' } as CSSProperties} data-arriving={arriving || undefined} aria-label="Next departures">
             {trains.map((train, index) => (
               <Card
                 index={index}
@@ -341,27 +341,26 @@ export default function Trenes() {
         </section>
 
         <div className="trenes-controls minimal-reveal-line">
-          <div className="trenes-speeds" role="radiogroup" aria-label="Velocidad del reloj">
-            {speeds.map(option => (
-              <button key={option.value} type="button" role="radio" aria-checked={speed === option.value} onClick={() => setSpeed(option.value)}>
-                {option.label}
-              </button>
-            ))}
-          </div>
+          <button type="button" className="trenes-icon trenes-play" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause' : 'Play'}
+            onClick={() => setPlaying(!playing)}>
+            <PixelSprite rows={playing ? PAUSE : PLAY} unit={2} />
+          </button>
           <div className="trenes-timeline" ref={stripBox}>
             <DayStrip width={stripWidth} reducedMotion={reducedMotion} now={now} minute={minute} onSeek={retime} scale={strip.scale} dpr={strip.dpr} />
           </div>
-          <button type="button" className="trenes-icon trenes-theme" aria-label={scheme === 'dark' ? 'Ver en claro' : 'Ver en oscuro'}
-            title={scheme === 'dark' ? 'Claro' : 'Oscuro'} onClick={() => setScheme(scheme === 'dark' ? 'light' : 'dark')}>
+          <button type="button" className="trenes-icon trenes-theme" aria-label={scheme === 'dark' ? 'Light mode' : 'Dark mode'}
+            title={scheme === 'dark' ? 'Light' : 'Dark'} onClick={() => setScheme(scheme === 'dark' ? 'light' : 'dark')}>
             <PixelSprite rows={scheme === 'dark' ? MOON : SUN} unit={2} />
           </button>
-          <button type="button" className="trenes-sound trenes-icon" aria-pressed={sound} aria-label="Sonido de la estación" title="Sonido"
+          <button type="button" className="trenes-sound trenes-icon" aria-pressed={sound} aria-label="Station sounds" title="Sound"
             onClick={() => setSoundState(value => !value)}>
             <PixelSprite rows={sound ? SPEAKER_ON : SPEAKER_OFF} unit={2} />
           </button>
-          <button type="button" className="trenes-now" disabled={!offTime} onClick={() => retime(realMinute())}>Ahora</button>
+          <button type="button" className="trenes-now" disabled={!offTime} aria-label="Back to now" title="Back to now" onClick={() => retime(realMinute())}>
+            <PixelText text="now" />
+          </button>
         </div>
-        <p className="trenes-hint minimal-reveal-line">Clic en una salida para hacerla tu tren y ver el camino a su vía · arrastra el día para viajar en el tiempo · espacio pausa</p>
+        <p className="trenes-hint minimal-reveal-line">Click a departure to see the way to its platform · drag the day to travel in time · space to pause</p>
       </div>
     </main>
   );

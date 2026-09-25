@@ -30,20 +30,20 @@ const OUT = -TRAIN - 2;
 type Shape = { length: number; gaps: number[]; nose: (j: number, length: number) => [number, number] | null; doors: number[]; lights: number };
 const full: [number, number] = [0, 5];
 const SHAPES: Record<Train['service'], Shape> = {
-  AV: {
+  HS: {
     length: TRAIN, gaps: [7, 15], doors: [2, 10, 18], lights: 1,
     nose: (j, n) => (j === 0 || j === n - 1 ? [2, 1] : j === 1 || j === n - 2 ? [1, 3] : null),
   },
-  LD: {
+  IC: {
     length: TRAIN, gaps: [5, 12, 17], doors: [2, 10, 18], lights: 0,
     nose: (j, n) => (j === 0 || j === n - 1 ? [1, 3] : null),
   },
-  MD: {
+  RG: {
     length: 15, gaps: [7], doors: [2, 10], lights: 0,
     nose: () => null,
   },
 };
-const shapeOf = (train: Train) => SHAPES[train.service] ?? SHAPES.AV;
+const shapeOf = (train: Train) => SHAPES[train.service] ?? SHAPES.HS;
 // Every train stops against the buffers, so shorter ones stop lower down.
 const stopOf = (train: Train) => BUMPER - shapeOf(train).length;
 
@@ -258,8 +258,8 @@ function drawHall(ctx: CanvasRenderingContext2D) {
   ctx.fillRect(3, HALL, W - 6, HALL_H);
   ctx.fillStyle = C.hall;
   ctx.fillRect(4, HALL + 1, W - 8, HALL_H - 2);
-  drawText(ctx, '→ acceso', 7, HALL + 1, C.label);
-  drawText(ctx, 'salida →', W - 7 - measure('salida →'), HALL + 1, C.label);
+  drawText(ctx, '→ entrance', 7, HALL + 1, C.label);
+  drawText(ctx, 'exit →', W - 7 - measure('exit →'), HALL + 1, C.label);
 }
 
 function drawTrain(ctx: CanvasRenderingContext2D, train: Train, y: number, color: string | null, doorsOpen: boolean, moving = 0) {
@@ -281,7 +281,7 @@ function drawTrain(ctx: CanvasRenderingContext2D, train: Train, y: number, color
     car++;
   }
   // Flat cabs get a dark windscreen.
-  if (train.service === 'MD') for (const j of [1, n - 2]) px(1, j, 3, color ? 'rgba(0,0,0,.25)' : C.vent);
+  if (train.service === 'RG') for (const j of [1, n - 2]) px(1, j, 3, color ? 'rgba(0,0,0,.25)' : C.vent);
   // Head and tail lights while it moves: white at the front, red behind.
   if (moving) {
     const front = moving > 0 ? n - 1 - shape.lights : shape.lights;
@@ -412,7 +412,8 @@ type Props = {
   now: () => number;
   // On wide screens the clock is drawn in the hall; narrow ones show it above.
   showClock: boolean;
-  simulated: boolean;
+  // Under the clock: the speed it runs at, or that it is paused.
+  label: string;
   focus: Train | null;
   reducedMotion: boolean;
   onHover: (train: Train | null) => void;
@@ -423,7 +424,7 @@ type Props = {
   dpr: number;
 };
 
-export default function StationMap({ now, showClock, simulated, focus, reducedMotion, onHover, onPick, onSignal, scale, dpr }: Props) {
+export default function StationMap({ now, showClock, label, focus, reducedMotion, onHover, onPick, onSignal, scale, dpr }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const hall = useRef<HTMLCanvasElement | null>(null);
   const born = useRef<number | null>(null);
@@ -433,8 +434,8 @@ export default function StationMap({ now, showClock, simulated, focus, reducedMo
   const present = useRef<Train[]>([]);
   const focusRef = useRef(focus);
   focusRef.current = focus;
-  const clockRef = useRef({ showClock, simulated });
-  clockRef.current = { showClock, simulated };
+  const clockRef = useRef({ showClock, label });
+  clockRef.current = { showClock, label };
   const signalRef = useRef(onSignal);
   signalRef.current = onSignal;
 
@@ -485,7 +486,7 @@ export default function StationMap({ now, showClock, simulated, focus, reducedMo
         ctx.beginPath();
         ctx.rect(0, TOP + 1, W, BUMPER - TOP - 1);
         ctx.clip();
-        for (const track of SLEEPERS) drawTrain(ctx, { track, service: 'AV' } as Train, snap(parked), null, false);
+        for (const track of SLEEPERS) drawTrain(ctx, { track, service: 'HS' } as Train, snap(parked), null, false);
         ctx.restore();
       }
       if (night > 0) {
@@ -524,7 +525,7 @@ export default function StationMap({ now, showClock, simulated, focus, reducedMo
       if (night === 1) {
         const first = upcoming(minute, 1)[0];
         if (first) {
-          const note = `sin servicio · primer tren ${clock(first.scheduled)}`;
+          const note = `no service · first train ${clock(first.scheduled)}`;
           drawText(ctx, note, Math.round((W - measure(note)) / 2), HALL + 1, C.date);
         }
       }
@@ -538,7 +539,7 @@ export default function StationMap({ now, showClock, simulated, focus, reducedMo
           ? [...text].map((char, i) => (char !== shown.previous[i] && char !== ':' ? String(Math.floor(Math.random() * 10)) : char)).join('')
           : text;
         drawSeven(ctx, face, 5, TOP + 1, C.clock, C.segOff, reducedMotion || Math.floor(time / 500) % 2 === 0);
-        drawText(ctx, clockRef.current.simulated ? 'simulada' : 'ahora', 5, TOP + 11, C.label);
+        drawText(ctx, clockRef.current.label, 5, TOP + 11, C.label);
         const [weekday, ...date] = dateLabel(minute).split(' ');
         drawText(ctx, weekday, W - 5 - measure(weekday), TOP + 1, C.date);
         drawText(ctx, date.join(' '), W - 5 - measure(date.join(' ')), TOP + 10, C.label);
@@ -607,7 +608,7 @@ export default function StationMap({ now, showClock, simulated, focus, reducedMo
         ? clamp01((time - walk.current.since) / 320)
         : clamp01((time - introWalk) / 550);
       if (focused && traced > 0 && minute >= focused.departure + ANNOUNCE && minute < focused.departure) {
-        drawWalk(ctx, focused.track, trackColor(focused.track), reducedMotion ? 0 : Math.floor(time / 70), easeOut(traced));
+        drawWalk(ctx, focused.track, trackColor(focused.track), reducedMotion ? 0 : Math.floor(time / 190), easeOut(traced));
       }
     };
     raf = requestAnimationFrame(frame);
@@ -639,7 +640,7 @@ export default function StationMap({ now, showClock, simulated, focus, reducedMo
       onPointerLeave={() => onHover(null)}
       onClick={event => { const train = trainAt(event); if (train) onPick(train); }}
       role="img"
-      aria-label={focus ? `Plano de la estación. El tren a ${focus.destination} sale de la vía ${focus.track}.` : 'Plano de la estación con ocho vías.'}
+      aria-label={focus ? `Station plan. The train to ${focus.destination} leaves from platform ${focus.track}.` : 'Station plan with eight platforms.'}
     />
   );
 }

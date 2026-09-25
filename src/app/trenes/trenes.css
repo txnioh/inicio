@@ -182,6 +182,9 @@ body:has(.trenes-page),
   display: flex;
   width: 100%;
   height: 100%;
+  /* Tall enough for two lines of stops, so the board doesn't grow and push
+     everything down when a train starts boarding and shows them. */
+  min-height: 172px;
   flex-direction: column;
   align-items: flex-start;
   padding: 12px 12px 14px;
@@ -261,6 +264,9 @@ body:has(.trenes-page),
 .trenes-card-stops {
   display: flex;
   flex-wrap: wrap;
+  /* At most two lines, so no card outgrows the others. */
+  max-height: 32px;
+  overflow: hidden;
   gap: 0 4px;
   margin-top: 2px;
 }
@@ -321,53 +327,38 @@ body:has(.trenes-page),
   50% { opacity: 0; }
 }
 
-/* Speed, the day strip and a way back to now, on one line. */
+/* Play/pause, the day strip and the switches, on one line. The buttons are
+   pixel art too: a 2px frame with clipped corners, pixel icons, and a
+   one-pixel press. */
 .trenes-controls {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
   margin-top: 16px;
-  font-size: 13px;
-}
-
-.trenes-speeds {
-  display: flex;
-  flex: none;
-  gap: 4px;
 }
 
 .trenes-controls button {
-  min-width: 40px;
-  height: 32px;
-  padding: 0 10px;
-  border: 1px solid light-dark(#e7e7e3, #252523);
-  border-radius: 8px;
-  background: light-dark(#fdfdfc, #121212);
-  color: light-dark(#444, #bababa);
-  font-weight: 460;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
-}
-
-.trenes-controls button[aria-checked='true'] {
-  border-color: light-dark(#cfcec8, #3c3b38);
-  background: light-dark(#f7f6f2, #181815);
-  color: light-dark(#111, #e0e0e0);
-}
-
-.trenes-controls .trenes-now,
-.trenes-controls .trenes-icon {
-  flex: none;
-}
-
-.trenes-controls .trenes-icon {
   display: grid;
+  flex: none;
   place-items: center;
   min-width: 36px;
-  padding: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  background: var(--trenes-card);
+  box-shadow: inset 0 0 0 2px light-dark(#e2e1db, #2b2a27);
   color: light-dark(#646460, #9e9e9b);
+  clip-path: var(--pixel-corners);
+  cursor: var(--cursor-hand, pointer);
+  touch-action: manipulation;
+}
+
+.trenes-controls button:active:not(:disabled) svg {
+  transform: translateY(2px);
+}
+
+.trenes-controls .trenes-play {
+  margin-right: 8px;
 }
 
 .trenes-controls .trenes-sound {
@@ -375,8 +366,7 @@ body:has(.trenes-page),
 }
 
 .trenes-controls .trenes-sound[aria-pressed='true'] {
-  border-color: light-dark(#cfcec8, #3c3b38);
-  background: light-dark(#f7f6f2, #181815);
+  background: light-dark(#ebeae5, #242321);
   color: light-dark(#111, #e0e0e0);
 }
 
@@ -415,10 +405,8 @@ body:has(.trenes-page),
 
 @media (hover: hover) and (pointer: fine) {
   .trenes-controls button:not(:disabled):hover {
-    border-color: light-dark(#cfcec8, #3c3b38);
     color: light-dark(#111, #e0e0e0);
   }
-
 }
 
 @media (max-width: 1000px) {
@@ -466,6 +454,7 @@ body:has(.trenes-page),
 
   .trenes-card {
     display: grid;
+    min-height: 0;
     grid-template-columns: 52px minmax(0, 1fr) auto;
     grid-template-areas:
       'time destination track'

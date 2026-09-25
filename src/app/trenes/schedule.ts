@@ -5,22 +5,22 @@
 
 export const TRACKS = 8;
 
-export type Service = 'AV' | 'LD' | 'MD';
-export const serviceNames: Record<Service, string> = { AV: 'Alta velocidad', LD: 'Larga distancia', MD: 'Media distancia' };
+export type Service = 'HS' | 'IC' | 'RG';
+export const serviceNames: Record<Service, string> = { HS: 'High speed', IC: 'Intercity', RG: 'Regional' };
 
 const routes: { service: Service; destination: string; stops: string[]; weight: number }[] = [
-  { service: 'AV', destination: 'Sevilla', stops: ['Ciudad Real', 'Puertollano', 'Córdoba'], weight: 4 },
-  { service: 'AV', destination: 'Málaga', stops: ['Córdoba', 'Antequera'], weight: 3 },
-  { service: 'AV', destination: 'Barcelona', stops: ['Guadalajara', 'Zaragoza', 'Lleida', 'Tarragona'], weight: 4 },
-  { service: 'AV', destination: 'Valencia', stops: ['Cuenca', 'Requena'], weight: 3 },
-  { service: 'AV', destination: 'Alicante', stops: ['Cuenca', 'Albacete', 'Villena'], weight: 2 },
-  { service: 'AV', destination: 'Granada', stops: ['Córdoba', 'Antequera', 'Loja'], weight: 1 },
-  { service: 'LD', destination: 'Cádiz', stops: ['Córdoba', 'Sevilla', 'Jerez'], weight: 1 },
-  { service: 'LD', destination: 'Badajoz', stops: ['Talavera', 'Cáceres', 'Mérida'], weight: 1 },
-  { service: 'LD', destination: 'Huelva', stops: ['Córdoba', 'Sevilla', 'La Palma'], weight: 1 },
-  { service: 'MD', destination: 'Toledo', stops: [], weight: 3 },
-  { service: 'MD', destination: 'Jaén', stops: ['Aranjuez', 'Alcázar', 'Linares'], weight: 1 },
-  { service: 'MD', destination: 'Ciudad Real', stops: ['Aranjuez', 'Alcázar'], weight: 1 },
+  { service: 'HS', destination: 'Sevilla', stops: ['Ciudad Real', 'Puertollano', 'Córdoba'], weight: 4 },
+  { service: 'HS', destination: 'Málaga', stops: ['Córdoba', 'Antequera'], weight: 3 },
+  { service: 'HS', destination: 'Barcelona', stops: ['Guadalajara', 'Zaragoza', 'Lleida', 'Tarragona'], weight: 4 },
+  { service: 'HS', destination: 'Valencia', stops: ['Cuenca', 'Requena'], weight: 3 },
+  { service: 'HS', destination: 'Alicante', stops: ['Cuenca', 'Albacete', 'Villena'], weight: 2 },
+  { service: 'HS', destination: 'Granada', stops: ['Córdoba', 'Antequera', 'Loja'], weight: 1 },
+  { service: 'IC', destination: 'Cádiz', stops: ['Córdoba', 'Sevilla', 'Jerez'], weight: 1 },
+  { service: 'IC', destination: 'Badajoz', stops: ['Talavera', 'Cáceres', 'Mérida'], weight: 1 },
+  { service: 'IC', destination: 'Huelva', stops: ['Córdoba', 'Sevilla', 'La Palma'], weight: 1 },
+  { service: 'RG', destination: 'Toledo', stops: [], weight: 3 },
+  { service: 'RG', destination: 'Jaén', stops: ['Aranjuez', 'Alcázar', 'Linares'], weight: 1 },
+  { service: 'RG', destination: 'Ciudad Real', stops: ['Aranjuez', 'Alcázar'], weight: 1 },
 ];
 
 export type Train = {
@@ -91,7 +91,7 @@ export function day(index: number): Train[] {
     for (let i = 0; i < TRACKS; i++) if (freeAt[i] <= from && (track < 0 || freeAt[i] < freeAt[track] - rand() * 30)) track = i;
     if (track >= 0) {
       freeAt[track] = departure + LEAVE + .5;
-      const base = route.service === 'AV' ? 3000 : route.service === 'LD' ? 700 : 17000;
+      const base = route.service === 'HS' ? 3000 : route.service === 'IC' ? 700 : 17000;
       // The origin comes from its own hash, not `rand`, so adding it left
       // every day's timetable (and saved train ids) exactly as they were.
       const siblings = routes.filter(item => item.service === route.service);
@@ -147,8 +147,8 @@ export const clock = (minute: number) => {
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 };
 
-const weekdays = ['Jueves', 'Viernes', 'Sábado', 'Domingo', 'Lunes', 'Martes', 'Miércoles'];
-const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const weekdays = ['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export function dateLabel(minute: number) {
   const index = Math.floor(minute / 1440);

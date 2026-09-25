@@ -8,7 +8,7 @@ import { pick } from './theme';
 // travel in time.
 const H = 16;
 const BASE = 8;
-const heights = { AV: 4, LD: 3, MD: 2 } as const;
+const heights = { HS: 4, IC: 3, RG: 2 } as const;
 const INTRO_DELAY = 1100;
 const INTRO_END = 1000;
 
@@ -96,7 +96,7 @@ export default function DayStrip({ width: W, reducedMotion, now, minute, onSeek,
       style={{ width: W * scale / dpr, height: H * scale / dpr }}
       tabIndex={0}
       role="slider"
-      aria-label="Hora del día"
+      aria-label="Time of day"
       aria-valuemin={0}
       aria-valuemax={1439}
       aria-valuenow={Math.floor(minute - today * 1440)}
