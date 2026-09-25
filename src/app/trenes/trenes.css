@@ -1,10 +1,10 @@
-/* Only this page follows the system's dark setting; the rest of the site
-   stays light. Every colour below is light-dark(<light>, <dark>). */
+/* This page can switch to dark (the rest of the site stays light). It opens
+   light; the toggle sets --trenes-scheme. Every colour below is
+   light-dark(<light>, <dark>). */
 html:has(.trenes-page),
 body:has(.trenes-page),
 .minimal-portfolio-page.trenes-page {
-  /* Set from script: the visitor's pick, or the system's. */
-  color-scheme: var(--trenes-scheme, light dark);
+  color-scheme: var(--trenes-scheme, light);
   background: light-dark(#fdfdfc, #121212);
   color: light-dark(#111111, #e0e0e0);
 }
