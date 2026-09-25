@@ -8,6 +8,8 @@ type GuideOptions = {
   playing: boolean;
   reducedMotion: boolean;
   explain: (text: string | null, announce?: boolean) => void;
+  // How long leaving takes, when a skin needs longer than the classic hole.
+  portalMs?: number;
 };
 type Anchor = 'home' | 'guide' | 'music';
 type Placement = { x: number; y: number; anchor: Anchor; active: boolean };
@@ -16,7 +18,9 @@ const fit = (value: number, max: number) => Math.max(24, Math.min(value, max - 2
 const inView = (box: DOMRect) => box.width > 0 && box.height > 0
   && box.bottom > 0 && box.top < innerHeight && box.right > 0 && box.left < innerWidth;
 
-export default function useRobotGuide({ home, stage, enabled, grabbed, playing, reducedMotion, explain }: GuideOptions) {
+export default function useRobotGuide({ home, stage, enabled, grabbed, playing, reducedMotion, explain, portalMs }: GuideOptions) {
+  const portalDuration = useRef(portalMs);
+  portalDuration.current = portalMs;
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState(false);
@@ -99,7 +103,7 @@ export default function useRobotGuide({ home, stage, enabled, grabbed, playing, 
       if (nextAnchor !== currentAnchor.current && placed.current && enabled
         && !reducedMotion && awake && currentBox && inView(currentBox)) {
         if (!departure) {
-          const duration = nextAnchor === 'home' ? 380 : 180;
+          const duration = portalDuration.current ?? (nextAnchor === 'home' ? 380 : 180);
           setDepartureMs(duration);
           setDeparting(true);
           departure = window.setTimeout(place, duration);

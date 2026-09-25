@@ -1,0 +1,242 @@
+.robot-shell {
+  max-width: 640px;
+}
+
+.robot-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.robot-header .minimal-basic-link {
+  align-self: flex-start;
+  margin-bottom: 28px;
+  color: rgba(0, 0, 0, .4);
+}
+
+.robot-header h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.09px;
+}
+
+.robot-header p {
+  margin: 0;
+  color: rgba(0, 0, 0, .4);
+  font-weight: 460;
+}
+
+.robot-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 40px;
+  border-radius: 4px;
+  background-color: #f7f6f2;
+  background-image:
+    linear-gradient(#87867f0d 1px, transparent 1px),
+    linear-gradient(90deg, #87867f0d 1px, transparent 1px);
+  background-size: 16px 16px;
+  overflow: hidden;
+}
+
+.robot-stage canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.robot-stage canvas:last-child {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.robot-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.robot-controls button,
+.robot-grid button {
+  border: 1px solid #e7e7e3;
+  border-radius: 8px;
+  background: #fdfdfc;
+  color: #444;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.robot-controls button {
+  min-width: 36px;
+  height: 32px;
+  padding: 0 10px;
+  font-weight: 460;
+}
+
+.robot-controls button:last-child {
+  margin-left: auto;
+}
+
+.robot-meta {
+  display: flex;
+  gap: 8px;
+  margin-left: 8px;
+  color: rgba(0, 0, 0, .4);
+  font-variant-numeric: tabular-nums;
+}
+
+.robot-meta strong {
+  color: #111;
+  font-weight: 500;
+}
+
+.robot-hint {
+  margin: 10px 0 0;
+  color: rgba(0, 0, 0, .32);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.robot-skins {
+  margin-top: 40px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.robot-skins h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.robot-skins p {
+  margin: 0;
+  color: rgba(0, 0, 0, .4);
+  font-weight: 460;
+}
+
+.robot-skins .robot-skin-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+}
+
+.robot-skins .robot-skin-choice {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 20px;
+  height: 72px;
+  padding: 0 20px 0 28px;
+  border: 1px solid #e7e7e3;
+  border-radius: 8px;
+  background: #fdfdfc;
+  color: #444;
+  font-size: 13px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.robot-skins input:checked + .robot-skin-choice {
+  border-color: #cfcec8;
+  background: #f7f6f2;
+  color: #111;
+}
+
+.robot-skins .minimal-footer-robot-gallery {
+  scale: 2;
+  transform-origin: left center;
+  margin-right: 28px;
+}
+
+.robot-skins input:focus-visible + .robot-skin-choice {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+.robot-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 40px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.robot-grid button {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 6px 8px;
+  font-size: 12px;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.robot-grid button[aria-pressed='true'] {
+  border-color: #cfcec8;
+  background: #f7f6f2;
+  color: #111;
+}
+
+.robot-grid canvas {
+  width: 100%;
+  max-width: 128px;
+  aspect-ratio: 4 / 3;
+  image-rendering: pixelated;
+}
+
+.robot-controls button:focus-visible,
+.robot-grid button:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .robot-controls button:hover,
+  .robot-skins label:hover .robot-skin-choice,
+  .robot-grid button:hover {
+    border-color: #cfcec8;
+    color: #111;
+  }
+}
+
+@media (max-width: 640px) {
+  .robot-shell {
+    padding: 32px 16px 40px;
+  }
+
+  .robot-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .robot-skins .robot-skin-choice {
+    gap: 8px;
+    padding: 0 12px 0 18px;
+  }
+
+  .robot-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .robot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .robot-meta span {
+    display: none;
+  }
+}

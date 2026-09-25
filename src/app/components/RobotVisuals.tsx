@@ -1,3 +1,12 @@
+import { lazy, Suspense } from 'react';
+import { useRobotSkin, type RobotSkin } from './robotSkin';
+import type { PixelPortal } from './robotAnimation';
+
+const pixelParts = () => import('./PixelRobotParts');
+const PixelRobotFace = lazy(() => pixelParts().then(module => ({ default: module.PixelRobotFace })));
+const PixelEffects = lazy(() => pixelParts().then(module => ({ default: module.PixelEffects })));
+const PixelSpeech = lazy(() => pixelParts().then(module => ({ default: module.PixelSpeech })));
+
 export function SpeechLetters({ text, letterDelay = 24, elapsed }: { text: string; letterDelay?: number; elapsed?: number }) {
   let letterIndex = 0;
   return text.split(/(\s+)/).map((word, wordIndex) => /^\s+$/.test(word) ? word : (
@@ -13,7 +22,14 @@ export function SpeechLetters({ text, letterDelay = 24, elapsed }: { text: strin
   ));
 }
 
-export function RobotEffects({ mode }: { mode: string }) {
+// The bubble's contents: pixel text for the pixel skin, soft letters otherwise.
+export function RobotSpeech({ text, skin }: { text: string; skin: RobotSkin }) {
+  if (skin === 'pixel') return <Suspense fallback={null}><PixelSpeech text={text} /></Suspense>;
+  return <SpeechLetters text={text} />;
+}
+
+export function RobotEffects({ mode, skin = 'classic' }: { mode: string; skin?: RobotSkin }) {
+  if (skin === 'pixel') return <Suspense fallback={null}><PixelEffects mode={mode} /></Suspense>;
   if (mode === 'sleeping') return <span className="minimal-robot-effects robot-sleep" aria-hidden="true">
     <i className="robot-sleep-halo" />
     <span>z</span><span>z</span><span>Z</span>
@@ -30,9 +46,21 @@ export function RobotEffects({ mode }: { mode: string }) {
   return null;
 }
 
-export function RobotFace() {
+// `skin` forces a skin (for previews); otherwise the visitor's choice is used.
+// `portal` plays the pixel skin's hole animation; `portalKey` restarts it.
+export function RobotFace({ expression = 'idle', skin, portal = null, portalKey = null, onActivityEnd }: {
+  expression?: string; skin?: RobotSkin; portal?: PixelPortal | null; portalKey?: number | null; onActivityEnd?: () => void;
+}) {
+  const saved = useRobotSkin();
+  if ((skin ?? saved) === 'pixel') return <Suspense fallback={<ClassicRobotFace />}>
+    <PixelRobotFace expression={expression} portal={portal} portalKey={portalKey} onActivityEnd={onActivityEnd} />
+  </Suspense>;
+  return <ClassicRobotFace />;
+}
+
+function ClassicRobotFace() {
   return (
-    <svg viewBox="0 0 48 36" focusable="false" aria-hidden="true">
+    <svg viewBox="0 0 48 36" focusable="false" aria-hidden="true" data-robot-face="">
       <g className="minimal-robot-head-follow">
         <g className="minimal-robot-expression">
           <rect className="minimal-robot-shell" x="7" y="8" width="34" height="23" rx="10" />

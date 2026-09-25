@@ -990,6 +990,57 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   gap: 8px;
 }
 
+.minimal-footer-skin {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  color: #70706a;
+  font-size: 12px;
+}
+
+.robot-skin-selector {
+  display: flex;
+  min-width: 0;
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid #e7e7e3;
+  border-radius: 9px;
+}
+
+.robot-skin-selector label {
+  position: relative;
+  min-width: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.robot-skin-choice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  color: #70706a;
+  font-size: 12px;
+}
+
+.robot-skin-selector input:checked + .robot-skin-choice {
+  background: #eeeee9;
+  color: #111;
+}
+
+.robot-skin-selector input:focus-visible + .robot-skin-choice {
+  outline: 2px solid #777771;
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .robot-skin-selector label:hover .robot-skin-choice { color: #111; }
+}
+
 .minimal-footer p {
   width: auto;
   margin: 0;
@@ -1128,7 +1179,7 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
 }
 
 .minimal-robot-speech[data-side='below']::after {
-  top: -4px;
+  top: -3px;
   bottom: auto;
   transform: translateX(-50%) rotate(225deg);
 }
@@ -1151,6 +1202,145 @@ html[data-page-transition]::view-transition-new(root) { animation: page-fade-in 
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.22;
+}
+
+.minimal-robot-pixel {
+  position: relative;
+  display: block;
+  width: 28px;
+  height: 21px;
+}
+
+/* Chunky pixels at the classic face's size: one art pixel is 1.5 CSS pixels
+   (3 device pixels on retina), so the 14×8 body covers 21×12px, like the
+   classic shell. The rest of the canvas is room for effects. */
+.minimal-robot-pixel canvas {
+  position: absolute;
+  left: -10px;
+  top: -13px;
+  width: 48px;
+  height: 36px;
+  image-rendering: pixelated;
+}
+
+/* The body's box, which the speech bubble is placed against. */
+.minimal-robot-pixel-body {
+  position: absolute;
+  left: 3.5px;
+  top: 5px;
+  width: 21px;
+  height: 12px;
+  pointer-events: none;
+}
+
+/* Pixel skin: the bubble and effects around the robot become pixel art too
+   and move in steps; the face canvas draws its own portal. */
+.minimal-footer-robot-gallery[data-skin='pixel'] .minimal-robot-hole {
+  display: none;
+}
+
+.minimal-footer-robot-gallery[data-portal] .minimal-robot-effects {
+  visibility: hidden;
+}
+
+.minimal-footer-robot-gallery[data-skin='pixel'] .minimal-robot-speech {
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  line-height: 0;
+  animation-timing-function: steps(2, end);
+}
+
+.minimal-footer-robot-gallery[data-skin='pixel'] .minimal-robot-speech canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.minimal-footer-robot-gallery[data-skin='pixel'] .minimal-robot-speech::after {
+  bottom: -3px;
+  width: 9px;
+  height: 4.5px;
+  border: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 3' shape-rendering='crispEdges'%3E%3Cpath fill='%23dfdfda' d='M0 0h1v1H0zM5 0h1v1H5zM1 1h1v1H1zM4 1h1v1H4zM2 2h2v1H2z'/%3E%3Cpath fill='%23fdfdfc' d='M1 0h4v1H1zM2 1h2v1H2z'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
+  transform: translateX(-50%);
+}
+
+.minimal-footer-robot-gallery[data-skin='pixel'] .minimal-robot-speech[data-side='below']::after {
+  top: -4px;
+  bottom: auto;
+  transform: translateX(-50%) rotate(180deg);
+}
+
+.minimal-footer-robot-gallery[data-skin='pixel'] .minimal-robot-speech[data-side='left']::after {
+  top: var(--robot-speech-tail);
+  right: -5.25px;
+  bottom: auto;
+  left: auto;
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+.minimal-footer-robot-gallery[data-skin='pixel'] .minimal-robot-effects svg {
+  display: block;
+  overflow: visible;
+}
+
+.minimal-footer-robot-gallery[data-skin='pixel'] .robot-sleep > span {
+  top: 4px;
+  left: 34px;
+  animation-name: pixelRobotDream;
+  animation-timing-function: steps(8, end);
+}
+
+.minimal-footer-robot-gallery[data-skin='pixel'] .robot-music > span {
+  top: 6px;
+  left: 1px;
+  animation-name: pixelRobotNote;
+  animation-timing-function: steps(8, end);
+}
+
+.minimal-footer-robot-gallery[data-skin='pixel'] .robot-music > span:nth-of-type(2) { left: 36px; }
+.minimal-footer-robot-gallery[data-skin='pixel'] .robot-music > span:nth-of-type(3) { left: 33px; }
+.minimal-footer-robot-gallery[data-skin='pixel'] .robot-music > span:nth-of-type(4) { left: 3px; }
+
+.minimal-footer-robot-gallery[data-skin='pixel'] .robot-sweat svg {
+  left: 3px;
+  width: 4.5px;
+  height: 4.5px;
+  animation-name: pixelRobotSweat;
+  animation-timing-function: steps(4, end);
+}
+
+.minimal-footer-robot-gallery[data-skin='pixel'] .robot-sweat svg:nth-child(n+4) {
+  left: 35px;
+}
+
+/* Below 2× screens, 1.5px pixels can't land on whole device pixels. */
+@media (max-resolution: 1.5dppx) {
+  .minimal-robot-pixel canvas,
+  .minimal-footer-robot-gallery[data-skin='pixel'] .minimal-robot-speech canvas {
+    image-rendering: auto;
+  }
+}
+
+@keyframes pixelRobotDream {
+  0% { opacity: 0; transform: translate(0, 0); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translate(12px, -24px); }
+}
+
+@keyframes pixelRobotNote {
+  0% { opacity: 0; transform: translate(0, 0); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--note-x), -24px); }
+}
+
+@keyframes pixelRobotSweat {
+  0% { opacity: 0; transform: translate(0, 0); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--drop-x), var(--drop-y)); }
 }
 
 .minimal-robot-head-follow,

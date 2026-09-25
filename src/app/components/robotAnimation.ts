@@ -7,6 +7,11 @@ export function robotPortalPose(progress: number, departing: boolean) {
   };
 }
 
+// Pixel skin: the face canvas draws its own portal (see drawPortal), 14
+// frames each way. Leaving must finish before the robot changes perch.
+export type PixelPortal = 'leaving' | 'arriving';
+export const PIXEL_PORTAL_MS = 14 * 35;
+
 export const robotHoleFrames: Keyframe[] = [
   { opacity: 0, transform: 'scaleX(.2)', offset: 0 },
   { opacity: .7, transform: 'scaleX(1)', offset: .2 },

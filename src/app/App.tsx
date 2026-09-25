@@ -4,10 +4,12 @@ import InkWritingLink from './components/InkWritingLink';
 import LocalTime from './components/LocalTime';
 import PageEnter from './components/PageEnter';
 import ProjectShowcase from './components/ProjectShowcase';
+import RobotSkinSelector from './components/RobotSkinSelector';
 import { VinylPlayer } from './components/VinylPlayer';
 import usePageNavigation from './usePageNavigation';
 
 const Neural = lazy(() => import('./neural/Neural'));
+const Robot = lazy(() => import('./robot/Robot'));
 
 function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
   return (
@@ -20,6 +22,7 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
 export default function App() {
   const { path, Article, Carrete, arrived } = usePageNavigation();
   if (path === '/neural') return <Suspense fallback={<main style={{ position: 'fixed', inset: 0, background: '#000' }} aria-label="Cargando la red neuronal" />}><Neural /></Suspense>;
+  if (path === '/robot') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Cargando el robot" />}><Robot /></Suspense>;
   if (path === '/') return <Home arrived={arrived} />;
   if (path === '/carrete') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading camera roll" />}><Carrete /></Suspense>;
   if (path === '/writing/ink') return <Suspense fallback={<main className="minimal-portfolio-page"><div className="minimal-portfolio-shell" role="status">Loading article…</div></main>}><Article /></Suspense>;
@@ -86,6 +89,10 @@ export function Home({ arrived }: { arrived: boolean }) {
             <div className="minimal-footer-row minimal-reveal-line">
               <p><LocalTime /> in Madrid, Spain</p>
               <FooterRobotMark />
+            </div>
+            <div className="minimal-footer-skin minimal-reveal-line">
+              <span aria-hidden="true">Robot</span>
+              <RobotSkinSelector />
             </div>
           </footer>
         </div>
