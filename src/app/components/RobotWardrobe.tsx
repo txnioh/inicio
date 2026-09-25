@@ -1,102 +1,102 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
-import RobotSkinSelector from './RobotSkinSelector';
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import FooterRobotMark from './FooterRobotMark';
-import type { RobotSkin } from './robotSkin';
+import { HANGER, PixelSprite, PixelTag } from './PixelSprite';
+import { RobotFace } from './RobotVisuals';
+import { robotSkins, setRobotSkin, useRobotSkin, type RobotSkin } from './robotSkin';
 import './robotWardrobe.css';
+
+const names: Record<RobotSkin, string> = { classic: 'Normal', pixel: 'Pixel' };
+
+// After a change the rail stays long enough to see the swap, then folds away.
+const CLOSE_AFTER_MS = 1300;
+const FOLD_MS = 240;
 
 export default function RobotWardrobe() {
   const id = useId();
+  const worn = useRobotSkin();
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const bubble = useRef<HTMLElement>(null);
-  const pointerInside = useRef(false);
   const [open, setOpen] = useState(false);
-  const [selection, setSelection] = useState<RobotSkin | null>(null);
+  const [folding, setFolding] = useState(false);
+  const [changedAt, setChangedAt] = useState<number | null>(null);
+
   const close = useCallback((restoreFocus = false) => {
-    setOpen(false);
     if (restoreFocus) trigger.current?.focus({ preventScroll: true });
+    setFolding(true);
   }, []);
 
-  useLayoutEffect(() => {
-    if (!open) return;
-    const position = () => {
-      const anchor = trigger.current?.getBoundingClientRect();
-      const origin = root.current?.getBoundingClientRect();
-      const panel = bubble.current;
-      if (!anchor || !origin || !panel) return;
-      const left = Math.max(16, Math.min(anchor.right + 8 - panel.offsetWidth, innerWidth - panel.offsetWidth - 16));
-      panel.style.left = `${left - origin.left}px`;
-      panel.style.setProperty('--wardrobe-tail', `${anchor.left + anchor.width / 2 - left}px`);
-      panel.dataset.side = anchor.top < panel.offsetHeight + 30 ? 'below' : 'above';
-    };
-    position();
-    root.current?.querySelector<HTMLInputElement>('input:checked')?.focus({ preventScroll: true });
-    window.addEventListener('resize', position);
-    window.addEventListener('scroll', position, { passive: true });
-    return () => {
-      window.removeEventListener('resize', position);
-      window.removeEventListener('scroll', position);
-    };
-  }, [open]);
+  useEffect(() => {
+    if (!folding) return;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const timer = window.setTimeout(() => {
+      setOpen(false);
+      setFolding(false);
+      setChangedAt(null);
+    }, reduced ? 0 : FOLD_MS);
+    return () => window.clearTimeout(timer);
+  }, [folding]);
 
+  // Dismiss on Escape or a press anywhere else.
   useEffect(() => {
     if (!open) return;
-    pointerInside.current = false;
+    root.current?.querySelector<HTMLInputElement>('input:checked')?.focus({ preventScroll: true });
     const dismiss = (event: PointerEvent) => {
       if (event.target instanceof Node && !root.current?.contains(event.target)) close();
     };
     const escape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.preventDefault(); close(true); }
     };
-    const release = () => { pointerInside.current = false; };
     document.addEventListener('pointerdown', dismiss);
-    document.addEventListener('pointerup', release);
-    document.addEventListener('pointercancel', release);
     document.addEventListener('keydown', escape);
     return () => {
-      release();
       document.removeEventListener('pointerdown', dismiss);
-      document.removeEventListener('pointerup', release);
-      document.removeEventListener('pointercancel', release);
       document.removeEventListener('keydown', escape);
     };
   }, [open, close]);
 
   useEffect(() => {
-    if (!open || !selection) return;
-    const timer = window.setTimeout(() => close(true), 1100);
+    if (changedAt === null) return;
+    const timer = window.setTimeout(() => close(), CLOSE_AFTER_MS);
     return () => window.clearTimeout(timer);
-  }, [open, selection, close]);
+  }, [changedAt, close]);
+
+  const shown = open || folding;
 
   return (
-    <div ref={root} className="robot-wardrobe" onPointerDownCapture={() => { pointerInside.current = true; }} onBlur={event => {
-      // Clicking a preview briefly focuses the page before its label focuses the radio.
-      if (!pointerInside.current && event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) close();
-    }}>
-      <FooterRobotMark dressing={open} />
+    <div ref={root} className="robot-wardrobe">
+      <FooterRobotMark dressing={shown} />
       <button ref={trigger} type="button" className="robot-wardrobe-trigger"
-        aria-label="Change robot skin" title="A little wardrobe"
-        aria-expanded={open} aria-controls={open ? id : undefined} aria-haspopup="dialog"
-        onClick={() => { setSelection(null); setOpen(value => !value); }}>
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M9.5 6.5a2.5 2.5 0 1 1 4.1 1.9C12.6 9.2 12 9.5 12 11l8.3 5.1a1 1 0 0 1-.5 1.9H4.2a1 1 0 0 1-.5-1.9L12 11" />
-        </svg>
+        aria-label="Change the robot's look" title="Wardrobe"
+        aria-expanded={open && !folding} aria-controls={shown ? id : undefined}
+        onClick={() => (open && !folding ? close() : (setFolding(false), setOpen(true)))}>
+        <PixelSprite rows={HANGER} unit={1} />
       </button>
-      {open && (
-        <section ref={bubble} id={id} className="robot-wardrobe-bubble" role="dialog" aria-labelledby={`${id}-title`}
-          data-changing={selection ?? undefined}>
-          <div className="robot-wardrobe-heading">
-            <h2 id={`${id}-title`}>A little change?</h2>
-            <button type="button" className="robot-wardrobe-close" aria-label="Close wardrobe" onClick={() => close(true)}>
-              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" /></svg>
-            </button>
-          </div>
-          <p className="robot-wardrobe-note">Same friend, different pixels.</p>
-          <RobotSkinSelector previews onSelect={setSelection} />
-          <span className="robot-wardrobe-caption" role="status">
-            {selection ? 'Looking sharp.' : 'A tiny wardrobe. Just for me.'}
-          </span>
-        </section>
+      {shown && (
+        <div id={id} className="robot-wardrobe-rail" role="radiogroup" aria-label="Robot look"
+          data-folding={folding || undefined} data-changed={changedAt !== null || undefined}>
+          <span className="robot-wardrobe-bar" aria-hidden="true" />
+          {robotSkins.map((option, index) => {
+            const onRobot = option === worn;
+            return (
+              <label key={option} className="robot-wardrobe-slot" style={{ '--i': index } as CSSProperties}
+                data-worn={onRobot || undefined}>
+                <input className="minimal-hidden-nav" type="radio" name={id} value={option} checked={onRobot}
+                  onChange={() => { setRobotSkin(option); setChangedAt(Date.now()); }}
+                  aria-label={onRobot ? `${names[option]}, wearing it` : names[option]} />
+                <span className="robot-wardrobe-hanger">
+                  <PixelSprite className="robot-wardrobe-wire" rows={HANGER} />
+                  {/* Both looks stay on the rail; the worn one dithers away. */}
+                  <span className="robot-wardrobe-outfit" data-away={onRobot || undefined}>
+                    <span className="minimal-footer-robot-gallery" data-skin={option} data-expression="idle" aria-hidden="true">
+                      <span className="minimal-robot-option"><RobotFace skin={option} /></span>
+                    </span>
+                  </span>
+                  <PixelTag key={String(onRobot)} className="robot-wardrobe-tag" text={onRobot ? 'wearing' : names[option]} dotted={onRobot} />
+                </span>
+              </label>
+            );
+          })}
+        </div>
       )}
     </div>
   );

@@ -16,7 +16,7 @@ export default function RobotSkinReveal({ skin, reducedMotion, ...face }: Compon
       return;
     }
     setFrom(old);
-    const timer = window.setTimeout(() => setFrom(null), 850);
+    const timer = window.setTimeout(() => setFrom(null), 380);
     return () => window.clearTimeout(timer);
   }, [skin, reducedMotion]);
 
@@ -24,7 +24,6 @@ export default function RobotSkinReveal({ skin, reducedMotion, ...face }: Compon
     <span className="robot-skin-reveal" data-changing={from ? skin : undefined} aria-hidden="true">
       {from && <span key={from} className="robot-skin-layer robot-skin-before"><RobotFace skin={from} /></span>}
       <span key={skin} className="robot-skin-layer robot-skin-after"><RobotFace {...face} skin={skin} /></span>
-      {from && <span key={`scan-${skin}`} className="robot-skin-scan" />}
     </span>
   );
 }
