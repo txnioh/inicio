@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
-import { perform, plan, type Plan } from './paint';
+import { createLoader, type Loader } from './loading';
+import { layoutFor, perform, plan, present, type Layout } from './paint';
 import { styles, type StyleId } from './style';
 import { understand, type Scene } from './understand';
 import './acuarela.css';
@@ -21,7 +22,6 @@ function loadStyle(): StyleId {
 }
 
 type Photo = { url: string; name: string };
-type Layout = { width: number; height: number; border: number };
 type Status =
   | { name: 'sample' | 'reading' | 'depth' | 'done' | 'saving' }
   | { name: 'download' | 'painting'; progress: number }
@@ -76,8 +76,11 @@ function describe(status: Status) {
 
 export default function Acuarela() {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const cover = useRef<HTMLCanvasElement>(null);
+  const loader = useRef<Loader | null>(null);
   const scene = useRef<Scene | null>(null);
-  const painting = useRef<Plan | null>(null);
+  // The photo being painted, as decoded.
+  const picture = useRef<HTMLImageElement | null>(null);
   const running = useRef<AbortController | null>(null);
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [layout, setLayout] = useState<Layout | null>(null);
@@ -96,23 +99,40 @@ export default function Acuarela() {
   const busy = ['reading', 'download', 'depth'].includes(status.name);
   const painted = !!photo && (status.name === 'done' || status.name === 'saving');
 
-  async function paint(nextSeed: number, withFrame: boolean, animate: boolean, nextStyle = styleNow.current) {
-    if (!scene.current || !canvas.current) return;
+  useEffect(() => {
+    const created = createLoader(cover.current!);
+    loader.current = created;
+    return () => created?.dispose();
+  }, []);
+
+  // The photo shows, going wet, over the painting's place while it is
+  // painted; then the new painting blooms in.
+  async function paint(nextSeed: number, withFrame: boolean, nextStyle = styleNow.current) {
+    const read = scene.current, image = picture.current, target = canvas.current;
+    if (!read || !image || !target) return;
     running.current?.abort();
     const controller = new AbortController();
     running.current = controller;
+    const { signal } = controller;
+    const shape = layoutFor(image.naturalWidth, image.naturalHeight, SIDE, withFrame);
+    setLayout(shape);
+    loader.current?.start(image, shape);
     setStatus({ name: 'painting', progress: 0 });
-    // Let the status show before planning, which takes a moment on a phone.
-    await new Promise(requestAnimationFrame);
-    if (controller.signal.aborted) return;
-    painting.current = plan(scene.current, nextSeed, SIDE, nextStyle);
-    const size = await perform(canvas.current, painting.current, {
-      frame: withFrame, animate, signal: controller.signal,
-      onProgress: progress => { if (!controller.signal.aborted) setStatus({ name: 'painting', progress }); },
-    });
-    if (controller.signal.aborted) return;
-    setLayout(size);
-    setStatus({ name: 'done' });
+    try {
+      const strokes = await plan(read, nextSeed, SIDE, nextStyle);
+      if (signal.aborted) return;
+      const shown = await perform(target, strokes, {
+        frame: withFrame, signal,
+        onProgress: progress => { if (!signal.aborted) setStatus({ name: 'painting', progress }); },
+      });
+      if (!shown || signal.aborted) return;
+      await loader.current?.reveal(target);
+      if (!signal.aborted) setStatus({ name: 'done' });
+    } catch {
+      if (signal.aborted) return;
+      loader.current?.stop();
+      setStatus({ name: 'error', message: 'The painting could not be made. Try again.' });
+    }
   }
 
   async function open(url: string, name: string) {
@@ -124,25 +144,33 @@ export default function Acuarela() {
     try {
       const image = await decode(url);
       if (controller.signal.aborted) return URL.revokeObjectURL(url);
+      // The painting's place takes the photo's shape at once, and never changes it.
+      const shape = layoutFor(image.naturalWidth, image.naturalHeight, SIDE, frame);
+      setLayout(shape);
+      loader.current?.start(image, shape);
       const read = await understand(image, 768, (stage, progress) => {
         if (!controller.signal.aborted) setStatus(stage === 'download' ? { name: 'download', progress } : { name: stage });
       });
       if (controller.signal.aborted) return URL.revokeObjectURL(url);
       scene.current = read;
+      picture.current = image;
       setPhoto({ url, name });
-      setLayout(null);
       running.current = null;
-      await paint(seed, frame, true);
     } catch (error) {
       URL.revokeObjectURL(url);
       if (controller.signal.aborted) return;
-      setStatus({
+      // Back to what was showing before.
+      loader.current?.stop();
+      const before = picture.current;
+      setLayout(before && layoutFor(before.naturalWidth, before.naturalHeight, SIDE, frame));
+      return setStatus({
         name: 'error',
         message: error instanceof Error && /decode|EncodingError/i.test(`${error.name} ${error.message}`)
           ? 'That photo could not be opened. Try a JPG, PNG or WebP.'
           : 'The model could not run here. Check the connection and try again.',
       });
     }
+    await paint(seed, frame);
   }
 
   // The style is remembered; changing it repaints the same scene with the
@@ -153,7 +181,7 @@ export default function Acuarela() {
     try {
       localStorage.setItem(STYLE_KEY, id);
     } catch { /* It just won't be remembered. */ }
-    if (scene.current) void paint(seed, frame, true, styles.find(s => s.id === id)!.style);
+    if (scene.current) void paint(seed, frame, styles.find(s => s.id === id)!.style);
   }
 
   // Release a chosen photo once another replaces it, or on leaving.
@@ -206,12 +234,15 @@ export default function Acuarela() {
   function again() {
     const next = seed + 1;
     setSeed(next);
-    void paint(next, frame, true);
+    void paint(next, frame);
   }
 
+  // The margin goes on or off around the same painting.
   function toggleFrame(value: boolean) {
     setFrame(value);
-    if (painting.current) void paint(seed, value, false);
+    const image = picture.current;
+    if (!image || !canvas.current || !present(canvas.current, value)) return;
+    setLayout(layoutFor(image.naturalWidth, image.naturalHeight, SIDE, value));
   }
 
   const holdKeys = (event: KeyboardEvent, down: boolean) => {
@@ -220,13 +251,13 @@ export default function Acuarela() {
       setComparing(down);
     }
   };
-  const shown: Layout | null = photo ? layout : SAMPLE;
+  const shown: Layout = layout ?? SAMPLE;
   // The photo covers the painting inside its frame.
-  const inset = shown && {
+  const inset = {
     left: `${shown.border / shown.width * 100}%`, top: `${shown.border / shown.height * 100}%`,
     width: `${(1 - 2 * shown.border / shown.width) * 100}%`, height: `${(1 - 2 * shown.border / shown.height) * 100}%`,
   };
-  const canCompare = !photo || painted;
+  const canCompare = painted || !layout;
 
   return (
     <main className="minimal-portfolio-page acuarela-page" tabIndex={-1}
@@ -254,17 +285,17 @@ export default function Acuarela() {
 
         <figure className="acuarela-stage">
           <div className="acuarela-painting"
-            style={shown ? { '--aspect': shown.width / shown.height } as CSSProperties : undefined}
-            data-empty={(!!photo && !layout && status.name !== 'painting') || undefined}
+            style={{ '--aspect': shown.width / shown.height } as CSSProperties}
             onPointerDown={event => { if (canCompare) { event.currentTarget.setPointerCapture(event.pointerId); setComparing(true); } }}
             onPointerUp={() => setComparing(false)}
             onPointerCancel={() => setComparing(false)}
             onContextMenu={event => event.preventDefault()}>
             {!photo && <img className="acuarela-sample" src={`/acuarela/sample-${styleId}.webp`} width={SAMPLE.width} height={SAMPLE.height}
               alt="Watercolour painting of a wooded park, with a pale parasol in one corner" />}
-            <canvas ref={canvas} hidden={!photo} role="img"
+            <canvas ref={canvas} className="acuarela-canvas" hidden={!photo} role="img"
               aria-label={photo ? `Watercolour painting of ${photo.name}` : undefined} />
-            {comparing && inset && <img className="acuarela-original" src={photo?.url ?? SAMPLE.photo} alt="" style={inset} />}
+            <canvas ref={cover} className="acuarela-loader" aria-hidden="true" />
+            {comparing && <img className="acuarela-original" src={photo?.url ?? SAMPLE.photo} alt="" style={inset} />}
           </div>
           <figcaption aria-live="polite">{describe(status)}</figcaption>
         </figure>

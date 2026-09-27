@@ -47,6 +47,8 @@
 .acuarela-painting {
   position: relative;
   width: min(100%, calc(52svh * var(--aspect, 1.33)));
+  /* The shape comes from the photo alone, not from the last painting inside. */
+  min-height: 0;
   aspect-ratio: var(--aspect, 1.33);
   touch-action: pan-y;
   user-select: none;
@@ -55,7 +57,7 @@
   cursor: pointer;
 }
 
-.acuarela-painting canvas,
+.acuarela-canvas,
 .acuarela-sample,
 .acuarela-original {
   display: block;
@@ -63,23 +65,31 @@
   height: 100%;
 }
 
-.acuarela-painting canvas[hidden] {
+.acuarela-canvas[hidden] {
   display: none;
 }
 
-.acuarela-painting canvas,
+/* Cropped, not stretched, for the moment a new photo's shape takes over. */
+.acuarela-canvas,
 .acuarela-sample {
+  object-fit: cover;
   background: #fbfaf6;
   box-shadow: 0 1px 2px rgba(60, 45, 20, .08), 0 12px 32px -10px rgba(60, 45, 20, .22);
 }
 
-.acuarela-painting[data-empty] canvas {
-  visibility: hidden;
+.acuarela-loader {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease;
 }
 
-.acuarela-painting[data-empty] {
-  background: #f4f1ea;
-  cursor: default;
+.acuarela-loader[data-active] {
+  opacity: 1;
+  transition-duration: .2s;
 }
 
 .acuarela-original {

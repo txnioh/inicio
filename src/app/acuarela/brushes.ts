@@ -1,7 +1,7 @@
 // The brush, on p5.brush (the standalone WebGL build): real watercolour
 // fills with bleed and texture (Tyler Hobbs' layered polygons) — the same
 // engine Aluan Wang builds inkField on. Every function here draws into
-// whatever canvas `begin()` loaded.
+// the canvas `begin()` made.
 
 import * as brush from 'p5.brush/standalone';
 import { rgb, type Lab, type Point } from './kit';
@@ -16,11 +16,20 @@ const hex = (lab: Lab) => `#${rgb(lab).map(v => v.toString(16).padStart(2, '0'))
 let origin: [number, number] = [0, 0];
 let scaled = 1;
 
-/** Loads a canvas for painting, on paper, with the origin in its top-left corner. */
-export function begin(canvas: HTMLCanvasElement, width: number, height: number, seed: number, paper: Lab) {
-  canvas.width = width;
-  canvas.height = height;
-  brush.load(canvas);
+// Every painting gets a new canvas, and the last one's WebGL context is
+// dropped. brush.load() builds a shader and three canvas-sized framebuffers
+// each time and never frees the old ones, so repainting on one canvas ran a
+// phone out of GPU memory after three or four paintings; and a resized canvas
+// kept its old viewport, so a photo of another shape came out cut off.
+let surface: HTMLCanvasElement | null = null;
+
+/** A new canvas to paint on, on paper, with the origin in its top-left corner. */
+export function begin(width: number, height: number, seed: number, paper: Lab) {
+  surface?.getContext('webgl2')?.getExtension('WEBGL_lose_context')?.loseContext();
+  surface = document.createElement('canvas');
+  surface.width = width;
+  surface.height = height;
+  brush.load(surface);
   brush.seed(seed);
   brush.noiseSeed(seed);
   // The built-in brushes are sized for small sketches.
@@ -30,6 +39,7 @@ export function begin(canvas: HTMLCanvasElement, width: number, height: number, 
   brush.clear(hex(paper));
   brush.translate(-origin[0] - width / 2, -origin[1] - height / 2);
   origin = [-width / 2, -height / 2];
+  return surface;
 }
 
 /** Flushes what has been painted so far onto the canvas. */
