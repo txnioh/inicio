@@ -5,8 +5,6 @@
 // When the painting is ready it blooms in through the wet photo, patch by
 // patch from the middle out, each patch with the darker rim of a drying wash.
 
-import type { Layout } from './paint';
-
 const VERTEX = `
 attribute vec2 a_position;
 varying vec2 v_uv;
@@ -20,13 +18,11 @@ precision highp float;
 varying vec2 v_uv;
 uniform sampler2D u_photo;
 uniform sampler2D u_paint;
-uniform vec4 u_inner;
 uniform vec2 u_size;
 uniform float u_time;
 uniform float u_wet;
 uniform float u_reveal;
 
-const vec3 MARGIN = vec3(.984, .980, .965);
 const vec3 SHEET = vec3(.953, .910, .839);
 
 float hash(vec2 p) {
@@ -46,7 +42,7 @@ float fbm(vec2 p) {
 
 void main() {
   vec2 uv = v_uv;
-  vec2 p = (uv - u_inner.xy) / (u_inner.zw - u_inner.xy);
+  vec2 p = uv;
   float aspect = u_size.x / u_size.y;
   vec2 s = vec2(p.x * aspect, p.y) * 2.4;
   float t = u_time * .07;
@@ -71,10 +67,7 @@ void main() {
   float pool = fbm(s * 1.6 + 2. * r - t);
   wet *= 1. - .22 * smoothstep(.04, 0., abs(pool - .5));
   wet += (noise(uv * u_size * .5) - .5) * .035;
-  vec3 photo = mix(c, wet, u_wet);
-
-  vec2 inside = step(u_inner.xy, uv) * step(uv, u_inner.zw);
-  vec3 base = mix(MARGIN, photo, inside.x * inside.y);
+  vec3 base = mix(c, wet, u_wet);
 
   // The painting blooms in where this field is lowest, the middle first.
   float field = .8 * fbm(vec2(uv.x * aspect, uv.y) * 3. + 4.) + .3 * length((uv - .5) * vec2(aspect, 1.)) / max(aspect, 1.);
@@ -90,7 +83,7 @@ const ease = (x: number) => x < .5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2;
 
 export type Loader = {
   /** Shows the photo going wet, or carries on if it already is. */
-  start(photo: HTMLImageElement, layout: Layout): void;
+  start(photo: HTMLImageElement): void;
   /** Blooms the painting in over the photo, then hides. Resolves when done or interrupted. */
   reveal(painting: HTMLCanvasElement): Promise<void>;
   /** Hides at once, keeping what is underneath. */
@@ -122,7 +115,7 @@ export function createLoader(canvas: HTMLCanvasElement): Loader | null {
   gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
   const at = (name: string) => gl.getUniformLocation(program, name);
   const uniforms = {
-    inner: at('u_inner'), size: at('u_size'), time: at('u_time'), wet: at('u_wet'), reveal: at('u_reveal'),
+    size: at('u_size'), time: at('u_time'), wet: at('u_wet'), reveal: at('u_reveal'),
   };
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
   const texture = (unit: number, name: string) => {
@@ -201,14 +194,12 @@ export function createLoader(canvas: HTMLCanvasElement): Loader | null {
   };
 
   return {
-    start(next, layout) {
+    start(next) {
       interrupt();
       if (next !== photo) {
         photo = next;
         upload(0, photoTexture, next, 1024);
       }
-      const bx = layout.border / layout.width, by = layout.border / layout.height;
-      gl.uniform4f(uniforms.inner, bx, by, 1 - bx, 1 - by);
       if (!active) {
         wet = 0;
         last = 0;

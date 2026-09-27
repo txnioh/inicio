@@ -1,6 +1,9 @@
 // How a photo is painted. None of these values knows what is in the picture:
 // they only change colour, the watercolour itself, and how the photo is
-// divided into shapes. The page offers two finished styles.
+// divided into shapes. The page offers two finished watercolour styles, and
+// an oil sketch (oil.ts).
+
+import { defaultOil, type Oil } from './oil';
 
 export type Style = {
   /** How bright and airy the washes are; 0 keeps the photo's own values. */
@@ -49,6 +52,16 @@ export const styles = [
       regions: 16, depthSplit: 0, zones: 1, simplify: .8, detail: 0,
     },
   },
-] as const satisfies readonly { id: string; name: string; style: Style }[];
+  { id: 'oil', name: 'Oil', oil: defaultOil },
+] as const satisfies readonly ({ id: string; name: string; style: Style } | { id: string; name: string; oil: Oil })[];
+
+/** Everything a painting is planned from, besides the photo. */
+export type Look = { kind: 'watercolour'; style: Style } | { kind: 'oil'; oil: Oil };
 
 export type StyleId = typeof styles[number]['id'];
+
+/** What a style paints from. */
+export function lookFor(id: StyleId): Look {
+  const chosen = styles.find(s => s.id === id)!;
+  return 'style' in chosen ? { kind: 'watercolour', style: chosen.style } : { kind: 'oil', oil: chosen.oil };
+}

@@ -10,12 +10,20 @@
 // paint.ts lays them down with the brush in brushes.ts.
 
 import { area, blur, contours, densify, hexLab, mixLab, oklab, random, simplifyLoop, smooth, type Lab, type Point, type Random } from './kit';
+import type { Mark } from './oil';
 import { defaultStyle, type Style } from './style';
 import type { Scene } from './understand';
 
 /** One watercolour wash over a set of outlines; see brushes.ts. */
 export type Stroke = { loops: Point[][]; color: Lab; opacity: number; bleed: number; texture: number; border: number; body: number };
-export type Plan = { width: number; height: number; seed: number; strokes: Stroke[] };
+/**
+ * A painting to lay down: on `paper`, watercolour washes (`strokes`) and
+ * oil brush strokes (`marks`), with the bristle brushes those need.
+ */
+export type Plan = {
+  width: number; height: number; seed: number; paper: Lab; strokes: Stroke[]; marks: Mark[];
+  brushes?: { sizes: number[]; texture: number; load: number };
+};
 
 export const PAPER = hexLab('#f3e8d6');
 // A watercolour box: olive, sap and teal greens, earths, blues, a red, violets.
@@ -32,9 +40,9 @@ const LAYERS = [
 
 const clamp = (v: number, low = 0, high = 1) => Math.min(high, Math.max(low, v));
 
-type Grid = { width: number; height: number; depth: Float32Array; lab: Float32Array };
+export type Grid = { width: number; height: number; depth: Float32Array; lab: Float32Array };
 
-function downsample(scene: Scene, factor: number): Grid {
+export function downsample(scene: Scene, factor: number): Grid {
   const width = Math.floor(scene.width / factor), height = Math.floor(scene.height / factor);
   const depth = new Float32Array(width * height), lab = new Float32Array(width * height * 3);
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
@@ -55,7 +63,7 @@ function downsample(scene: Scene, factor: number): Grid {
  * Edge-preserving smoothing (a bilateral filter): texture settles into flat
  * colour while the edges between things stay where they are.
  */
-function settle({ width, height, lab }: Grid, radius: number, range: number) {
+export function settle({ width, height, lab }: Grid, radius: number, range: number) {
   const out = new Float32Array(lab.length);
   const spatial = 2 * (radius / 2) ** 2, tonal = 2 * range * range;
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
@@ -83,7 +91,7 @@ function settle({ width, height, lab }: Grid, radius: number, range: number) {
  * so that shapes follow the photo and near and far things of the same colour
  * stay apart.
  */
-function cluster(lab: Float32Array, depth: Float32Array, k: number, depthWeight: number, rng: Random) {
+export function cluster(lab: Float32Array, depth: Float32Array, k: number, depthWeight: number, rng: Random) {
   const count = depth.length;
   const feature = (c: number): number[] =>
     [lab[c * 3], lab[c * 3 + 1] * 2.2, lab[c * 3 + 2] * 2.2, depth[c] * depthWeight * .45];
@@ -120,7 +128,7 @@ function cluster(lab: Float32Array, depth: Float32Array, k: number, depthWeight:
 }
 
 /** Each cell takes the most common label around it, so shapes lose their speckle. */
-function calm(labels: Uint8Array, width: number, height: number, radius: number, k: number) {
+export function calm(labels: Uint8Array, width: number, height: number, radius: number, k: number) {
   const out = new Uint8Array(labels.length);
   const votes = new Uint16Array(k);
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
@@ -341,5 +349,5 @@ export function plan(scene: Scene, seed: number, side: number, style: Style = de
     }
   }
 
-  return { width, height, seed, strokes: layers.flat() };
+  return { width, height, seed, paper: PAPER, strokes: layers.flat(), marks: [] };
 }

@@ -118,3 +118,14 @@
   .ink-button, .ink-button-icon, .ink-icon-layers path { transition: none; }
   .ink-button:is(:hover, :active) .ink-button-icon { transform: none; }
 }
+
+/* Watercolour article */
+.wc-canvas { display: block; width: 100%; height: auto; }
+.wc-drag { cursor: ew-resize; touch-action: pan-y; }
+.wc-portrait { max-width: 320px; margin: 0 auto; mask-image: none; }
+.wc-compare { position: relative; max-width: 360px; margin: 0 auto; aspect-ratio: 1279 / 1600; overflow: hidden; border-radius: 2px; background: #faf9f5; }
+.wc-compare img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.wc-compare-photo { clip-path: inset(0 calc(100% - var(--split)) 0 0); }
+.wc-compare-handle { position: absolute; top: 0; bottom: 0; left: var(--split); width: 1.5px; margin-left: -.75px; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,.25); pointer-events: none; }
+.wc-compare input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; touch-action: pan-y; }
+.wc-compare:has(input:focus-visible) { outline: 2px solid #111; outline-offset: 3px; }

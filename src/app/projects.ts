@@ -1,4 +1,5 @@
 export const projects = [
+  { title: 'Acuarela', group: 'lab', date: '2026', href: '/acuarela' },
   { title: 'Carrete', group: 'lab', date: '2026', href: '/carrete' },
   { title: 'txniOS', group: 'apps', date: '2024', href: 'https://os.txnio.com' },
   { title: 'Tresdé', group: 'apps', date: '2026', href: 'https://tresde.txnio.com' },

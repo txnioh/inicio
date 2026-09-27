@@ -2,15 +2,15 @@
 // laid down here with the brush, a few at a time so the page stays live.
 
 import * as brush from './brushes';
-import { PAPER, type Plan } from './plan';
-import type { Style } from './style';
+import type { Plan } from './plan';
+import type { Look } from './style';
 import type { Scene } from './understand';
 
 let worker: Worker | null = null;
 let requests = 0;
 
 /** Works out the strokes that paint a scene; `side` is the painting's longest side. */
-export function plan(scene: Scene, seed: number, side: number, style: Style): Promise<Plan> {
+export function plan(scene: Scene, seed: number, side: number, look: Look): Promise<Plan> {
   worker ??= new Worker(new URL('./plan.worker.ts', import.meta.url), { type: 'module' });
   const id = ++requests;
   const current = worker;
@@ -32,23 +32,29 @@ export function plan(scene: Scene, seed: number, side: number, style: Style): Pr
     };
     current.addEventListener('message', listen);
     current.addEventListener('error', fail);
-    current.postMessage({ id, scene, seed, side, style });
+    current.postMessage({ id, scene, seed, side, look });
   });
 }
 
-/** A painting as shown: its size with the margin, and the margin. */
-export type Layout = { width: number; height: number; border: number };
+/** A painting's size on the page. */
+export type Layout = { width: number; height: number };
 
-/** The painting a photo of this size will make, with or without its margin; `side` is its longest side. */
-export function layoutFor(width: number, height: number, side: number, frame: boolean): Layout {
-  const border = frame ? Math.round(side * .03) : 0;
+/** The size of the painting a photo of this size makes; `side` is its longest side. */
+export function layoutFor(width: number, height: number, side: number): Layout {
   const long = Math.max(width, height);
-  return { width: Math.round(width / long * side) + border * 2, height: Math.round(height / long * side) + border * 2, border };
+  return { width: Math.round(width / long * side), height: Math.round(height / long * side) };
 }
 
-// The last finished painting, without its margin, so the margin can be
-// switched on and off without painting again.
-let painted: HTMLCanvasElement | null = null;
+/** Lays down the plan's `i`th stroke: its watercolour washes first, then its brush strokes. */
+export function layDown({ strokes, marks }: Plan, i: number) {
+  if (i < strokes.length) {
+    const { loops, color, ...options } = strokes[i];
+    brush.wash(loops, color, options);
+  } else {
+    const { points, color, size, brush: which } = marks[i - strokes.length];
+    brush.stroke(points, color, size, which);
+  }
+}
 
 /**
  * Lays the strokes down in short batches, one per frame, so the animation
@@ -56,37 +62,23 @@ let painted: HTMLCanvasElement | null = null;
  * Returns null if cancelled.
  */
 export async function perform(canvas: HTMLCanvasElement, paint: Plan,
-  { frame = true, signal, onProgress }: { frame?: boolean; signal?: AbortSignal; onProgress?: (done: number) => void } = {}) {
-  const surface = brush.begin(paint.width, paint.height, paint.seed, PAPER);
-  const { strokes } = paint;
+  { signal, onProgress }: { signal?: AbortSignal; onProgress?: (done: number) => void } = {}) {
+  const surface = brush.begin(paint.width, paint.height, paint.seed, paint.paper);
+  if (paint.brushes) brush.bristles(paint.brushes, paint.seed);
+  const total = paint.strokes.length + paint.marks.length;
   let i = 0;
-  while (i < strokes.length) {
+  while (i < total) {
     const start = performance.now();
-    while (i < strokes.length && performance.now() - start < 20) {
-      const { loops, color, ...options } = strokes[i++];
-      brush.wash(loops, color, options);
+    while (i < total && performance.now() - start < 20) {
+      layDown(paint, i++);
     }
     brush.flush();
-    onProgress?.(i / strokes.length);
+    onProgress?.(i / total);
     await new Promise(requestAnimationFrame);
     if (signal?.aborted) return null;
   }
-  painted ??= document.createElement('canvas');
-  painted.width = surface.width;
-  painted.height = surface.height;
-  painted.getContext('2d')!.drawImage(surface, 0, 0);
-  return present(canvas, frame);
-}
-
-/** Shows the last painting on `canvas`, framed by a white margin or not. */
-export function present(canvas: HTMLCanvasElement, frame: boolean): Layout | null {
-  if (!painted) return null;
-  const border = frame ? Math.round(Math.max(painted.width, painted.height) * .03) : 0;
-  canvas.width = painted.width + border * 2;
-  canvas.height = painted.height + border * 2;
-  const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = '#fbfaf6';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(painted, border, border);
-  return { width: canvas.width, height: canvas.height, border };
+  canvas.width = surface.width;
+  canvas.height = surface.height;
+  canvas.getContext('2d')!.drawImage(surface, 0, 0);
+  return { width: canvas.width, height: canvas.height };
 }

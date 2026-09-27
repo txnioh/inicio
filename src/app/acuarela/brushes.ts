@@ -4,7 +4,7 @@
 // the canvas `begin()` made.
 
 import * as brush from 'p5.brush/standalone';
-import { rgb, type Lab, type Point } from './kit';
+import { random, rgb, type Lab, type Point } from './kit';
 
 const hex = (lab: Lab) => `#${rgb(lab).map(v => v.toString(16).padStart(2, '0')).join('')}`;
 
@@ -71,4 +71,43 @@ export function wash(loops: Point[][], color: Lab, { opacity = 150, bleed = .12,
     brush.polygon(loop);
   }
   brush.noFill();
+}
+
+/**
+ * Flat brushes of stiff bristles for the oil sketch, one per size: dashes
+ * spread across the brush, of uneven load, so a stroke is streaked by its
+ * hairs. `texture` is how dry some hairs run, `load` how much paint the
+ * brush lays at its edges. Each is stamped at a spacing in proportion to its
+ * size, so every point takes the same few stamps. Call after begin().
+ */
+export function bristles({ sizes, texture, load }: { sizes: number[]; texture: number; load: number }, seed: number) {
+  const { next } = random(seed);
+  const hairs = Array.from({ length: 60 }, () => ({
+    x: next() * 36 - 18, y: next() * 92 - 46, width: 2 + next() * 5, length: 18 + next() * 42,
+    // More texture: more hairs run dry, and drier.
+    tone: Math.floor(next() ** (3 - 2.4 * texture) * texture * 255),
+  }));
+  sizes.forEach((size, i) => brush.add(`bristle${i}`, {
+    type: 'custom', weight: 1, scatter: .02, sharpness: .5, grain: 1, opacity: 30 + load * 170,
+    spacing: Math.max(1, size * .15), pressure: [1.1, .9], rotate: 'natural', markerTip: false, noise: .6,
+    tip: surface => {
+      for (const hair of hairs) {
+        surface.fill(hair.tone);
+        surface.ellipse(hair.x, hair.y, hair.length, hair.width);
+      }
+    },
+  }));
+}
+
+// Where a stroke's stamps pile up, p5.brush darkens its colour to
+// c·0.85 − 0.075, like a loaded pencil. A brush stroke always piles up in
+// its middle, so the colour asked for is lifted by the inverse, and comes
+// out as itself; otherwise every stroke came out darker than its edges,
+// outlined in a pale rim.
+const loaded = (lab: Lab) => `#${rgb(lab).map(v => Math.min(255, Math.round((v / 255 + .075) / .85 * 255)).toString(16).padStart(2, '0')).join('')}`;
+
+/** A brush stroke through points (x, y, pressure), with one of the bristle brushes. */
+export function stroke(points: number[][], color: Lab, size: number, which: number) {
+  brush.set(`bristle${which}`, loaded(color), size);
+  brush.spline(points, .5);
 }

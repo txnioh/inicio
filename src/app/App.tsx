@@ -11,6 +11,7 @@ const Acuarela = lazy(() => import('./acuarela/Acuarela'));
 const Neural = lazy(() => import('./neural/Neural'));
 const Robot = lazy(() => import('./robot/Robot'));
 const Trenes = lazy(() => import('./trenes/Trenes'));
+const WatercolourArticle = lazy(() => import('./writing/WatercolourArticle'));
 
 function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
   return (
@@ -28,6 +29,7 @@ export default function App() {
   if (path === '/trains' || path === '/trenes') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading the station" />}><Trenes /></Suspense>;
   if (path === '/') return <Home arrived={arrived} />;
   if (path === '/carrete') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading camera roll" />}><Carrete /></Suspense>;
+  if (path === '/writing/watercolour') return <Suspense fallback={<main className="minimal-portfolio-page"><div className="minimal-portfolio-shell" role="status">Loading article…</div></main>}><WatercolourArticle /></Suspense>;
   if (path === '/writing/ink') return <Suspense fallback={<main className="minimal-portfolio-page"><div className="minimal-portfolio-shell" role="status">Loading article…</div></main>}><Article /></Suspense>;
   return <main className="minimal-portfolio-page"><div className="minimal-portfolio-shell minimal-article">
     <header><h1>Page not found</h1></header><p>This page doesn’t exist. <a className="minimal-basic-link" href="/">Back to Index</a></p>
@@ -82,9 +84,15 @@ export function Home({ arrived }: { arrived: boolean }) {
           <section className="minimal-section" aria-labelledby="writing-title">
             <div className="minimal-project-list">
               <h3 id="writing-title" className="minimal-reveal-line">Writing</h3>
-              <ul><li><ul><li>
-                <InkWritingLink />
-              </li></ul></li></ul>
+              <ul><li><ul>
+                <li>
+                  <a className="minimal-row-link minimal-reveal-line" href="/writing/watercolour">
+                    <h2>Painting a photo in watercolour</h2>
+                    <span className="minimal-row-meta"><span>2026</span><span aria-hidden="true">/</span><span>Read</span></span>
+                  </a>
+                </li>
+                <li><InkWritingLink /></li>
+              </ul></li></ul>
             </div>
           </section>
 

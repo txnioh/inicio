@@ -18,4 +18,12 @@ declare module 'p5.brush/standalone' {
   export function noWash(): void;
   export function noHatch(): void;
   export function polygon(points: Points): void;
+  type Tip = { fill(value: number): void; ellipse(x: number, y: number, width: number, height: number): void };
+  export function add(name: string, params: {
+    type: 'custom'; weight: number; scatter: number; sharpness: number; grain: number; opacity: number;
+    spacing: number; pressure: [number, number]; rotate: 'natural' | 'random' | 'none'; markerTip: boolean; noise: number;
+    tip: (surface: Tip) => void;
+  }): void;
+  export function set(name: string, colour: Colour, weight?: number): void;
+  export function spline(points: Points, curvature?: number): void;
 }

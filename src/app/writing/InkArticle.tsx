@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef } from 'react';
 import RobotHomeLink from '../components/RobotHomeLink';
-import FooterRobotMark from '../components/FooterRobotMark';
+import { Contents, useActiveSection } from './ArticleContents';
 import NowPlaying from '../components/NowPlaying';
 import { ExampleDemo, FanDemo, LayersDemo, RevealDemo, ShapeDemo, TextureDemo, WobbleDemo } from './InkDemos';
 import './writing.css';
@@ -15,44 +15,9 @@ const sections = [
   ['credits', 'Notes & credits'],
 ] as const;
 
-function Contents({ activeId, onNavigate }: { activeId: string | null; onNavigate: (id: string) => void }) {
-  const activeIndex = sections.findIndex(([id]) => id === activeId);
-  return <div className="ink-contents-list">
-    <span className="ink-section-robot" data-active={activeIndex >= 0}
-      style={{ '--active-section': Math.max(0, activeIndex) } as CSSProperties} aria-hidden="true">
-      <FooterRobotMark draggable={false} />
-    </span>
-    <ul>{sections.map(([id, title], index) => <li key={id}>
-      <a href={`#${id}`} style={{ '--index-row': `index-row-${index}` } as CSSProperties}
-        aria-current={activeId === id ? 'location' : undefined} onClick={() => onNavigate(id)}>{title}</a>
-    </li>)}</ul>
-  </div>;
-}
-
 export default function InkArticle() {
   const mobileContents = useRef<HTMLDetailsElement>(null);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
-
-  useEffect(() => {
-    const headings = sections.map(([id]) => document.getElementById(id)!);
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const readingLine = Math.min(200, innerHeight * .25);
-      const current = headings.filter(heading => heading.getBoundingClientRect().top <= readingLine).at(-1);
-      const atEnd = scrollY + innerHeight >= document.documentElement.scrollHeight - 2;
-      setActiveSection(atEnd ? 'credits' : current?.id ?? null);
-    };
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
-    update();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-    };
-  }, []);
+  const [activeSection, setActiveSection] = useActiveSection(sections);
   useEffect(() => {
     document.title = 'Making SVG feel like ink · Antonio J. Gonzalez';
     const description = document.querySelector('meta[name="description"]');
@@ -68,7 +33,7 @@ export default function InkArticle() {
     <a className="ink-skip" href="#ink-article">Skip to article</a>
     <aside className="ink-sidebar">
       <RobotHomeLink className="ink-index" />
-      <nav className="page-index" aria-label="Article sections"><Contents activeId={activeSection} onNavigate={setActiveSection} /></nav>
+      <nav className="page-index" aria-label="Article sections"><Contents sections={sections} activeId={activeSection} onNavigate={setActiveSection} /></nav>
     </aside>
     <div className="minimal-portfolio-shell ink-shell">
       <RobotHomeLink className="ink-mobile-index" />
@@ -82,7 +47,7 @@ export default function InkArticle() {
 
         <details className="ink-mobile-contents" ref={mobileContents}>
           <summary>In this article <span aria-hidden="true">+</span></summary>
-          <nav aria-label="Article sections on mobile"><Contents activeId={activeSection} onNavigate={id => {
+          <nav aria-label="Article sections on mobile"><Contents sections={sections} activeId={activeSection} onNavigate={id => {
             setActiveSection(id);
             if (mobileContents.current) mobileContents.current.open = false;
           }} /></nav>

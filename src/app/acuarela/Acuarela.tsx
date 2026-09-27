@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
 import { createLoader, type Loader } from './loading';
-import { layoutFor, perform, plan, present, type Layout } from './paint';
-import { styles, type StyleId } from './style';
+import { layoutFor, perform, plan, type Layout } from './paint';
+import { lookFor, styles, type StyleId } from './style';
 import { understand, type Scene } from './understand';
 import './acuarela.css';
 
 // Paintings made from one of the Carrete photos, one per style, shown before
 // any photo is chosen, so the page explains itself without downloading the
 // model.
-const SAMPLE = { photo: '/carrete/instagram/C-m0owIt5PF-02.webp', width: 1375, height: 1696, border: 48 };
+const SAMPLE = { photo: '/carrete/instagram/C-m0owIt5PF-02.webp', width: 1279, height: 1600 };
 const SIDE = 1600;
 const STYLE_KEY = 'acuarela:style';
 
@@ -63,7 +63,7 @@ function useInstallable() {
 
 function describe(status: Status) {
   switch (status.name) {
-    case 'sample': return 'Painted from one of my photos. Your first photo downloads a 27 MB model, once.';
+    case 'sample': return 'The first photo downloads a 27 MB model, once.';
     case 'reading': return 'Opening the photo…';
     case 'download': return `Downloading the model, only this once · ${Math.round(status.progress * 100)}%`;
     case 'depth': return 'Measuring what is near and what is far…';
@@ -86,14 +86,12 @@ export default function Acuarela() {
   const [layout, setLayout] = useState<Layout | null>(null);
   const [status, setStatus] = useState<Status>({ name: 'sample' });
   const [seed, setSeed] = useState(1);
-  const [frame, setFrame] = useState(true);
   const [comparing, setComparing] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [styleId, setStyleId] = useState(loadStyle);
-  const style = styles.find(s => s.id === styleId)!.style;
   // Paintings started from async flows use the style chosen by then.
-  const styleNow = useRef(style);
-  styleNow.current = style;
+  const lookNow = useRef(lookFor(styleId));
+  lookNow.current = lookFor(styleId);
   useInstallable();
 
   const busy = ['reading', 'download', 'depth'].includes(status.name);
@@ -107,22 +105,21 @@ export default function Acuarela() {
 
   // The photo shows, going wet, over the painting's place while it is
   // painted; then the new painting blooms in.
-  async function paint(nextSeed: number, withFrame: boolean, nextStyle = styleNow.current) {
+  async function paint(nextSeed: number, look = lookNow.current) {
     const read = scene.current, image = picture.current, target = canvas.current;
     if (!read || !image || !target) return;
     running.current?.abort();
     const controller = new AbortController();
     running.current = controller;
     const { signal } = controller;
-    const shape = layoutFor(image.naturalWidth, image.naturalHeight, SIDE, withFrame);
-    setLayout(shape);
-    loader.current?.start(image, shape);
+    setLayout(layoutFor(image.naturalWidth, image.naturalHeight, SIDE));
+    loader.current?.start(image);
     setStatus({ name: 'painting', progress: 0 });
     try {
-      const strokes = await plan(read, nextSeed, SIDE, nextStyle);
+      const strokes = await plan(read, nextSeed, SIDE, look);
       if (signal.aborted) return;
       const shown = await perform(target, strokes, {
-        frame: withFrame, signal,
+        signal,
         onProgress: progress => { if (!signal.aborted) setStatus({ name: 'painting', progress }); },
       });
       if (!shown || signal.aborted) return;
@@ -145,9 +142,8 @@ export default function Acuarela() {
       const image = await decode(url);
       if (controller.signal.aborted) return URL.revokeObjectURL(url);
       // The painting's place takes the photo's shape at once, and never changes it.
-      const shape = layoutFor(image.naturalWidth, image.naturalHeight, SIDE, frame);
-      setLayout(shape);
-      loader.current?.start(image, shape);
+      setLayout(layoutFor(image.naturalWidth, image.naturalHeight, SIDE));
+      loader.current?.start(image);
       const read = await understand(image, 768, (stage, progress) => {
         if (!controller.signal.aborted) setStatus(stage === 'download' ? { name: 'download', progress } : { name: stage });
       });
@@ -162,7 +158,7 @@ export default function Acuarela() {
       // Back to what was showing before.
       loader.current?.stop();
       const before = picture.current;
-      setLayout(before && layoutFor(before.naturalWidth, before.naturalHeight, SIDE, frame));
+      setLayout(before && layoutFor(before.naturalWidth, before.naturalHeight, SIDE));
       return setStatus({
         name: 'error',
         message: error instanceof Error && /decode|EncodingError/i.test(`${error.name} ${error.message}`)
@@ -170,7 +166,7 @@ export default function Acuarela() {
           : 'The model could not run here. Check the connection and try again.',
       });
     }
-    await paint(seed, frame);
+    await paint(seed);
   }
 
   // The style is remembered; changing it repaints the same scene with the
@@ -181,7 +177,7 @@ export default function Acuarela() {
     try {
       localStorage.setItem(STYLE_KEY, id);
     } catch { /* It just won't be remembered. */ }
-    if (scene.current) void paint(seed, frame, styles.find(s => s.id === id)!.style);
+    if (scene.current) void paint(seed, lookFor(id));
   }
 
   // Release a chosen photo once another replaces it, or on leaving.
@@ -234,15 +230,7 @@ export default function Acuarela() {
   function again() {
     const next = seed + 1;
     setSeed(next);
-    void paint(next, frame);
-  }
-
-  // The margin goes on or off around the same painting.
-  function toggleFrame(value: boolean) {
-    setFrame(value);
-    const image = picture.current;
-    if (!image || !canvas.current || !present(canvas.current, value)) return;
-    setLayout(layoutFor(image.naturalWidth, image.naturalHeight, SIDE, value));
+    void paint(next);
   }
 
   const holdKeys = (event: KeyboardEvent, down: boolean) => {
@@ -252,11 +240,6 @@ export default function Acuarela() {
     }
   };
   const shown: Layout = layout ?? SAMPLE;
-  // The photo covers the painting inside its frame.
-  const inset = {
-    left: `${shown.border / shown.width * 100}%`, top: `${shown.border / shown.height * 100}%`,
-    width: `${(1 - 2 * shown.border / shown.width) * 100}%`, height: `${(1 - 2 * shown.border / shown.height) * 100}%`,
-  };
   const canCompare = painted || !layout;
 
   return (
@@ -268,17 +251,13 @@ export default function Acuarela() {
         <header className="acuarela-header">
           <a className="minimal-basic-link acuarela-back" href="/">Index</a>
           <h1>Acuarela</h1>
-          <p>
-            Paints a photo in watercolour. It looks at the photo’s own colours and at what is near and far,
-            finds its shapes, and paints them stroke by stroke. It all happens on your device.
-          </p>
         </header>
 
         <div className="acuarela-styles" role="radiogroup" aria-label="Style">
-          {styles.map((option, i) => (
+          {styles.map(option => (
             <button key={option.id} type="button" role="radio" aria-checked={option.id === styleId}
               onClick={() => chooseStyle(option.id)} disabled={busy}>
-              <span aria-hidden="true">{i + 1}</span> {option.name}
+              {option.name}
             </button>
           ))}
         </div>
@@ -286,16 +265,19 @@ export default function Acuarela() {
         <figure className="acuarela-stage">
           <div className="acuarela-painting"
             style={{ '--aspect': shown.width / shown.height } as CSSProperties}
+            tabIndex={canCompare ? 0 : -1} aria-label="Press and hold to see the photo"
+            onKeyDown={event => holdKeys(event, true)} onKeyUp={event => holdKeys(event, false)}
+            onBlur={() => setComparing(false)}
             onPointerDown={event => { if (canCompare) { event.currentTarget.setPointerCapture(event.pointerId); setComparing(true); } }}
             onPointerUp={() => setComparing(false)}
             onPointerCancel={() => setComparing(false)}
             onContextMenu={event => event.preventDefault()}>
             {!photo && <img className="acuarela-sample" src={`/acuarela/sample-${styleId}.webp`} width={SAMPLE.width} height={SAMPLE.height}
-              alt="Watercolour painting of a wooded park, with a pale parasol in one corner" />}
+              alt={`${styleId === 'oil' ? 'Oil sketch' : 'Watercolour painting'} of a wooded park, with a pale parasol in one corner`} />}
             <canvas ref={canvas} className="acuarela-canvas" hidden={!photo} role="img"
-              aria-label={photo ? `Watercolour painting of ${photo.name}` : undefined} />
+              aria-label={photo ? `Painting of ${photo.name}` : undefined} />
             <canvas ref={cover} className="acuarela-loader" aria-hidden="true" />
-            {comparing && <img className="acuarela-original" src={photo?.url ?? SAMPLE.photo} alt="" style={inset} />}
+            {comparing && <img className="acuarela-original" src={photo?.url ?? SAMPLE.photo} alt="" />}
           </div>
           <figcaption aria-live="polite">{describe(status)}</figcaption>
         </figure>
@@ -309,24 +291,11 @@ export default function Acuarela() {
             <input type="file" accept="image/*" capture="environment" onChange={choose} disabled={busy} />
             Camera
           </label>
+          <button type="button" className="acuarela-button" onClick={again} disabled={!painted}>
+            Again
+          </button>
           <button type="button" className="acuarela-button" onClick={save} disabled={!painted}>
             Save
-          </button>
-        </div>
-
-        <div className="acuarela-row">
-          <button type="button" className="acuarela-text-button" onClick={again} disabled={!painted}>
-            Paint it again
-          </button>
-          <label className="acuarela-toggle">
-            <input type="checkbox" checked={frame} onChange={event => toggleFrame(event.target.checked)} disabled={!painted} />
-            Frame
-          </label>
-          <button type="button" className="acuarela-text-button"
-            onPointerDown={() => setComparing(true)} onPointerUp={() => setComparing(false)}
-            onPointerLeave={() => setComparing(false)} onKeyDown={event => holdKeys(event, true)}
-            onKeyUp={event => holdKeys(event, false)} disabled={!canCompare}>
-            Hold for photo
           </button>
         </div>
       </div>
