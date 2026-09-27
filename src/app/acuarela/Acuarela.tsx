@@ -11,6 +11,15 @@ import './acuarela.css';
 const SAMPLE = { photo: '/carrete/instagram/C-m0owIt5PF-02.webp', width: 1279, height: 1600 };
 const SIDE = 1600;
 const STYLE_KEY = 'acuarela:style';
+const CLASSIC_KEY = 'acuarela:classic';
+
+function loadClassic() {
+  try {
+    return localStorage.getItem(CLASSIC_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 function loadStyle(): StyleId {
   try {
@@ -90,8 +99,10 @@ export default function Acuarela() {
   const [dragging, setDragging] = useState(false);
   const [styleId, setStyleId] = useState(loadStyle);
   // Paintings started from async flows use the style chosen by then.
-  const lookNow = useRef(lookFor(styleId));
-  lookNow.current = lookFor(styleId);
+  const [classic, setClassic] = useState(loadClassic);
+  const lookNow = useRef(lookFor(styleId, classic));
+  lookNow.current = lookFor(styleId, classic);
+  const hasClassic = 'classic' in styles.find(s => s.id === styleId)!;
   useInstallable();
 
   const busy = ['reading', 'download', 'depth'].includes(status.name);
@@ -125,8 +136,9 @@ export default function Acuarela() {
       if (!shown || signal.aborted) return;
       await loader.current?.reveal(target);
       if (!signal.aborted) setStatus({ name: 'done' });
-    } catch {
+    } catch (error) {
       if (signal.aborted) return;
+      console.error(error);
       loader.current?.stop();
       setStatus({ name: 'error', message: 'The painting could not be made. Try again.' });
     }
@@ -177,7 +189,18 @@ export default function Acuarela() {
     try {
       localStorage.setItem(STYLE_KEY, id);
     } catch { /* It just won't be remembered. */ }
-    if (scene.current) void paint(seed, lookFor(id));
+    if (scene.current) void paint(seed, lookFor(id, classic));
+  }
+
+  // Watercolour comes as glazes, or classic: as it first was, opaque and
+  // textured with little circles. Also remembered.
+  function chooseClassic(value: boolean) {
+    if (value === classic) return;
+    setClassic(value);
+    try {
+      localStorage.setItem(CLASSIC_KEY, value ? '1' : '0');
+    } catch { /* It just won't be remembered. */ }
+    if (scene.current) void paint(seed, lookFor(styleId, value));
   }
 
   // Release a chosen photo once another replaces it, or on leaving.
@@ -261,6 +284,12 @@ export default function Acuarela() {
             </button>
           ))}
         </div>
+        {hasClassic && <div className="acuarela-variants" role="radiogroup" aria-label="Version">
+          {([[false, 'Glaze'], [true, 'Classic']] as const).map(([value, name]) => (
+            <button key={name} type="button" role="radio" aria-checked={classic === value}
+              onClick={() => chooseClassic(value)} disabled={busy}>{name}</button>
+          ))}
+        </div>}
 
         <figure className="acuarela-stage">
           <div className="acuarela-painting"
@@ -272,7 +301,7 @@ export default function Acuarela() {
             onPointerUp={() => setComparing(false)}
             onPointerCancel={() => setComparing(false)}
             onContextMenu={event => event.preventDefault()}>
-            {!photo && <img className="acuarela-sample" src={`/acuarela/sample-${styleId}.webp`} width={SAMPLE.width} height={SAMPLE.height}
+            {!photo && <img className="acuarela-sample" src={`/acuarela/sample-${styleId}${hasClassic && classic ? '-classic' : ''}.webp`} width={SAMPLE.width} height={SAMPLE.height}
               alt={`${styleId === 'oil' ? 'Oil sketch' : 'Watercolour painting'} of a wooded park, with a pale parasol in one corner`} />}
             <canvas ref={canvas} className="acuarela-canvas" hidden={!photo} role="img"
               aria-label={photo ? `Painting of ${photo.name}` : undefined} />

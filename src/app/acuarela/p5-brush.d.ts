@@ -15,6 +15,8 @@ declare module 'p5.brush/standalone' {
   export function fillBleed(strength: number, direction?: 'in' | 'out', angle?: number): void;
   export function fillTexture(texture: number, border: number, scatter?: boolean): void;
   export function wash(colour: Colour, opacity?: number): void;
+  /** Added by the build (vite.config.ts): soft spots or the original hard circles as fill texture. */
+  export function softTexture(on: boolean): void;
   export function noWash(): void;
   export function noHatch(): void;
   export function polygon(points: Points): void;

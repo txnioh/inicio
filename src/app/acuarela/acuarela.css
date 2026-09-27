@@ -62,6 +62,33 @@
   cursor: default;
 }
 
+/* Glaze or Classic, for the watercolour styles. */
+.acuarela-variants {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.acuarela-variants button {
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(0, 0, 0, .4);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.acuarela-variants button[aria-checked='true'] {
+  color: #111;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .acuarela-stage {
   position: sticky;
   z-index: 1;

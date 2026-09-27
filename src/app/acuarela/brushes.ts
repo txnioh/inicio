@@ -42,6 +42,9 @@ export function begin(width: number, height: number, seed: number, paper: Lab) {
   return surface;
 }
 
+/** Textures washes with p5.brush's original hard circles, or soft spots; see vite.config.ts. */
+export const circles = (on: boolean) => brush.softTexture(!on);
+
 /** Flushes what has been painted so far onto the canvas. */
 export const flush = () => brush.render();
 

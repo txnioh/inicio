@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import * as brush from '../acuarela/brushes';
 import { hexLab, mixLab, random, rgb, type Lab } from '../acuarela/kit';
 import { directions } from '../acuarela/oil';
-import { layDown, plan } from '../acuarela/paint';
+import { layDown, plan, prepare } from '../acuarela/paint';
 import { calm, cluster, downsample, settle, type Grid } from '../acuarela/plan';
 import { lookFor, type StyleId } from '../acuarela/style';
 import type { Scene } from '../acuarela/understand';
@@ -328,8 +328,7 @@ export function OrderDemo() {
       canvas.width = painting.width;
       canvas.height = painting.height;
       const ctx = canvas.getContext('2d')!;
-      const surface = brush.begin(painting.width, painting.height, painting.seed, painting.paper);
-      if (painting.brushes) brush.bristles(painting.brushes, painting.seed);
+      const surface = prepare(painting);
       const total = painting.strokes.length + painting.marks.length;
       const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
       // Spread over about three seconds, so the order shows.

@@ -23,6 +23,8 @@ export type Stroke = { loops: Point[][]; color: Lab; opacity: number; bleed: num
 export type Plan = {
   width: number; height: number; seed: number; paper: Lab; strokes: Stroke[]; marks: Mark[];
   brushes?: { sizes: number[]; texture: number; load: number };
+  /** Washes textured with hard circles rather than soft spots. */
+  circles?: boolean;
 };
 
 export const PAPER = hexLab('#f3e8d6');
@@ -349,5 +351,5 @@ export function plan(scene: Scene, seed: number, side: number, style: Style = de
     }
   }
 
-  return { width, height, seed, paper: PAPER, strokes: layers.flat(), marks: [] };
+  return { width, height, seed, paper: PAPER, strokes: layers.flat(), marks: [], circles: style.circles };
 }

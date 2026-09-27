@@ -45,6 +45,14 @@ export function layoutFor(width: number, height: number, side: number): Layout {
   return { width: Math.round(width / long * side), height: Math.round(height / long * side) };
 }
 
+/** A new canvas for a plan, with its brushes and texture set. */
+export function prepare(paint: Plan) {
+  const surface = brush.begin(paint.width, paint.height, paint.seed, paint.paper);
+  if (paint.brushes) brush.bristles(paint.brushes, paint.seed);
+  brush.circles(!!paint.circles);
+  return surface;
+}
+
 /** Lays down the plan's `i`th stroke: its watercolour washes first, then its brush strokes. */
 export function layDown({ strokes, marks }: Plan, i: number) {
   if (i < strokes.length) {
@@ -63,8 +71,7 @@ export function layDown({ strokes, marks }: Plan, i: number) {
  */
 export async function perform(canvas: HTMLCanvasElement, paint: Plan,
   { signal, onProgress }: { signal?: AbortSignal; onProgress?: (done: number) => void } = {}) {
-  const surface = brush.begin(paint.width, paint.height, paint.seed, paint.paper);
-  if (paint.brushes) brush.bristles(paint.brushes, paint.seed);
+  const surface = prepare(paint);
   const total = paint.strokes.length + paint.marks.length;
   let i = 0;
   while (i < total) {
