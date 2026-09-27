@@ -7,6 +7,7 @@ import RobotWardrobe from './components/RobotWardrobe';
 import { VinylPlayer } from './components/VinylPlayer';
 import usePageNavigation from './usePageNavigation';
 
+const Acuarela = lazy(() => import('./acuarela/Acuarela'));
 const Neural = lazy(() => import('./neural/Neural'));
 const Robot = lazy(() => import('./robot/Robot'));
 const Trenes = lazy(() => import('./trenes/Trenes'));
@@ -22,6 +23,7 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
 export default function App() {
   const { path, Article, Carrete, arrived } = usePageNavigation();
   if (path === '/neural') return <Suspense fallback={<main style={{ position: 'fixed', inset: 0, background: '#000' }} aria-label="Cargando la red neuronal" />}><Neural /></Suspense>;
+  if (path === '/acuarela') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading Acuarela" />}><Acuarela /></Suspense>;
   if (path === '/robot') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Cargando el robot" />}><Robot /></Suspense>;
   if (path === '/trains' || path === '/trenes') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading the station" />}><Trenes /></Suspense>;
   if (path === '/') return <Home arrived={arrived} />;

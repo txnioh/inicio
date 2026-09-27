@@ -1,0 +1,14 @@
+{
+  "name": "Acuarela",
+  "short_name": "Acuarela",
+  "description": "Turns a photo into ink and watercolour, on your device.",
+  "start_url": "/acuarela",
+  "scope": "/acuarela",
+  "display": "standalone",
+  "background_color": "#fdfdfc",
+  "theme_color": "#fdfdfc",
+  "icons": [
+    { "src": "/acuarela/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/acuarela/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -15,7 +15,9 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.3.0",
     "framer-motion": "^12.43.0",
+    "p5.brush": "^2.2.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tweakpane": "^4.0.5"

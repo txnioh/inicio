@@ -1,0 +1,221 @@
+/* Acuarela: a photo becomes a watercolour painting. */
+.acuarela-shell {
+  max-width: 640px;
+  padding-top: 56px;
+}
+
+.acuarela-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.09px;
+}
+
+.acuarela-header .minimal-basic-link {
+  align-self: flex-start;
+  margin-bottom: 20px;
+  color: rgba(0, 0, 0, .4);
+}
+
+.acuarela-header h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.acuarela-header p {
+  max-width: 46ch;
+  margin: 0;
+  color: rgba(0, 0, 0, .4);
+}
+
+.acuarela-stage {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 24px -16px 0;
+  padding: 12px 16px 10px;
+  background: #fdfdfc;
+}
+
+.acuarela-painting {
+  position: relative;
+  width: min(100%, calc(52svh * var(--aspect, 1.33)));
+  aspect-ratio: var(--aspect, 1.33);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  cursor: pointer;
+}
+
+.acuarela-painting canvas,
+.acuarela-sample,
+.acuarela-original {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.acuarela-painting canvas[hidden] {
+  display: none;
+}
+
+.acuarela-painting canvas,
+.acuarela-sample {
+  background: #fbfaf6;
+  box-shadow: 0 1px 2px rgba(60, 45, 20, .08), 0 12px 32px -10px rgba(60, 45, 20, .22);
+}
+
+.acuarela-painting[data-empty] canvas {
+  visibility: hidden;
+}
+
+.acuarela-painting[data-empty] {
+  background: #f4f1ea;
+  cursor: default;
+}
+
+.acuarela-original {
+  position: absolute;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.acuarela-stage figcaption {
+  min-height: 16px;
+  color: rgba(0, 0, 0, .4);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.acuarela-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.acuarela-button {
+  position: relative;
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 12px;
+  white-space: nowrap;
+  border: 0;
+  border-radius: 999px;
+  background: #edede9;
+  color: #111;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.acuarela-primary {
+  background: #111;
+  color: #fdfdfc;
+}
+
+/* The file inputs stay in the page, focusable, under their labels. */
+.acuarela-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.acuarela-button:disabled,
+.acuarela-button:has(input:disabled) {
+  opacity: .45;
+  cursor: default;
+}
+
+.acuarela-button:focus-visible,
+.acuarela-button:has(input:focus-visible),
+.acuarela-page :is(button, input):focus-visible {
+  outline: 1.5px solid #111;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* Computers have no camera to hand; Choose photo covers them. */
+  .acuarela-camera { display: none; }
+  .acuarela-button:not(:disabled):hover { background: #e3e3de; }
+  .acuarela-primary:not(:has(input:disabled)):hover { background: #2a2a28; }
+}
+
+.acuarela-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.acuarela-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  color: #555552;
+  cursor: pointer;
+}
+
+.acuarela-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #111;
+}
+
+.acuarela-text-button {
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #555552;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: #cfcfc8;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.acuarela-text-button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.acuarela-page[data-dragging] .acuarela-painting {
+  outline: 1.5px dashed #111;
+  outline-offset: 8px;
+}
+
+@media (min-width: 960px) {
+  .acuarela-shell { max-width: 640px; }
+  .acuarela-painting { width: min(100%, calc(60svh * var(--aspect, 1.33))); }
+}
+
+@media (display-mode: standalone) {
+  .acuarela-back { display: none; }
+  .acuarela-shell { padding-top: max(24px, env(safe-area-inset-top)); }
+}
