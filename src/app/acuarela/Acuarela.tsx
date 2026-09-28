@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
+import { release } from './brushes';
 import { createLoader, type Loader } from './loading';
 import { layoutFor, perform, plan, type Layout } from './paint';
 import { lookFor, styles, type StyleId } from './style';
@@ -31,8 +32,15 @@ function loadStyle(): StyleId {
 }
 
 type Photo = { url: string; name: string };
+type Export = { name: string; format: 'png' | 'jpeg'; scale: 1 | 2 };
+const EXPORTS: Export[] = [
+  { name: 'PNG 2×', format: 'png', scale: 2 },
+  { name: 'JPEG 2×', format: 'jpeg', scale: 2 },
+  { name: 'JPEG 1×', format: 'jpeg', scale: 1 },
+];
 type Status =
-  | { name: 'sample' | 'reading' | 'depth' | 'done' | 'saving' }
+  | { name: 'sample' | 'reading' | 'depth' | 'done' }
+  | { name: 'saving'; progress?: number }
   | { name: 'download' | 'painting'; progress: number }
   | { name: 'error'; message: string };
 
@@ -77,7 +85,7 @@ function describe(status: Status) {
     case 'download': return `Downloading the model, only this once · ${Math.round(status.progress * 100)}%`;
     case 'depth': return 'Measuring what is near and what is far…';
     case 'painting': return `Painting · ${Math.round(status.progress * 100)}%`;
-    case 'saving': return 'Saving…';
+    case 'saving': return status.progress === undefined ? 'Saving…' : `Painting it at 2× · ${Math.round(status.progress * 100)}%`;
     case 'error': return status.message;
     case 'done': return 'Press and hold the painting to see the photo.';
   }
@@ -105,8 +113,10 @@ export default function Acuarela() {
   const hasClassic = 'classic' in styles.find(s => s.id === styleId)!;
   useInstallable();
 
-  const busy = ['reading', 'download', 'depth'].includes(status.name);
+  const busy = ['reading', 'download', 'depth', 'saving'].includes(status.name);
   const painted = !!photo && (status.name === 'done' || status.name === 'saving');
+  const ready = !!photo && status.name === 'done';
+  const [choosing, setChoosing] = useState(false);
 
   useEffect(() => {
     const created = createLoader(cover.current!);
@@ -220,15 +230,27 @@ export default function Acuarela() {
     if (file && !busy) void open(URL.createObjectURL(file), file.name);
   }
 
-  async function save() {
-    const element = canvas.current;
-    if (!element || !photo) return;
+  // 1× is the painting on screen; 2× paints it again, same seed and style,
+  // at twice the size, where there's room for finer grain and edges.
+  async function save({ format, scale }: Export) {
+    const element = canvas.current, read = scene.current;
+    if (!element || !photo || !read) return;
+    setChoosing(false);
     setStatus({ name: 'saving' });
     try {
-      const blob = await new Promise<Blob>((resolve, reject) => element.toBlob(
-        result => result ? resolve(result) : reject(new Error('Could not export')), 'image/jpeg', .92));
+      let source = element;
+      if (scale === 2) {
+        source = document.createElement('canvas');
+        const painting = await plan(read, seed, SIDE * 2, lookNow.current);
+        await perform(source, painting, { onProgress: progress => setStatus({ name: 'saving', progress }) });
+        // A painting this size holds a lot of GPU memory; it's copied out now.
+        release();
+      }
+      const type = `image/${format}`;
+      const blob = await new Promise<Blob>((resolve, reject) => source.toBlob(
+        result => result ? resolve(result) : reject(new Error('Could not export')), type, .95));
       const base = photo.name.replace(/\.[^.]+$/, '') || 'photo';
-      const file = new File([blob], `${base}-acuarela.jpg`, { type: 'image/jpeg' });
+      const file = new File([blob], `${base}-acuarela${scale === 2 ? '@2x' : ''}.${format === 'png' ? 'png' : 'jpg'}`, { type });
       // Phones get the share sheet, which can save to Photos; computers a download.
       if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
         try {
@@ -320,12 +342,18 @@ export default function Acuarela() {
             <input type="file" accept="image/*" capture="environment" onChange={choose} disabled={busy} />
             Camera
           </label>
-          <button type="button" className="acuarela-button" onClick={again} disabled={!painted}>
+          <button type="button" className="acuarela-button" onClick={again} disabled={!ready}>
             Again
           </button>
-          <button type="button" className="acuarela-button" onClick={save} disabled={!painted}>
+          <button type="button" className="acuarela-button" onClick={() => setChoosing(true)} disabled={!ready}>
             Save
           </button>
+          {choosing && <div className="acuarela-exports" role="group" aria-label="Save as">
+            {EXPORTS.map(option => (
+              <button key={option.name} type="button" className="acuarela-button" onClick={() => void save(option)}>{option.name}</button>
+            ))}
+            <button type="button" className="acuarela-button acuarela-cancel" aria-label="Cancel" onClick={() => setChoosing(false)}>✕</button>
+          </div>}
         </div>
       </div>
     </main>

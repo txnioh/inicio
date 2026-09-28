@@ -173,6 +173,7 @@
 }
 
 .acuarela-actions {
+  position: relative;
   display: flex;
   gap: 8px;
   margin-top: 12px;
@@ -197,6 +198,20 @@
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Save's choices lie over the buttons, in the same place. */
+.acuarela-exports {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 8px;
+  background: #fdfdfc;
+}
+
+.acuarela-cancel {
+  flex: 0 0 44px;
+  padding: 0;
 }
 
 .acuarela-primary {

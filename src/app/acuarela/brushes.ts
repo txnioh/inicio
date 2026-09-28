@@ -45,6 +45,12 @@ export function begin(width: number, height: number, seed: number, paper: Lab) {
   return surface;
 }
 
+/** Drops the last canvas's WebGL context, and the memory it holds, when nothing more will be painted on it. */
+export function release() {
+  surface?.getContext('webgl2')?.getExtension('WEBGL_lose_context')?.loseContext();
+  surface = null;
+}
+
 /** Textures washes with p5.brush's original hard circles, or soft spots; see vite.config.ts. */
 export const circles = (on: boolean) => brush.softTexture(!on);
 
