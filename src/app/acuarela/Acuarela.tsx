@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type
 import { release } from './brushes';
 import { createLoader, type Loader } from './loading';
 import { layoutFor, perform, plan, type Layout } from './paint';
-import { lookFor, styles, type StyleId } from './style';
+import Slider from './Slider';
+import { controls, lookFor, styles, valueOf, type StyleId, type Tweak } from './style';
 import { understand, type Scene } from './understand';
 import './acuarela.css';
 
@@ -13,6 +14,17 @@ const SAMPLE = { photo: '/carrete/instagram/C-m0owIt5PF-02.webp', width: 1279, h
 const SIDE = 1600;
 const STYLE_KEY = 'acuarela:style';
 const CLASSIC_KEY = 'acuarela:classic';
+const TWEAKS_KEY = 'acuarela:tweaks';
+
+// Adjustments, kept per style and version.
+function loadTweaks(): Record<string, Tweak> {
+  try {
+    return JSON.parse(localStorage.getItem(TWEAKS_KEY) ?? '{}');
+  } catch {
+    return {};
+  }
+}
+const variantOf = (id: StyleId, classic: boolean) => `${id}${classic ? ':classic' : ''}`;
 
 function loadClassic() {
   try {
@@ -108,9 +120,13 @@ export default function Acuarela() {
   const [styleId, setStyleId] = useState(loadStyle);
   // Paintings started from async flows use the style chosen by then.
   const [classic, setClassic] = useState(loadClassic);
-  const lookNow = useRef(lookFor(styleId, classic));
-  lookNow.current = lookFor(styleId, classic);
-  const hasClassic = 'classic' in styles.find(s => s.id === styleId)!;
+  const [tweaks, setTweaks] = useState(loadTweaks);
+  const [adjusting, setAdjusting] = useState(false);
+  const retune = useRef(0);
+  const look = lookFor(styleId, classic, tweaks[variantOf(styleId, classic)]);
+  const lookNow = useRef(look);
+  lookNow.current = look;
+  const chosen = styles.find(s => s.id === styleId)!;
   useInstallable();
 
   const busy = ['reading', 'download', 'depth', 'saving'].includes(status.name);
@@ -199,19 +215,35 @@ export default function Acuarela() {
     try {
       localStorage.setItem(STYLE_KEY, id);
     } catch { /* It just won't be remembered. */ }
-    if (scene.current) void paint(seed, lookFor(id, classic));
+    if (scene.current) void paint(seed, lookFor(id, classic, tweaks[variantOf(id, classic)]));
   }
 
-  // Watercolour comes as glazes, or classic: as it first was, opaque and
-  // textured with little circles. Also remembered.
+  // Each style comes in its newer version (Glaze, Impasto) or Classic, as it
+  // first was. Also remembered.
   function chooseClassic(value: boolean) {
     if (value === classic) return;
     setClassic(value);
     try {
       localStorage.setItem(CLASSIC_KEY, value ? '1' : '0');
     } catch { /* It just won't be remembered. */ }
-    if (scene.current) void paint(seed, lookFor(styleId, value));
+    if (scene.current) void paint(seed, lookFor(styleId, value, tweaks[variantOf(styleId, value)]));
   }
+
+  // Adjusting repaints once the value has been still for a moment. A null
+  // tweak puts the style back as it comes.
+  function tune(tweak: Tweak | null) {
+    const variant = variantOf(styleId, classic);
+    const next = { ...tweaks };
+    if (tweak) next[variant] = tweak;
+    else delete next[variant];
+    setTweaks(next);
+    try {
+      localStorage.setItem(TWEAKS_KEY, JSON.stringify(next));
+    } catch { /* It just won't be remembered. */ }
+    clearTimeout(retune.current);
+    if (scene.current) retune.current = window.setTimeout(() => void paint(seed, lookFor(styleId, classic, next[variant])), 450);
+  }
+  useEffect(() => () => clearTimeout(retune.current), []);
 
   // Release a chosen photo once another replaces it, or on leaving.
   useEffect(() => () => { if (photo) URL.revokeObjectURL(photo.url); }, [photo]);
@@ -306,11 +338,22 @@ export default function Acuarela() {
             </button>
           ))}
         </div>
-        {hasClassic && <div className="acuarela-variants" role="radiogroup" aria-label="Version">
-          {([[false, 'Glaze'], [true, 'Classic']] as const).map(([value, name]) => (
+        <div className="acuarela-variants" role="radiogroup" aria-label="Version">
+          {([[false, chosen.version], [true, 'Classic']] as const).map(([value, name]) => (
             <button key={name} type="button" role="radio" aria-checked={classic === value}
               onClick={() => chooseClassic(value)} disabled={busy}>{name}</button>
           ))}
+          <button type="button" className="acuarela-adjust-toggle" aria-expanded={adjusting}
+            aria-controls="acuarela-adjust" onClick={() => setAdjusting(!adjusting)}>Adjust</button>
+        </div>
+        {adjusting && <div className="acuarela-adjust" id="acuarela-adjust" role="group" aria-label="Adjust">
+          {controls[look.kind].map(control => (
+            <Slider key={control.key} label={control.label} min={control.min} max={control.max} step={control.step}
+              value={valueOf(look, control.key)}
+              onChange={value => tune({ ...tweaks[variantOf(styleId, classic)], [control.key]: value })} />
+          ))}
+          <button type="button" className="acuarela-adjust-reset" onClick={() => tune(null)}
+            disabled={!tweaks[variantOf(styleId, classic)]}>Reset</button>
         </div>}
 
         <figure className="acuarela-stage">
@@ -323,7 +366,7 @@ export default function Acuarela() {
             onPointerUp={() => setComparing(false)}
             onPointerCancel={() => setComparing(false)}
             onContextMenu={event => event.preventDefault()}>
-            {!photo && <img className="acuarela-sample" src={`/acuarela/sample-${styleId}${hasClassic && classic ? '-classic' : ''}.webp`} width={SAMPLE.width} height={SAMPLE.height}
+            {!photo && <img className="acuarela-sample" src={`/acuarela/sample-${styleId}${classic ? '-classic' : ''}.webp`} width={SAMPLE.width} height={SAMPLE.height}
               alt={`${styleId === 'oil' ? 'Oil sketch' : 'Watercolour painting'} of a wooded park, with a pale parasol in one corner`} />}
             <canvas ref={canvas} className="acuarela-canvas" hidden={!photo} role="img"
               aria-label={photo ? `Painting of ${photo.name}` : undefined} />

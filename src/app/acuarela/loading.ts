@@ -1,9 +1,7 @@
 // What shows while a photo is being painted: the photo itself, going wet.
-// Water drifts over it in a slow, folding flow, carrying its colours along
-// (each pigment a little differently, so they separate at the edges), with
-// tide lines where the water pools and the grain of the paper coming up.
-// When the painting is ready it blooms in through the wet photo, patch by
-// patch from the middle out, each patch with the darker rim of a drying wash.
+// Water drifts over it in a slow, folding flow that bends the picture and
+// nothing more. When the painting is ready it blooms in through the wet
+// photo, patch by patch from the middle out.
 
 const VERTEX = `
 attribute vec2 a_position;
@@ -22,8 +20,6 @@ uniform vec2 u_size;
 uniform float u_time;
 uniform float u_wet;
 uniform float u_reveal;
-
-const vec3 SHEET = vec3(.953, .910, .839);
 
 float hash(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -52,29 +48,14 @@ void main() {
   vec2 r = vec2(fbm(s + 3.5 * q + vec2(1.7, 9.2) + t), fbm(s + 3.5 * q + vec2(8.3, 2.8) - .8 * t));
   vec2 flow = (r - .5) * .07 * u_wet;
 
-  // The photo's colour carried along it, each channel a little further.
-  vec3 c = vec3(0.);
-  for (int i = 0; i < 5; i++) {
-    vec2 o = flow * (.4 + float(i) * .25);
-    c.r += texture2D(u_photo, p + o * 1.12).r;
-    c.g += texture2D(u_photo, p + o).g;
-    c.b += texture2D(u_photo, p + o * .88).b;
-  }
-  c /= 5.;
-
-  // As a glaze on paper, darker where the water pools, grainy.
-  vec3 wet = mix(c, SHEET * (.28 + .78 * c), .4);
-  float pool = fbm(s * 1.6 + 2. * r - t);
-  wet *= 1. - .22 * smoothstep(.04, 0., abs(pool - .5));
-  wet += (noise(uv * u_size * .5) - .5) * .035;
-  vec3 base = mix(c, wet, u_wet);
+  // The photo, bent along it.
+  vec3 base = texture2D(u_photo, p + flow).rgb;
 
   // The painting blooms in where this field is lowest, the middle first.
   float field = .8 * fbm(vec2(uv.x * aspect, uv.y) * 3. + 4.) + .3 * length((uv - .5) * vec2(aspect, 1.)) / max(aspect, 1.);
   float front = u_reveal * 1.3 - .12;
   float shown = 1. - smoothstep(front - .05, front, field);
-  float rim = smoothstep(.07, 0., front - field) * shown;
-  vec3 paint = texture2D(u_paint, uv).rgb * (1. - .2 * rim);
+  vec3 paint = texture2D(u_paint, uv).rgb;
 
   gl_FragColor = vec4(mix(base, paint, shown), 1.);
 }`;

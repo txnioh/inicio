@@ -3,6 +3,7 @@
 
 import * as brush from './brushes';
 import type { Plan } from './plan';
+import { relief } from './relief';
 import type { Look } from './style';
 import type { Scene } from './understand';
 
@@ -87,5 +88,6 @@ export async function perform(canvas: HTMLCanvasElement, paint: Plan,
   canvas.width = surface.width;
   canvas.height = surface.height;
   canvas.getContext('2d')!.drawImage(surface, 0, 0);
+  if (paint.relief) relief(canvas, paint.marks, paint.relief, paint.seed);
   return { width: canvas.width, height: canvas.height };
 }

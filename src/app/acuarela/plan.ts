@@ -25,6 +25,8 @@ export type Plan = {
   brushes?: { sizes: number[]; texture: number; load: number };
   /** Washes textured with hard circles rather than soft spots. */
   circles?: boolean;
+  /** How strongly the brush strokes' relief is lit, once painted; see relief.ts. */
+  relief?: number;
 };
 
 export const PAPER = hexLab('#f3e8d6');
