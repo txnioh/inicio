@@ -66,6 +66,17 @@ function softWatercolour(): Plugin {
     resolveId(id) {
       if (id === 'p5.brush/standalone') return `${source}index.standalone.js`;
     },
+    // The dev server marks these files immutable, so a browser kept an
+    // unpatched copy after the patch changed; they are revalidated instead.
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (request.url?.includes('/p5.brush/src/')) {
+          const setHeader = response.setHeader.bind(response);
+          response.setHeader = (name, value) => setHeader(name, /^cache-control$/i.test(name) ? 'no-cache' : value);
+        }
+        next();
+      });
+    },
     transform(code, id) {
       const file = id.split('?')[0];
       if (!file.startsWith(source)) return;

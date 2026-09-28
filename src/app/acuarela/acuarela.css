@@ -1,21 +1,24 @@
 /* Acuarela: a photo becomes a watercolour painting. */
+/* Everything fits one screen: the painting takes whatever height is left. */
 .acuarela-shell {
+  display: flex;
+  flex-direction: column;
   max-width: 640px;
-  padding-top: 56px;
+  height: 100vh;
+  height: 100svh;
+  padding: 20px 16px max(16px, env(safe-area-inset-bottom));
 }
 
 .acuarela-header {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  justify-content: space-between;
+  align-items: baseline;
   font-size: 14px;
   line-height: 20px;
   letter-spacing: -0.09px;
 }
 
 .acuarela-header .minimal-basic-link {
-  align-self: flex-start;
-  margin-bottom: 20px;
   color: rgba(0, 0, 0, .4);
 }
 
@@ -29,7 +32,7 @@
 .acuarela-styles {
   display: flex;
   gap: 2px;
-  margin-top: 20px;
+  margin-top: 14px;
   padding: 2px;
   border-radius: 999px;
   background: #edede9;
@@ -67,7 +70,7 @@
   display: flex;
   justify-content: center;
   gap: 18px;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .acuarela-variants button {
@@ -90,21 +93,21 @@
 }
 
 .acuarela-stage {
-  position: sticky;
-  z-index: 1;
-  top: 0;
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  margin: 12px -16px 0;
-  padding: 12px 16px 10px;
-  background: #fdfdfc;
+  justify-content: center;
+  gap: 8px;
+  min-height: 0;
+  margin: 10px 0 0;
+  container-type: size;
 }
 
+/* As large as fits both ways, leaving room for the caption under it. */
 .acuarela-painting {
   position: relative;
-  width: min(100%, calc(52svh * var(--aspect, 1.33)));
+  width: min(100cqw, calc((100cqh - 24px) * var(--aspect, 1.33)));
   /* The shape comes from the photo alone, not from the last painting inside. */
   min-height: 0;
   aspect-ratio: var(--aspect, 1.33);
@@ -158,7 +161,11 @@
 }
 
 .acuarela-stage figcaption {
+  max-width: 100%;
   min-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: rgba(0, 0, 0, .4);
   font-size: 12px;
   line-height: 16px;
@@ -168,7 +175,7 @@
 .acuarela-actions {
   display: flex;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 12px;
 }
 
 .acuarela-button {
@@ -232,12 +239,7 @@
   outline-offset: 8px;
 }
 
-@media (min-width: 960px) {
-  .acuarela-shell { max-width: 640px; }
-  .acuarela-painting { width: min(100%, calc(60svh * var(--aspect, 1.33))); }
-}
-
 @media (display-mode: standalone) {
   .acuarela-back { display: none; }
-  .acuarela-shell { padding-top: max(24px, env(safe-area-inset-top)); }
+  .acuarela-shell { padding-top: max(16px, env(safe-area-inset-top)); }
 }

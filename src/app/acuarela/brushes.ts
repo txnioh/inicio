@@ -30,6 +30,9 @@ export function begin(width: number, height: number, seed: number, paper: Lab) {
   surface.width = width;
   surface.height = height;
   brush.load(surface);
+  // Sets p5.brush's buffers up for this canvas now; otherwise clear() below
+  // first clears the last canvas's, and WebGL warns on every painting.
+  brush.render();
   brush.seed(seed);
   brush.noiseSeed(seed);
   // The built-in brushes are sized for small sketches.
