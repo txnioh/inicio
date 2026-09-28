@@ -1,7 +1,7 @@
 // How a photo is painted. None of these values knows what is in the picture:
 // they only change colour, the watercolour itself, and how the photo is
-// divided into shapes. The page offers two finished watercolour styles, and
-// an oil sketch (oil.ts).
+// divided into shapes. The page offers a watercolour and an oil sketch
+// (oil.ts).
 
 import { defaultOil, impastoOil, type Oil } from './oil';
 
@@ -44,20 +44,13 @@ export const defaultStyle: Style = {
   regions: 8, depthSplit: 1, zones: 3, simplify: 1, detail: 1, circles: false,
 };
 
-const soft: Style = {
-  // Pale, loose and wet: many single-tone shapes, spread wide, no accents.
-  ...defaultStyle,
-  saturation: .35, harmony: 1.5, atmosphere: 1.4, pigment: .8, cover: .4, bleed: 3, granulation: .3, wetEdges: .95,
-  regions: 16, depthSplit: 0, zones: 1, simplify: .8, detail: 0,
-};
-
-// Every style also comes classic, as it first was. For the watercolours
-// that's every shape on an opaque flat underpaint, textured with hard little
-// circles; for the oil sketch, broad loose strokes without relief. `version`
-// names the newer one.
+// Two styles, each classic as it first was — and painted that way unless
+// asked otherwise — or in its newer version, named by `version`. Classic
+// watercolour lays every shape on an opaque flat underpaint, textured with
+// hard little circles; the classic oil sketch is broad and loose, without
+// relief.
 export const styles = [
-  { id: 'detailed', name: 'Detailed', version: 'Glaze', style: defaultStyle, classic: { ...defaultStyle, cover: 1, circles: true } },
-  { id: 'soft', name: 'Soft', version: 'Glaze', style: soft, classic: { ...soft, pigment: .3, cover: 1, circles: true } },
+  { id: 'watercolour', name: 'Watercolour', version: 'Glaze', style: defaultStyle, classic: { ...defaultStyle, cover: 1, circles: true } },
   { id: 'oil', name: 'Oil', version: 'Impasto', oil: impastoOil, classic: defaultOil },
 ] as const satisfies readonly ({ id: string; name: string; version: string; style: Style; classic: Style }
   | { id: string; name: string; version: string; oil: Oil; classic: Oil })[];

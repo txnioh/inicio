@@ -13,7 +13,6 @@ import './acuarela.css';
 const SAMPLE = { photo: '/carrete/instagram/C-m0owIt5PF-02.webp', width: 1279, height: 1600 };
 const SIDE = 1600;
 const STYLE_KEY = 'acuarela:style';
-const CLASSIC_KEY = 'acuarela:classic';
 const TWEAKS_KEY = 'acuarela:tweaks';
 
 // Adjustments, kept per style and version.
@@ -25,14 +24,6 @@ function loadTweaks(): Record<string, Tweak> {
   }
 }
 const variantOf = (id: StyleId, classic: boolean) => `${id}${classic ? ':classic' : ''}`;
-
-function loadClassic() {
-  try {
-    return localStorage.getItem(CLASSIC_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
 
 function loadStyle(): StyleId {
   try {
@@ -119,7 +110,8 @@ export default function Acuarela() {
   const [dragging, setDragging] = useState(false);
   const [styleId, setStyleId] = useState(loadStyle);
   // Paintings started from async flows use the style chosen by then.
-  const [classic, setClassic] = useState(loadClassic);
+  // Classic every time the page opens; the newer version is a choice.
+  const [classic, setClassic] = useState(true);
   const [tweaks, setTweaks] = useState(loadTweaks);
   const [adjusting, setAdjusting] = useState(false);
   const retune = useRef(0);
@@ -218,14 +210,11 @@ export default function Acuarela() {
     if (scene.current) void paint(seed, lookFor(id, classic, tweaks[variantOf(id, classic)]));
   }
 
-  // Each style comes in its newer version (Glaze, Impasto) or Classic, as it
-  // first was. Also remembered.
+  // Each style comes Classic, as it first was, or in its newer version
+  // (Glaze, Impasto).
   function chooseClassic(value: boolean) {
     if (value === classic) return;
     setClassic(value);
-    try {
-      localStorage.setItem(CLASSIC_KEY, value ? '1' : '0');
-    } catch { /* It just won't be remembered. */ }
     if (scene.current) void paint(seed, lookFor(styleId, value, tweaks[variantOf(styleId, value)]));
   }
 
@@ -339,7 +328,7 @@ export default function Acuarela() {
           ))}
         </div>
         <div className="acuarela-variants" role="radiogroup" aria-label="Version">
-          {([[false, chosen.version], [true, 'Classic']] as const).map(([value, name]) => (
+          {([[true, 'Classic'], [false, chosen.version]] as const).map(([value, name]) => (
             <button key={name} type="button" role="radio" aria-checked={classic === value}
               onClick={() => chooseClassic(value)} disabled={busy}>{name}</button>
           ))}

@@ -12,7 +12,7 @@ type Point = [number, number];
 type Rng = ReturnType<typeof random>;
 
 const PHOTO = '/carrete/instagram/C-m0owIt5PF-02.webp';
-const PAINTING = '/acuarela/sample-detailed.webp';
+const PAINTING = '/acuarela/sample-watercolour.webp';
 // The sample photo's depth, measured once by the app's model, so these
 // examples don't download it.
 const DEPTH = '/acuarela/sample-depth.webp';
@@ -304,7 +304,7 @@ export function DepthDemo() {
 // The real painter, stroke by stroke.
 
 export function OrderDemo() {
-  const [style, setStyle] = useState<StyleId>('detailed');
+  const [style, setStyle] = useState<StyleId>('watercolour');
   const [run, setRun] = useState(0);
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -350,7 +350,7 @@ export function OrderDemo() {
       aria-label={`The photo being painted, ${Math.round(progress * 100)}% done`} /></div>
     <div className="ink-demo-controls">
       <div className="ink-choices" role="group" aria-label="Style">
-        {(['detailed', 'soft', 'oil'] as const).map(id => <InkButton key={id} ink="#c0392b" aria-pressed={style === id}
+        {(['watercolour', 'oil'] as const).map(id => <InkButton key={id} ink="#c0392b" aria-pressed={style === id}
           onClick={() => setStyle(id)}>{id[0].toUpperCase() + id.slice(1)}</InkButton>)}
       </div>
       <InkButton ink="#c0392b" icon="replay" onClick={() => setRun(run + 1)}>Paint again</InkButton>

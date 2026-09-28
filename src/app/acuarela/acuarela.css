@@ -1,4 +1,59 @@
 /* Acuarela: a photo becomes a watercolour painting. */
+
+/* Its colours, light, and dark when the device is. */
+.acuarela-page {
+  --ac-page: #fdfdfc;
+  --ac-text: #111;
+  --ac-muted: rgba(0, 0, 0, .4);
+  --ac-soft: #6b6b66;
+  --ac-control: #edede9;
+  --ac-control-hover: #e3e3de;
+  --ac-chosen: #fdfdfc;
+  --ac-primary: #111;
+  --ac-primary-hover: #2a2a28;
+  --ac-on-primary: #fdfdfc;
+  --ac-slider: #f1f1ee;
+  --ac-slider-hover: #ecece8;
+  --ac-slider-active: #e9e9e4;
+  --ac-fill: #e2e2dc;
+  --ac-fill-active: #d8d8d1;
+  --ac-handle: #9b9b95;
+  --ac-dot: #a3a39d;
+  --ac-paper: #fbfaf6;
+  --ac-shadow: 0 1px 2px rgba(60, 45, 20, .08), 0 12px 32px -10px rgba(60, 45, 20, .22);
+  background: var(--ac-page);
+  color: var(--ac-text);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:has(.acuarela-page),
+  :root:has(.acuarela-page) body {
+    background: #121211;
+    color-scheme: dark;
+  }
+
+  .acuarela-page {
+    --ac-page: #121211;
+    --ac-text: #f1f1ec;
+    --ac-muted: rgba(255, 255, 255, .45);
+    --ac-soft: #9c9c96;
+    --ac-control: #222220;
+    --ac-control-hover: #2b2b28;
+    --ac-chosen: #3a3a36;
+    --ac-primary: #f1f1ec;
+    --ac-primary-hover: #ffffff;
+    --ac-on-primary: #121211;
+    --ac-slider: #1d1d1b;
+    --ac-slider-hover: #222220;
+    --ac-slider-active: #262624;
+    --ac-fill: #2e2e2b;
+    --ac-fill-active: #3a3a36;
+    --ac-handle: #7c7c76;
+    --ac-dot: #5a5a55;
+    --ac-paper: #1d1d1b;
+    --ac-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 16px 40px -12px rgba(0, 0, 0, .7);
+  }
+}
 /* Everything fits one screen: the painting takes whatever height is left. */
 .acuarela-shell {
   display: flex;
@@ -19,7 +74,7 @@
 }
 
 .acuarela-header .minimal-basic-link {
-  color: rgba(0, 0, 0, .4);
+  color: var(--ac-muted);
 }
 
 .acuarela-header h1 {
@@ -35,7 +90,7 @@
   margin-top: 14px;
   padding: 2px;
   border-radius: 999px;
-  background: #edede9;
+  background: var(--ac-control);
 }
 
 .acuarela-styles button {
@@ -45,7 +100,7 @@
   border: 0;
   border-radius: 999px;
   background: none;
-  color: #6b6b66;
+  color: var(--ac-soft);
   font: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -56,8 +111,8 @@
 }
 
 .acuarela-styles button[aria-checked='true'] {
-  background: #fdfdfc;
-  color: #111;
+  background: var(--ac-chosen);
+  color: var(--ac-text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
 }
 
@@ -78,7 +133,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: rgba(0, 0, 0, .4);
+  color: var(--ac-muted);
   font: inherit;
   font-size: 12px;
   cursor: pointer;
@@ -87,7 +142,7 @@
 }
 
 .acuarela-variants button[aria-checked='true'] {
-  color: #111;
+  color: var(--ac-text);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
@@ -98,7 +153,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: rgba(0, 0, 0, .4);
+  color: var(--ac-muted);
   font: inherit;
   font-size: 12px;
   cursor: pointer;
@@ -106,7 +161,7 @@
 }
 
 .acuarela-adjust-toggle[aria-expanded='true'] {
-  color: #111;
+  color: var(--ac-text);
 }
 
 .acuarela-adjust {
@@ -123,7 +178,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: rgba(0, 0, 0, .4);
+  color: var(--ac-muted);
   font: inherit;
   font-size: 12px;
   cursor: pointer;
@@ -143,8 +198,8 @@
   padding: 0 12px;
   overflow: hidden;
   border-radius: 10px;
-  background: #f1f1ee;
-  color: #6b6b66;
+  background: var(--ac-slider);
+  color: var(--ac-soft);
   font-size: 13px;
   cursor: grab;
   user-select: none;
@@ -155,7 +210,7 @@
 
 .acuarela-slider[data-active] {
   cursor: grabbing;
-  background: #e9e9e4;
+  background: var(--ac-slider-active);
 }
 
 .acuarela-slider-fill {
@@ -163,12 +218,12 @@
   inset: 0 auto 0 0;
   width: calc(var(--end) * 100%);
   border-radius: 10px;
-  background: #e2e2dc;
+  background: var(--ac-fill);
   transition: background-color .15s ease;
 }
 
 .acuarela-slider[data-active] .acuarela-slider-fill {
-  background: #d8d8d1;
+  background: var(--ac-fill-active);
 }
 
 /* The handle: a thin bar at the end of the fill. */
@@ -181,7 +236,7 @@
   height: 14px;
   margin-top: -7px;
   border-radius: 1px;
-  background: #9b9b95;
+  background: var(--ac-handle);
   opacity: var(--handle, 1);
   transition: background-color .15s ease, height .15s ease, margin-top .15s ease;
 }
@@ -190,7 +245,7 @@
 .acuarela-slider:has(input:focus-visible) .acuarela-slider-fill::after {
   height: 18px;
   margin-top: -9px;
-  background: #111;
+  background: var(--ac-text);
 }
 
 .acuarela-slider-dots {
@@ -205,7 +260,7 @@
   height: 3px;
   margin: -1.5px 0 0 -1.5px;
   border-radius: 50%;
-  background: #a3a39d;
+  background: var(--ac-dot);
   transition: opacity .2s ease;
 }
 
@@ -217,7 +272,7 @@
 }
 
 .acuarela-slider-value {
-  color: #111;
+  color: var(--ac-text);
   font-variant-numeric: tabular-nums;
   font-weight: 500;
 }
@@ -234,12 +289,12 @@
 }
 
 .acuarela-slider:has(input:focus-visible) {
-  outline: 1.5px solid #111;
+  outline: 1.5px solid var(--ac-text);
   outline-offset: 2px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .acuarela-slider:not([data-active]):hover { background: #ecece8; }
+  .acuarela-slider:not([data-active]):hover { background: var(--ac-slider-hover); }
 }
 
 .acuarela-stage {
@@ -284,8 +339,8 @@
 .acuarela-canvas,
 .acuarela-sample {
   object-fit: cover;
-  background: #fbfaf6;
-  box-shadow: 0 1px 2px rgba(60, 45, 20, .08), 0 12px 32px -10px rgba(60, 45, 20, .22);
+  background: var(--ac-paper);
+  box-shadow: var(--ac-shadow);
 }
 
 .acuarela-loader {
@@ -316,7 +371,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: rgba(0, 0, 0, .4);
+  color: var(--ac-muted);
   font-size: 12px;
   line-height: 16px;
   text-align: center;
@@ -340,8 +395,8 @@
   white-space: nowrap;
   border: 0;
   border-radius: 999px;
-  background: #edede9;
-  color: #111;
+  background: var(--ac-control);
+  color: var(--ac-text);
   font: inherit;
   font-size: 14px;
   font-weight: 500;
@@ -356,7 +411,7 @@
   inset: 0;
   display: flex;
   gap: 8px;
-  background: #fdfdfc;
+  background: var(--ac-page);
 }
 
 .acuarela-cancel {
@@ -365,8 +420,8 @@
 }
 
 .acuarela-primary {
-  background: #111;
-  color: #fdfdfc;
+  background: var(--ac-primary);
+  color: var(--ac-on-primary);
 }
 
 /* The file inputs stay in the page, focusable, under their labels. */
@@ -388,19 +443,19 @@
 .acuarela-button:has(input:focus-visible),
 .acuarela-page :is(button, input):focus-visible,
 .acuarela-painting:focus-visible {
-  outline: 1.5px solid #111;
+  outline: 1.5px solid var(--ac-text);
   outline-offset: 3px;
 }
 
 @media (hover: hover) and (pointer: fine) {
   /* Computers have no camera to hand; Choose photo covers them. */
   .acuarela-camera { display: none; }
-  .acuarela-button:not(:disabled):hover { background: #e3e3de; }
-  .acuarela-primary:not(:has(input:disabled)):hover { background: #2a2a28; }
+  .acuarela-button:not(:disabled):hover { background: var(--ac-control-hover); }
+  .acuarela-primary:not(:has(input:disabled)):hover { background: var(--ac-primary-hover); }
 }
 
 .acuarela-page[data-dragging] .acuarela-painting {
-  outline: 1.5px dashed #111;
+  outline: 1.5px dashed var(--ac-text);
   outline-offset: 8px;
 }
 
