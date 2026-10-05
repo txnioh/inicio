@@ -144,6 +144,10 @@ The effect uses WebGL without an extra dependency, falls back to a 2D orbit
 when unavailable, pauses in background tabs, and stops after entry. Reduced
 motion uses a still composition and disables inertia and transitions.
 
+## MiOlivo
+
+`miolivo/` is a separate Vite app: a tree-by-tree digital twin of an olive farm, in Spanish, running on a simulated farm in Jaén. See [miolivo/README.md](miolivo/README.md).
+
 ## Writing
 
 Read the [editorial guide](docs/writing-style.md) before drafting an article or designing its demos. It records the reference structures, writing rules, section template, and review checklist used in Inicio.
