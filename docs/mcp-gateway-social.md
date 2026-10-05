@@ -6,60 +6,49 @@ Origen: [tweet de @UberEng](https://x.com/UberEng/status/2106071967619322330), q
 
 ## Texto para LinkedIn
 
-> Uber ha publicado cómo conecta sus agentes de IA con el resto de la empresa, y me parece de lo más útil que he leído sobre MCP en producción.
->
-> El punto de partida: más de 10.000 servicios internos que hablan HTTP, gRPC y TChannel. Si cada equipo monta su propio servidor MCP, acabas con agentes tocando producción sin auth común, sin límites y sin saber quién es el dueño de qué.
->
-> Su respuesta es un único MCP Gateway, partido en dos:
->
-> → Registry (control plane): qué servidores y tools existen, quién es su dueño y si están activados.
-> → Proxy (data plane): autorización por tool, rate limiting, redacción de datos sensibles y traducción de MCP al protocolo nativo de cada servicio. Los servicios de abajo no cambian.
->
-> Tres ideas que me llevo:
->
-> 1. Generar tools desde los contratos que ya existen. AutoCrawler lee los .proto y .thrift del registro de IDLs, usa un LLM para escribir descripciones pensadas para agentes y registra cada tool desactivada.
-> 2. Descubrir no es exponer. Nada llega a un agente hasta que el equipo dueño lo revisa y lo activa, con la configuración versionada como código.
-> 3. El contexto es escaso. Con 5.000 tools no puedes cargar todos los schemas: Omni MCP expone solo cuatro (discover_server, discover_tools, get_tool_schema, invoke_tool) y Response Projection deja que el agente pida únicamente los campos que necesita.
->
-> Hoy: más de 800 servidores MCP y 5.000 tools detrás de un mismo punto de control.
->
-> Lo he resumido en un vídeo de 80 segundos con pinta de terminal 👇
->
-> Artículo completo: https://www.uber.com/us/en/blog/designing-mcp-gateway/
->
-> #MCP #AIAgents #PlatformEngineering #SoftwareArchitecture
+Tono: cotidiano, sin siglas. Cualquiera que use IA en el trabajo debería entenderlo.
 
-Versión corta, si se prefiere un post menos largo:
-
-> Uber pone sus 800+ servidores MCP y 5.000 tools detrás de un único gateway: un registry que decide qué existe y un proxy que decide cómo se llama (auth, límites, redacción, traducción a gRPC/Thrift).
+> Uber ha contado cómo deja que la IA use sus sistemas internos sin perder el control. La idea es sencilla: una sola puerta.
 >
-> Lo que más me gusta: todo lo que se descubre nace desactivado hasta que su dueño lo aprueba.
+> Uber tiene miles de sistemas (viajes, pagos, mapas, pedidos). Si cada equipo conecta la IA a su manera, nadie sabe qué puede tocar.
 >
-> Resumen en vídeo, estilo terminal 👇
-> https://www.uber.com/us/en/blog/designing-mcp-gateway/
+> Así que toda la IA entra por el mismo sitio, y ahí:
+>
+> → se comprueba quién pide algo y si tiene permiso
+> → los datos privados se tapan antes de salir
+> → todo lo nuevo empieza cerrado hasta que su equipo lo aprueba
+> → la IA pide solo lo que necesita, en vez de cargarlo todo
+>
+> Hoy son 800 conexiones y 5.000 acciones detrás de esa única puerta.
+>
+> Lo he resumido en un minuto, en formato terminal 👇
+>
+> Artículo: https://www.uber.com/us/en/blog/designing-mcp-gateway/
 
-Subir el MP4 de forma nativa (no como enlace) y poner la URL del artículo en el texto o en el primer comentario.
+Subir el MP4 de forma nativa (no como enlace).
 
 ## Vídeo
 
-Archivo: `out/mcp-gateway/mcp-gateway-ascii.mp4`, 1080 × 1080, 30 fps, H.264, YUV 4:2:0, 79,8 s, sin audio, unos 2,2 MB. Portada: `out/mcp-gateway/cover.png`. La carpeta `out` está excluida de Git.
+Archivo: `out/mcp-gateway/mcp-gateway-ascii.mp4`, 1080 × 1080, 30 fps, H.264, 63,5 s, sin audio, unos 0,9 MB. Portada: `out/mcp-gateway/cover.png`. La carpeta `out` está excluida de Git.
 
 Regenerar con `python3 scripts/render-mcp-gateway-video.py`; `--preview` exporta solo fotogramas de revisión. Necesita FFmpeg, Pillow, numpy y pyfiglet (`pip install pillow numpy pyfiglet`) y la fuente DejaVu Sans Mono.
 
-Todo el vídeo es una rejilla de 72 × 31 caracteres dentro de una ventana de terminal, con brillo de fósforo y líneas de barrido. Los caracteres de caja y bloque se dibujan como geometría para que se unan entre filas.
+Criterio: una idea por pantalla, palabras cotidianas, rejilla de 46 × 19 caracteres con letra grande y mucho espacio vacío. Sin siglas técnicas salvo «gateway» como subtítulo de la puerta.
 
-| Tiempo | Escena | Qué cuenta |
-| --- | --- | --- |
-| 0–8,5 s | `curl` al artículo y rótulo MCP GATEWAY | Qué es y de dónde sale. |
-| 8,5–19 s | 01 · el problema | 10.000+ servicios, tres protocolos, conexiones sueltas: «shadow MCP». |
-| 19–30,5 s | 02 · la solución | Diagrama agentes → Registry / Proxy → Muttley → HTTP, gRPC, TChannel y MCP nativos. |
-| 30,5–41 s | 03 · AutoCrawler | IDL → descripción con LLM → tool DISABLED → revisión del dueño → `enabled: true`. |
-| 41–51,8 s | 04 · la vida de una llamada | authn con token del usuario, authz por tool, rate limit, traducción, respuesta, redacción. |
-| 51,8–65,3 s | 05 · contexto | Barra de contexto que se desborda con 5.000 schemas; Omni MCP con sus 4 tools; Response Projection. |
-| 65,3–75,3 s | 06 · en producción | Contadores 800 / 5.000 / 10.000 y cuatro conclusiones. |
-| 75,3–79,8 s | fuente y `exit` | Enlace al artículo. |
+| Tiempo | Pantalla |
+| --- | --- |
+| 0–6,5 s | ¿Cómo deja Uber que la IA use sus sistemas internos sin perder el control? |
+| 6,5–11,5 s | Uber tiene miles de sistemas internos. |
+| 11,5–17,5 s | Quiere que la IA pueda usarlos. |
+| 17,5–23,5 s | Pero si cada equipo la conecta a su manera, nadie sabe qué puede tocar. |
+| 23,5–30 s | La idea de Uber: una sola puerta. |
+| 30–37,5 s | En la puerta se revisa cada petición; lo privado se tapa. |
+| 37,5–44,5 s | Todo lo nuevo empieza cerrado hasta que su equipo lo aprueba. |
+| 44,5–52 s | La IA no lo carga todo de golpe: pregunta solo lo que necesita. |
+| 52–57,5 s | 800 conexiones, 5.000 acciones, una sola puerta. |
+| 57,5–63,5 s | Una puerta. Reglas claras. Enlace al artículo. |
 
-Los nombres de tools (`eats.get_order_status`, etc.), los ficheros IDL, el YAML y la respuesta JSON son ilustrativos y así se indica en pantalla. No son ejemplos del artículo.
+Equivalencias con el artículo: «puerta» es el MCP Gateway; «conexiones» son servidores MCP; «acciones» son tools; «empieza cerrado» es el estado desactivado por defecto; «pregunta solo lo que necesita» resume Omni MCP y Response Projection. Los ejemplos de acciones y el teléfono son ilustrativos.
 
 ## Procedencia de los datos
 
