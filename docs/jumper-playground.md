@@ -69,7 +69,10 @@ inference cadence. ONNX Runtime Web executes the actual trained networks.
 
 The host supplies joint positions, velocities, actual MuJoCo motor torque,
 (w,x,y,z) orientation, and angular/linear velocity in the body frame, paired by
-wire joint names. MuJoCo's velocity out-buffer is reused and freed on disposal.
+wire joint names. `mjOBJ_XBODY` selects the link frame; `mjOBJ_BODY` would instead
+rotate the IMU into the CAD's principal-inertia frame. After each control period,
+`mj_forward` refreshes derived poses and velocities to the integrated state,
+matching the upstream native simulator. MuJoCo's velocity out-buffer is reused and freed on disposal.
 A single copied contact vector is freed per step.
 
 Motor PD output follows the upstream exponential torque-speed curve and thermal
@@ -100,16 +103,24 @@ Packing checks that removing visual-only meshes preserves body transforms.
 ONNX sessions are cached per model, locomotion/jump are warmed before playing,
 and other models load when first requested. All WASM stays on the Jumper route.
 
-On load, the original controller replays 24 reference frames, with zero
+On load, the original controller replays 24 **locomotion-only** reference frames, with zero
 observation/target error and no mode mismatches. All 18 recorded inferences are
-also checked in the browser; maximum observed error was 4.77e-7.
+also checked in the browser; maximum observed error was 4.77e-7. This recording
+does not certify parity for other modes; those have separate execution checks.
 
 Run `node scripts/verify-jumper.mjs` (Node 24+) for controller parity, ONNX parity,
-standing, forward movement, foot contact and traversal of the first box, a complete jump/landing, finite states, actuator limits
+standing, forward movement, foot contact with the first box, a complete jump/landing, finite states, actuator limits
 and absence of applied external forces. The native ONNX runtime is already supplied
-by this repository's Transformers dependency. The checked scene measured ~61 cm
-of forward travel, a peak body height of 23.02 cm, and return to the 10.57 cm stance.
-These are simulator measurements, not claims about a hardware test.
+by this repository's Transformers dependency. With the corrected IMU frame the
+robot contacts the first box but does not cross it in this test. Its earlier
+traversal with incorrect feedback is not a validated climbing skill.
+
+Run `node scripts/verify-jumper.mjs --all-modes` to additionally check a minute of
+neutral stance, all twelve official modes, complete recorded motion frame counts,
+and the native toggle that returns from either claw mode to locomotion. The test
+also checks that root velocities/poses are current. It writes
+`output/jumper-motion-audit.json`. See [the motion audit](jumper-motion-audit.md)
+for results and the boundary with the skate environment.
 
 Regenerate pinned assets in order:
 

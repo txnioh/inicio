@@ -1,5 +1,6 @@
 export type SkinId = 'original' | 'sand' | 'sage' | 'silver';
 import type { Parity } from './controller';
+import type { SkateStats } from './skate';
 
 export const motions = [
   { id: 'locomotion', name: 'Caminar' }, { id: 'jump', name: 'Saltar' },
@@ -32,6 +33,7 @@ export interface Stats {
   policyRunning: boolean;
   simRate: number;
   parity?: Parity;
+  skate?: SkateStats;
 }
 
 export const initialStats: Stats = {

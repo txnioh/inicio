@@ -8,6 +8,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { dressEva } from './eva';
+import { Skate, skateXml } from './skate';
+import { flushInputs, modeBinding, queueMode, type InputEdge } from './inputs';
 import { type Joint, type SkinId, type Stats, boxes, skins } from './settings';
 
 interface PhysicalConfig {
@@ -73,7 +75,7 @@ export class Playground {
   private accumulator = 0;
   private stepping = false;
   private generation = 0;
-  private inputEvents: { device: 'key' | 'pad'; code: string; down: boolean; repeat: boolean }[] = [];
+  private inputEvents: InputEdge[] = [];
   private boundKeys = new Set<string>();
   private simRate = 1;
   private rateAt = 0;
@@ -83,7 +85,9 @@ export class Playground {
   private bodyRotation = new THREE.Quaternion();
   private onStats: (stats: Stats) => void;
 
-  constructor(private host: HTMLElement, onStats: (stats: Stats) => void, private onError: (message: string) => void) {
+  private skate?: Skate;
+
+  constructor(private host: HTMLElement, onStats: (stats: Stats) => void, private onError: (message: string) => void, private skateMode = false) {
     this.onStats = onStats;
     this.robot = new RobotController(this.abort.signal);
     // Antialias the scene's render target; canvas MSAA cannot filter that image.
@@ -100,15 +104,17 @@ export class Playground {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.composer.addPass(new SMAAPass());
     this.composer.addPass(new OutputPass());
-    this.scene.fog = new THREE.Fog('#fdfdfc', 3, 7);
+    this.scene.fog = skateMode ? new THREE.Fog('#fdfdfc', 8, 26) : new THREE.Fog('#fdfdfc', 3, 7);
+    if (skateMode) { this.camera.far = 45; this.camera.updateProjectionMatrix(); }
     this.renderer.domElement.setAttribute('aria-label', 'Modelo 3D de Jumper. Arrastra para girar; usa la rueda para acercarte.');
     this.host.append(this.renderer.domElement);
     this.camera.up.set(0, 0, 1);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.minDistance = 0.25;
-    this.controls.maxDistance = 3;
+    this.controls.maxDistance = skateMode ? 7 : 3;
     this.controls.maxPolarAngle = Math.PI * 0.49;
+    this.controls.addEventListener('start', () => { this.chasePaused = performance.now() + 4000; });
     this.cameraView('iso');
     const ambient = new THREE.HemisphereLight('#ffffff', '#9ca3a0', 2.6);
     ambient.position.set(0, 0, 1);
@@ -142,7 +148,7 @@ export class Playground {
     this.grid.visible = false;
     const boxMaterial = new THREE.MeshStandardMaterial({ color: '#deddd5', roughness: 0.9 });
     const edgeMaterial = new THREE.LineBasicMaterial({ color: '#b9b8ad', transparent: true, opacity: 0.5 });
-    for (const box of boxes) {
+    for (const box of skateMode ? [] : boxes) {
       const geometry = new THREE.BoxGeometry(box.width, box.depth, box.height);
       const mesh = new THREE.Mesh(geometry, boxMaterial);
       mesh.position.set(box.x, box.y, box.height / 2);
@@ -217,7 +223,7 @@ export class Playground {
     };
     await Promise.all(Array.from({ length: 6 }, download));
     if (this.disposed) return [];
-    mujoco.FS.writeFile('/jumper/scene.xml', xml);
+    mujoco.FS.writeFile('/jumper/scene.xml', this.skateMode ? skateXml(xml) : xml);
     this.model = mujoco.MjModel.mj_loadXML('/jumper/scene.xml');
     this.data = new mujoco.MjData(this.model);
     this.velocityBuffer = new mujoco.DoubleBuffer(6);
@@ -236,6 +242,13 @@ export class Playground {
     }
     for (const name of physical.feet) this.footGeoms.add(mujoco.mj_name2id(this.model, 5, name));
     this.createMeshes(manifest, binary);
+    if (this.skateMode) {
+      this.skate = new Skate(mujoco, this.model, this.scene, this.footGeoms, (lx, ly, rx, ry, nowUs) => {
+        const fsm = this.robot.fsm;
+        fsm.setAxis('Lx', lx); fsm.setAxis('Ly', ly); fsm.setAxis('Rx', rx); fsm.setAxis('Ry', ry); fsm.padFrame(nowUs);
+      });
+      for (const { id, mesh, name, collision, body } of this.skate.drawables) this.drawables.push({ id, mesh: mesh as Drawable['mesh'], name, color: new THREE.Color(), collision, body });
+    }
     this.reset();
     this.frame = requestAnimationFrame(this.tick);
     onProgress(100);
@@ -258,6 +271,8 @@ export class Playground {
         this.geometries.set(meshId, geometry);
       }
       const name = this.mujoco.mj_id2name(model, 5, id);
+      // The skate scene draws its own meshes (cones) from skate.ts.
+      if (name?.startsWith('skate_')) continue;
       const collision = model.geom_group[id] === 1;
       const color = new THREE.Color().setRGB(model.geom_rgba[id * 4], model.geom_rgba[id * 4 + 1], model.geom_rgba[id * 4 + 2], THREE.SRGBColorSpace);
       const material = new THREE.MeshStandardMaterial({ color: collision ? '#dc5f2b' : color, roughness: 0.48, metalness: 0.15, wireframe: collision });
@@ -302,6 +317,7 @@ export class Playground {
     this.data.qpos[2] = this.physical.standHeight;
     this.data.qpos[3] = 1;
     this.joints.forEach((_, i) => { this.data.qpos[this.qAddresses[i]] = this.targets[i]; });
+    this.skate?.reset(this.data);
     this.mujoco.mj_forward(this.model, this.data);
     this.cameraView('iso');
     this.draw();
@@ -314,7 +330,9 @@ export class Playground {
     const fsm = this.robot.fsm;
     const previousMode = fsm.mode();
     const nowUs = Math.round(this.data.time * 1e6);
-    this.mujoco.mj_objectVelocity(this.model, this.data, 1, 1, this.velocityBuffer, 1);
+    // XBODY is the robot link frame. BODY uses the rotated principal-inertia
+    // frame from the CAD, which is not the frame expected by the policy's IMU.
+    this.mujoco.mj_objectVelocity(this.model, this.data, this.mujoco.mjtObj.mjOBJ_XBODY.value, 1, this.velocityBuffer, 1);
     const velocity = this.velocityBuffer.GetView() as Float64Array;
     fsm.set_state(new Float32Array(this.qAddresses.map(a => this.data.qpos[a])),
       new Float32Array(this.vAddresses.map(a => this.data.qvel[a])),
@@ -324,14 +342,8 @@ export class Playground {
     fsm.set_command(0, 0, 0, nowUs);
     // A short press can have both edges between ticks. Deliver its release on
     // the next tick so the shipped FSM observes both, without remapping keys.
-    const seen = new Set<string>();
-    while (this.inputEvents.length) {
-      const event = this.inputEvents[0], token = `${event.device}:${event.code}`;
-      if (seen.has(token)) break;
-      seen.add(token); this.inputEvents.shift();
-      if (event.device === 'key') fsm.setKeyCode(event.code, event.down, event.repeat, nowUs);
-      else { fsm.setPad(event.code, event.down); fsm.padFrame(nowUs); }
-    }
+    this.skate?.beforeControl(this.data, fsm.mode(), fsm.is_running_policy());
+    flushInputs(fsm, this.inputEvents, nowUs);
     await this.robot.tick(nowUs);
     if (this.disposed || generation !== this.generation || !this.playing) return;
     if (fsm.mode() !== previousMode) console.debug('[Jumper]', previousMode, '→', fsm.mode());
@@ -360,6 +372,11 @@ export class Playground {
       });
       this.mujoco.mj_step(this.model, this.data);
     }
+    // mj_step integrates qpos/qvel last, leaving derived poses and body velocity
+    // one substep behind. Refresh them together, as upstream native_sim does,
+    // before rendering or supplying the next policy observation.
+    this.mujoco.mj_forward(this.model, this.data);
+    this.skate?.afterControl(this.data);
     this.phase = this.data.time;
     this.grounded = false;
     // contact is a copied vector in the official bindings: retain one snapshot
@@ -394,15 +411,17 @@ export class Playground {
     const elapsed = this.previous ? Math.min((now - this.previous) / 1000, 0.04) : 0;
     this.previous = document.hidden ? 0 : now;
     if (!document.hidden) {
+      if (this.skate?.wantsRestart && !this.stepping) { this.reset(); this.setPlaying(true); }
       if (this.playing) {
         this.accumulator = Math.min(this.accumulator + elapsed, 0.04);
         void this.advance();
       }
-      this.follow.set(this.data.qpos[0], this.data.qpos[1], Math.max(0.09, this.data.qpos[2] * 0.7));
+      this.follow.set(this.data.qpos[0], this.data.qpos[1], this.skate ? this.data.qpos[2] - 0.07 : Math.max(0.09, this.data.qpos[2] * 0.7));
       this.follow.sub(this.controls.target).multiplyScalar(1 - Math.exp(-elapsed * 5));
       this.controls.target.add(this.follow);
       this.camera.position.add(this.follow);
-      this.light.target.position.set(this.data.qpos[0], this.data.qpos[1], 0);
+      if (this.skate && now > this.chasePaused) this.chase(elapsed);
+      this.light.target.position.set(this.data.qpos[0], this.data.qpos[1], this.skate ? this.data.qpos[2] - 0.17 : 0);
       this.light.position.copy(this.light.target.position).add(this.lightOffset);
       this.controls.update();
       if (now - this.renderPrevious >= 1000 / 60 - 0.5) { this.draw(); this.renderPrevious = now; }
@@ -438,7 +457,7 @@ export class Playground {
   }
 
   private report(fps: number) {
-    this.onStats({ time: this.phase, playing: this.playing, fps, height: this.data.qpos[2], contacts: this.data.ncon, joints: this.qAddresses.map(address => this.data.qpos[address]), x: this.data.qpos[0], y: this.data.qpos[1], grounded: this.grounded, controllerMode: this.robot.fsm.mode(), policyRunning: this.robot.fsm.is_running_policy(), simRate: this.simRate, parity: this.robot.parity });
+    this.onStats({ time: this.phase, playing: this.playing, fps, height: this.data.qpos[2], contacts: this.data.ncon, joints: this.qAddresses.map(address => this.data.qpos[address]), x: this.data.qpos[0], y: this.data.qpos[1], grounded: this.grounded, controllerMode: this.robot.fsm.mode(), policyRunning: this.robot.fsm.is_running_policy(), simRate: this.simRate, parity: this.robot.parity, skate: this.skate?.stats(this.data) });
   }
 
   setPlaying(playing: boolean) {
@@ -448,40 +467,47 @@ export class Playground {
   }
   key(code: string, down: boolean, repeat = false) {
     if (!this.data || !this.playing || this.disposed) return false;
+    if (this.skate?.key(code, down)) return true;
     this.inputEvents.push({ device: 'key', code, down, repeat });
     return this.boundKeys.has(code);
   }
   pad(x: number, y: number) {
     if (!this.data || this.disposed) return;
+    if (this.skate) { this.skate.pad(x, y); return; }
     const fsm = this.robot.fsm;
     fsm.setAxis('Lx', x); fsm.setAxis('Ly', y);
     fsm.padFrame(Math.round(this.data.time * 1e6));
   }
   padButton(name: string, down: boolean) {
     if (!this.data || !this.playing || this.disposed) return;
+    if (this.skate && name === 'A') { this.skate.key('Space', down); return; }
     this.inputEvents.push({ device: 'pad', code: name, down, repeat: false });
   }
   release() {
     this.inputEvents.length = 0;
+    this.skate?.letGo();
     if (this.data && !this.disposed) this.robot.fsm.letGo(Math.round(this.data.time * 1e6));
   }
   action(name: string) {
-    if (!this.data || this.disposed) return;
-    if (name === 'locomotion') { this.release(); return; }
-    const bindings = JSON.parse(this.robot.fsm.bindings()) as { name: string; pad?: string; with?: string }[];
-    const binding = bindings.find(b => b.name === name && b.pad);
-    if (!binding) return;
-    if (binding.with) this.padButton(binding.with, true);
-    this.padButton(binding.pad!, true);
-    // Preserve both edges, with at least one controller tick between them.
-    const generation = this.generation;
-    const release = () => {
-      if (this.disposed || generation !== this.generation) return;
-      this.padButton(binding.pad!, false);
-      if (binding.with) this.padButton(binding.with, false);
-    };
-    setTimeout(release, 100);
+    if (!this.data || this.disposed || !this.playing) return;
+    if (name === 'locomotion') this.release();
+    queueMode(this.robot.fsm, name, this.inputEvents);
   }
+  canAction(name: string) { return !!this.data && (name === 'locomotion' || !!modeBinding(this.robot.fsm, name)); }
+  releaseBoard() { if (this.data) this.skate?.release(this.data.time); }
+  // Chase camera for the downhill: behind the board and a little to the toe
+  // side, so Jumper's face shows. Dragging the view pauses it for 4 s.
+  private chasePaused = 0;
+  private chaseOffset = new THREE.Vector3();
+  private chase(elapsed: number) {
+    const { heading } = this.skate!.boardPose(this.data);
+    const behind = 1.7, side = 0.55, height = 0.75;
+    this.chaseOffset.set(-Math.cos(heading) * behind + Math.sin(heading) * side, -Math.sin(heading) * behind - Math.cos(heading) * side, height);
+    const current = this.camera.position.clone().sub(this.controls.target);
+    current.lerp(this.chaseOffset, 1 - Math.exp(-elapsed * 2.2));
+    this.camera.position.copy(this.controls.target).add(current);
+  }
+  togglePilot() { const on = this.skate?.togglePilot() ?? false; this.report(0); return on; }
   setGrid(on: boolean) { this.grid.visible = on; }
   setCollision(on: boolean) {
     this.collisionView = on;
@@ -509,7 +535,8 @@ export class Playground {
     const x = this.data ? this.data.qpos[0] : 0;
     const y = this.data ? this.data.qpos[1] : 0;
     this.controls.target.set(x + 0.06, y, 0.065);
-    if (view === 'iso') this.camera.position.set(x + 1.15, y - 1.35, 1.1);
+    if (this.skateMode && view === 'iso') this.camera.position.set(x + 0.35, y - 2.6, 0.75);
+    else if (view === 'iso') this.camera.position.set(x + 1.15, y - 1.35, 1.1);
     if (view === 'front') this.camera.position.set(x + 1.8, y, 0.9);
     if (view === 'top') this.camera.position.set(x + 0.001, y, 2.5);
     this.controls.update();

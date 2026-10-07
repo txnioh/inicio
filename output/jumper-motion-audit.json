@@ -1,0 +1,376 @@
+{
+  "verifiedFiles": 38,
+  "referenceModes": [
+    "locomotion"
+  ],
+  "parity": {
+    "divergent": [],
+    "frames": 24,
+    "inferences": 18,
+    "modeMismatches": [],
+    "observation": 0,
+    "target": 0
+  },
+  "inferenceError": 2.384185791015625e-7,
+  "stand": [
+    0.0041825384322613365,
+    -0.0011671676494989212,
+    0.10468425095294959
+  ],
+  "walk": [
+    0.3329007595240043,
+    0.03427005451820681,
+    0.1036043347983906
+  ],
+  "obstacle": {
+    "position": [
+      0.34192429556851167,
+      0.05031090331885115,
+      0.10679844254972391
+    ],
+    "footTouchedBox": true,
+    "crossed": false
+  },
+  "jump": {
+    "peak": 0.22945233802351078,
+    "airborne": true,
+    "landed": [
+      0.004290233421929748,
+      -0.0010870930539543426,
+      0.1043376098211106
+    ],
+    "mode": "locomotion"
+  },
+  "wasmMemoryMB": 53.41184,
+  "idle": {
+    "seconds": 60,
+    "inferences": 12000,
+    "maxCommand": 0,
+    "maxGait": 0,
+    "maxPostureOffset": 0,
+    "maxDrift": 0.009053210254923507,
+    "minHeight": 0.10431302862409184,
+    "maxHeight": 0.10470656210148765,
+    "meanHeight": 0.10456051597359162,
+    "heightStd": 0.00009013027468717363,
+    "heightStepRms": 0.000009545438601911002,
+    "angularSpeedRms": 0.04351006568401128
+  },
+  "modes": [
+    {
+      "name": "claw_left",
+      "duration": null,
+      "inferences": 960,
+      "firstPolicy": 0.9149999999999823,
+      "lastPolicy": 20.094999999999555,
+      "transitions": [
+        {
+          "at": 0.01,
+          "mode": "claw_left"
+        }
+      ],
+      "minHeight": 0.10051918215983045,
+      "maxHeight": 0.11596309249888562,
+      "safeFrames": 0,
+      "maxTargetChange": 0.45639264583587646,
+      "finalMode": "claw_left",
+      "finalPosition": [
+        -0.008588353423586647,
+        -0.1973538410604031,
+        0.11368468093768458
+      ],
+      "afterLetGo": "claw_left",
+      "afterWalkSelection": "locomotion",
+      "expectedInferences": null,
+      "passed": true
+    },
+    {
+      "name": "claw_right",
+      "duration": null,
+      "inferences": 959,
+      "firstPolicy": 0.9249999999999821,
+      "lastPolicy": 20.084999999999557,
+      "transitions": [
+        {
+          "at": 0.01,
+          "mode": "claw_right"
+        }
+      ],
+      "minHeight": 0.10057397462917261,
+      "maxHeight": 0.10880002219057403,
+      "safeFrames": 0,
+      "maxTargetChange": 1.001419186592102,
+      "finalMode": "claw_right",
+      "finalPosition": [
+        0.012132867685797421,
+        -0.0030541808974425605,
+        0.10859088310570161
+      ],
+      "afterLetGo": "claw_right",
+      "afterWalkSelection": "locomotion",
+      "expectedInferences": null,
+      "passed": true
+    },
+    {
+      "name": "dance_brazilian",
+      "duration": 66.08,
+      "inferences": 3304,
+      "firstPolicy": 0.8199999999999843,
+      "lastPolicy": 66.88000000000808,
+      "transitions": [
+        {
+          "at": 0.01,
+          "mode": "dance_brazilian"
+        },
+        {
+          "at": 66.89,
+          "mode": "locomotion"
+        }
+      ],
+      "minHeight": 0.10048059818490976,
+      "maxHeight": 0.15197024809569074,
+      "safeFrames": 0,
+      "maxTargetChange": 2.1346659660339355,
+      "finalMode": "locomotion",
+      "finalPosition": [
+        0.024145068997234242,
+        0.03399937553596168,
+        0.10453416211549321
+      ],
+      "expectedInferences": 3304,
+      "passed": true
+    },
+    {
+      "name": "dance_crab",
+      "duration": 235.68,
+      "inferences": 11784,
+      "firstPolicy": 0.8199999999999843,
+      "lastPolicy": 236.47999999985385,
+      "transitions": [
+        {
+          "at": 0.01,
+          "mode": "dance_crab"
+        },
+        {
+          "at": 236.49,
+          "mode": "locomotion"
+        }
+      ],
+      "minHeight": 0.10119263395763425,
+      "maxHeight": 0.13931497961249922,
+      "safeFrames": 0,
+      "maxTargetChange": 2.457568645477295,
+      "finalMode": "locomotion",
+      "finalPosition": [
+        -0.09015554001529719,
+        -0.02628751168561241,
+        0.10468155710346262
+      ],
+      "expectedInferences": 11784,
+      "passed": true
+    },
+    {
+      "name": "dance_dream_wings",
+      "duration": 55.6,
+      "inferences": 2780,
+      "firstPolicy": 0.8199999999999843,
+      "lastPolicy": 56.400000000012504,
+      "transitions": [
+        {
+          "at": 0.01,
+          "mode": "dance_dream_wings"
+        },
+        {
+          "at": 56.41,
+          "mode": "locomotion"
+        }
+      ],
+      "minHeight": 0.09737251492674703,
+      "maxHeight": 0.12166408106581804,
+      "safeFrames": 0,
+      "maxTargetChange": 1.694490909576416,
+      "finalMode": "locomotion",
+      "finalPosition": [
+        0.05931211893823882,
+        0.0013187369671495903,
+        0.10447291019066683
+      ],
+      "expectedInferences": 2780,
+      "passed": true
+    },
+    {
+      "name": "dance_maze",
+      "duration": 10,
+      "inferences": 500,
+      "firstPolicy": 0.8199999999999843,
+      "lastPolicy": 10.800000000000978,
+      "transitions": [
+        {
+          "at": 0.01,
+          "mode": "dance_maze"
+        },
+        {
+          "at": 10.81,
+          "mode": "locomotion"
+        }
+      ],
+      "minHeight": 0.10023184879101316,
+      "maxHeight": 0.13156381494479388,
+      "safeFrames": 0,
+      "maxTargetChange": 1.9632134437561035,
+      "finalMode": "locomotion",
+      "finalPosition": [
+        0.036972092055217745,
+        0.00276385216505326,
+        0.10435780771145423
+      ],
+      "expectedInferences": 500,
+      "passed": true
+    },
+    {
+      "name": "gesture_bow",
+      "duration": 8.56,
+      "inferences": 428,
+      "firstPolicy": 0.8199999999999843,
+      "lastPolicy": 9.360000000000753,
+      "transitions": [
+        {
+          "at": 0.01,
+          "mode": "gesture_bow"
+        },
+        {
+          "at": 9.37,
+          "mode": "locomotion"
+        }
+      ],
+      "minHeight": 0.10173190537820866,
+      "maxHeight": 0.11569668130490442,
+      "safeFrames": 0,
+      "maxTargetChange": 1.5934498310089111,
+      "finalMode": "locomotion",
+      "finalPosition": [
+        0.0554003073635792,
+        -0.0015691083768737564,
+        0.10450565324346138
+      ],
+      "expectedInferences": 428,
+      "passed": true
+    },
+    {
+      "name": "gesture_hello",
+      "duration": 7.32,
+      "inferences": 366,
+      "firstPolicy": 0.8199999999999843,
+      "lastPolicy": 8.120000000000559,
+      "transitions": [
+        {
+          "at": 0.01,
+          "mode": "gesture_hello"
+        },
+        {
+          "at": 8.13,
+          "mode": "locomotion"
+        }
+      ],
+      "minHeight": 0.10173190537820866,
+      "maxHeight": 0.11602827857567904,
+      "safeFrames": 0,
+      "maxTargetChange": 1.6435552835464478,
+      "finalMode": "locomotion",
+      "finalPosition": [
+        -0.02158042142243756,
+        -0.0013550536659371509,
+        0.10437396832757219
+      ],
+      "expectedInferences": 366,
+      "passed": true
+    },
+    {
+      "name": "gesture_paw",
+      "duration": 6.38,
+      "inferences": 319,
+      "firstPolicy": 0.8199999999999843,
+      "lastPolicy": 7.180000000000413,
+      "transitions": [
+        {
+          "at": 0.01,
+          "mode": "gesture_paw"
+        },
+        {
+          "at": 7.19,
+          "mode": "locomotion"
+        }
+      ],
+      "minHeight": 0.07494829746121102,
+      "maxHeight": 0.10736700210135187,
+      "safeFrames": 0,
+      "maxTargetChange": 1.9188437461853027,
+      "finalMode": "locomotion",
+      "finalPosition": [
+        0.018631071227145506,
+        0.0025673602051408074,
+        0.10467413153537093
+      ],
+      "expectedInferences": 319,
+      "passed": true
+    },
+    {
+      "name": "gesture_salute",
+      "duration": 6.02,
+      "inferences": 301,
+      "firstPolicy": 0.8199999999999843,
+      "lastPolicy": 6.820000000000356,
+      "transitions": [
+        {
+          "at": 0.01,
+          "mode": "gesture_salute"
+        },
+        {
+          "at": 6.83,
+          "mode": "locomotion"
+        }
+      ],
+      "minHeight": 0.09520081091125622,
+      "maxHeight": 0.13500805704017985,
+      "safeFrames": 0,
+      "maxTargetChange": 1.7061126232147217,
+      "finalMode": "locomotion",
+      "finalPosition": [
+        0.005885150587891354,
+        0.008676888471704143,
+        0.10434069271844917
+      ],
+      "expectedInferences": 301,
+      "passed": true
+    },
+    {
+      "name": "jump",
+      "duration": 1.472000002861023,
+      "inferences": 236,
+      "firstPolicy": 0.6650000000001048,
+      "lastPolicy": 1.8400000000002885,
+      "transitions": [
+        {
+          "at": 0.01,
+          "mode": "jump"
+        },
+        {
+          "at": 1.845,
+          "mode": "locomotion"
+        }
+      ],
+      "minHeight": 0.07100608165780244,
+      "maxHeight": 0.22945116268136437,
+      "safeFrames": 0,
+      "maxTargetChange": 2.0291130542755127,
+      "finalMode": "locomotion",
+      "finalPosition": [
+        0.004469415231627333,
+        0.0003263984088497518,
+        0.10456313369810281
+      ],
+      "expectedInferences": 236,
+      "passed": true
+    }
+  ]
+}

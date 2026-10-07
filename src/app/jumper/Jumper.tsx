@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { Playground } from './playground';
 import { initialStats, motions, skins, type SkinId } from './settings';
+import SkateHud from './SkateHud';
 import './jumper.css';
 
 function Icon({ name }: { name: 'play' | 'pause' | 'reset' | 'jump' }) {
@@ -12,7 +13,7 @@ function Icon({ name }: { name: 'play' | 'pause' | 'reset' | 'jump' }) {
   </svg>;
 }
 
-export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'eva' }) {
+export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'eva' | 'skate' }) {
   const modelName = variant === 'eva' ? 'EVA-01' : 'Jumper';
   const host = useRef<HTMLDivElement>(null);
   const engine = useRef<Playground | null>(null);
@@ -27,7 +28,7 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
 
   useEffect(() => {
     const title = document.title;
-    document.title = variant === 'eva' ? 'EVA-01' : 'Jumper';
+    document.title = variant === 'eva' ? 'EVA-01' : variant === 'skate' ? 'Jumper · Skate' : 'Jumper';
     let active = true;
     let playground: Playground | undefined;
     try {
@@ -42,7 +43,7 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
           host.current.dataset.time = String(value.time);
           host.current.dataset.parity = JSON.stringify(value.parity);
         }
-      }, message => { if (active) setError(message); });
+      }, message => { if (active) setError(message); }, variant === 'skate');
       engine.current = playground;
       void playground.load(value => { if (active) setProgress(value); }).then(() => {
         if (!active) return;
@@ -65,6 +66,8 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
       if (event.target instanceof Element && event.target.closest('input, select, textarea, [contenteditable]')) return;
       if (event.code === 'Space' && event.target instanceof Element && event.target.closest('button, a')) return;
       if (event.code === 'KeyR' && !event.repeat) { engine.current?.reset(); setError(''); }
+      else if (variant === 'skate' && event.code === 'Enter' && !event.repeat && !(event.target instanceof Element && event.target.closest('button, a'))) { engine.current?.releaseBoard(); event.preventDefault(); }
+      else if (variant === 'skate' && event.code === 'KeyP' && !event.repeat) engine.current?.togglePilot();
       else if (event.code === 'Escape') { setSettings(false); clear(); }
       else if (engine.current?.key(event.code, true, event.repeat)) event.preventDefault();
     }
@@ -73,7 +76,7 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
     window.addEventListener('blur', clear);
     document.addEventListener('visibilitychange', clear);
     return () => { clear(); window.removeEventListener('keydown', key); window.removeEventListener('keyup', key); window.removeEventListener('blur', clear); document.removeEventListener('visibilitychange', clear); };
-  }, [ready]);
+  }, [ready, variant]);
 
   function joystick(event: PointerEvent<HTMLDivElement>) {
     if (!ready) return;
@@ -94,11 +97,11 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
 
   return <main className="minimal-portfolio-page jumper-page" tabIndex={-1}>
     <div className="jumper-canvas" ref={host} tabIndex={0} aria-label={`Playground de ${modelName}. WASD: caminar. J/L: girar. Espacio: salto. R: reiniciar.`} onPointerDown={() => host.current?.focus({ preventScroll: true })} />
-    <header className="jumper-header"><div><a className="minimal-basic-link" href="/">Index</a><nav className="jumper-models" aria-label="Modelo">{variant === 'jumper' ? <h1>Jumper</h1> : <a href="/jumper">Jumper</a>}<span aria-hidden="true">/</span>{variant === 'eva' ? <h1>EVA-01</h1> : <a href="/jumper/eva">EVA-01</a>}</nav></div><button aria-expanded={settings} aria-controls="jumper-settings" onClick={() => setSettings(value => !value)}>Ajustes</button></header>
+    <header className="jumper-header"><div><a className="minimal-basic-link" href="/">Index</a><nav className="jumper-models" aria-label="Modelo">{variant === 'jumper' ? <h1>Jumper</h1> : <a href="/jumper">Jumper</a>}<span aria-hidden="true">/</span>{variant === 'eva' ? <h1>EVA-01</h1> : <a href="/jumper/eva">EVA-01</a>}<span aria-hidden="true">/</span>{variant === 'skate' ? <h1>Skate</h1> : <a href="/jumper/skate">Skate</a>}</nav></div><button aria-expanded={settings} aria-controls="jumper-settings" onClick={() => setSettings(value => !value)}>Ajustes</button></header>
     {!ready ? <div className="jumper-loading" role="status">{error ? <><p>{error}</p><button onClick={() => location.reload()}>Reintentar</button></> : <span>{progress}%</span>}</div> : null}
     {ready && error ? <p className="jumper-error jumper-runtime-error" role="alert">{error}</p> : null}
     {settings ? <section className="jumper-settings" id="jumper-settings" aria-label="Ajustes">
-      <label className="jumper-setting">Acción<select aria-label="Acción" value={stats.controllerMode} disabled={!ready || !stats.playing} onChange={event => engine.current?.action(event.target.value)}>{motions.map(motion => <option key={motion.id} value={motion.id}>{motion.name}</option>)}{stats.controllerMode === 'safe' ? <option value="safe">Detenido</option> : null}</select></label>
+      <label className="jumper-setting">Acción<select aria-label="Acción" value={stats.controllerMode} disabled={!ready || !stats.playing} onChange={event => engine.current?.action(event.target.value)}>{motions.map(motion => <option key={motion.id} value={motion.id} disabled={!engine.current?.canAction(motion.id)}>{motion.name}</option>)}{stats.controllerMode === 'safe' ? <option value="safe">Detenido</option> : null}</select></label>
       {variant === 'jumper' ? <div className="jumper-setting"><span>Color</span><div className="jumper-colors">{skins.map(item => <button key={item.id} style={{ background: item.shell }} title={item.name} aria-label={item.name} aria-pressed={skin === item.id} disabled={!ready} onClick={() => { setSkin(item.id); engine.current?.setSkin(item.id); }} />)}</div></div> : null}
       <label className="jumper-setting">Cuadrícula<input type="checkbox" checked={grid} onChange={event => { setGrid(event.target.checked); engine.current?.setGrid(event.target.checked); }} /></label>
       <label className="jumper-setting">Colisiones<input type="checkbox" checked={collision} onChange={event => { setCollision(event.target.checked); engine.current?.setCollision(event.target.checked); }} /></label>
@@ -108,9 +111,10 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
       <div className="jumper-links"><a href="https://github.com/KingKongRobotics/jumper" target="_blank" rel="noreferrer">Repo ↗</a><a href="https://beunlimited.me/en/simulator" target="_blank" rel="noreferrer">Simulador ↗</a></div>
     </section> : null}
     <footer className="jumper-controls"><div className="jumper-actions"><button aria-label={stats.playing ? 'Pausar' : 'Reproducir'} title={stats.playing ? 'Pausar' : 'Reproducir'} disabled={!ready} onClick={() => engine.current?.setPlaying(!stats.playing)}><Icon name={stats.playing ? 'pause' : 'play'} /></button><button aria-label="Reiniciar" title="Reiniciar" disabled={!ready} onClick={() => { setError(''); engine.current?.reset(); }}><Icon name="reset" /></button></div>
-      <span className="jumper-hint">WASD · J/L · Espacio</span>
+      <span className="jumper-hint">{variant === 'skate' ? 'Enter soltar · ←/→ o A/D girar · W/S puntas/talones · P piloto · R reiniciar' : 'WASD · J/L · Espacio'}</span>
       <span className="jumper-mode">{ready && !stats.policyRunning ? stats.controllerMode === 'safe' ? 'Detenido' : 'Preparando' : stats.controllerMode === 'locomotion' ? '' : motions.find(item => item.id === stats.controllerMode)?.name}</span>
     </footer>
-    {ready ? <div className="jumper-touch"><div className="jumper-joystick" aria-label={`Mover a ${modelName}`} onPointerDown={joystick} onPointerMove={joystick} onPointerUp={releaseJoystick} onPointerCancel={releaseJoystick} onLostPointerCapture={releaseJoystick}><span /></div><button aria-label="Saltar" title="Saltar" onPointerDown={event => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); engine.current?.padButton('A', true); }} onPointerUp={() => engine.current?.padButton('A', false)} onPointerCancel={() => engine.current?.padButton('A', false)} onLostPointerCapture={() => engine.current?.padButton('A', false)} onClick={event => { if (event.detail === 0) engine.current?.action('jump'); }}><Icon name="jump" /></button></div> : null}
+    {variant === 'skate' && ready && stats.skate ? <SkateHud stats={stats.skate} onRelease={() => engine.current?.releaseBoard()} onPilot={() => engine.current?.togglePilot()} /> : null}
+    {ready ? <div className="jumper-touch"><div className="jumper-joystick" aria-label={`Mover a ${modelName}`} onPointerDown={joystick} onPointerMove={joystick} onPointerUp={releaseJoystick} onPointerCancel={releaseJoystick} onLostPointerCapture={releaseJoystick}><span /></div>{variant === 'skate' ? null : <button aria-label="Saltar" title="Saltar" onPointerDown={event => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); engine.current?.padButton('A', true); }} onPointerUp={() => engine.current?.padButton('A', false)} onPointerCancel={() => engine.current?.padButton('A', false)} onLostPointerCapture={() => engine.current?.padButton('A', false)} onClick={event => { if (event.detail === 0) engine.current?.action('jump'); }}><Icon name="jump" /></button>}</div> : null}
   </main>;
 }

@@ -1,0 +1,18 @@
+.skate-hud { position: fixed; z-index: 2; left: 32px; top: 76px; display: flex; flex-direction: column; gap: 14px; pointer-events: none; font-size: 11px; color: #a3a29d; }
+.skate-speed { color: #77766f; font-variant-numeric: tabular-nums; }
+.skate-speed span { font-size: 22px; color: #111; letter-spacing: -0.02em; }
+.skate-speed small { display: block; margin-top: 2px; font-size: 10px; color: #a3a29d; }
+.skate-weight rect { fill: none; stroke: #d1d0ca; }
+.skate-weight line { stroke: #e6e5e0; }
+.skate-weight-target { fill: none; stroke: #77766f; }
+.skate-weight-feet { fill: #111; }
+.skate-weight .skate-weight-lean { stroke: #d4583a; stroke-width: 3; stroke-linecap: round; }
+.skate-feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; min-height: 64px; }
+.skate-feed li { animation: skate-in .35s ease-out; color: #a3a29d; }
+.skate-feed li:last-child { color: #111; }
+.skate-actions { display: flex; gap: 14px; }
+.jumper-page .skate-actions button { pointer-events: auto; font-size: 11px; }
+.jumper-page .skate-actions button[aria-pressed="true"] { color: #111; }
+@keyframes skate-in { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .skate-feed li { animation: none; } }
+@media (pointer: coarse), (max-width: 700px) { .skate-hud { left: 20px; top: 62px; } }

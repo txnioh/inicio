@@ -1,0 +1,339 @@
+import type { MainModule, MjData, MjModel } from '@mujoco/mujoco';
+import * as THREE from 'three';
+import { buildCourse, coneMesh, courseXml, obstacles, raceLine, road, surfaceAt } from './course.ts';
+import { skateboardParts } from './skateboard.ts';
+
+// Jumper riding a skateboard down a hill (see course.ts). The board is a free
+// body with real truck geometry: each hanger turns about a 45° pivot axis
+// against a bushing spring, so leaning the deck steers it. Nothing pushes the
+// robot or the board: gravity, contacts and the original policies ride. The
+// only control is where Jumper puts its weight on the deck.
+
+// Deck 72 × 44 cm with 8 cm kicks, a wide cruiser: Jumper stands sideways, as a
+// skater does, and its feet spread 40 cm along and 33 cm across.
+export const board = { half: [0.36, 0.22, 0.006], base: 0.25, track: 0.19, wheel: 0.024, axle: -0.036, pivot: 45, bushing: 4, start: -0.5 };
+const deckHeight = board.wheel - board.axle;
+const rollIn = road.rollIn * Math.PI / 180;
+
+export interface SkateStats {
+  released: boolean; pilot: boolean; speed: number; top: number; time: number; finished: boolean; cones: number;
+  feed: { id: number; text: string }[]; weight: [number, number]; target: [number, number]; lean: number; edge: number;
+}
+
+// Where Jumper's centre of mass may sit on the deck, from the middle, before its
+// feet reach an edge (its claws reach 19 cm forward, its rear feet 14 cm back,
+// so the deck is 44 cm wide). Past the feet, the body leans: the posture pitch
+// extends the rear legs and folds the front ones, moving weight onto the toes
+// without moving the feet (and the reverse for the heels).
+export const stance = { toes: 0.03, heels: 0.035, along: 0.05, shift: 0.08 };
+// Its centre of mass sits 1 cm ahead of the base frame, along its own x.
+const comAhead = 0.01;
+// Inputs: [toes(-)/heels(+), nose(+)/tail(-), turn left(+)/right(-)].
+const weightKeys: Record<string, [number, number, number]> = {
+  KeyW: [-1, 0, 0], ArrowUp: [-1, 0, 0], KeyS: [1, 0, 0], ArrowDown: [1, 0, 0],
+  KeyA: [0, 0, 1], KeyD: [0, 0, -1], ArrowLeft: [0, 0, 1], ArrowRight: [0, 0, -1], KeyJ: [0, 0, 1], KeyL: [0, 0, -1],
+};
+
+// The deck centre at rest on the start ramp, and where the stopper meets the front wheels.
+const start = [board.start + Math.sin(rollIn) * (deckHeight + 0.001), 0, surfaceAt(board.start) + Math.cos(rollIn) * (deckHeight + 0.001)];
+const stopperX = board.start + (board.base + board.wheel + 0.012) * Math.cos(rollIn);
+
+const f = (value: number) => value.toFixed(5);
+function boardXml() {
+  const c = Math.cos(board.pivot * Math.PI / 180), s = Math.sin(board.pivot * Math.PI / 180), [hx, hy, hz] = board.half;
+  const truck = (side: number, name: string) => `
+    <geom name="skate_${name}_base" type="box" pos="${side * board.base} 0 -0.011" size="0.04 0.03 0.005" mass="0.06" contype="0" conaffinity="0"/>
+    <body name="skate_${name}_hanger" pos="${side * board.base} 0 ${board.axle}">
+      <joint name="skate_${name}_pivot" type="hinge" pos="0 0 0.014" axis="${f(-side * c)} 0 ${f(-s)}" stiffness="${board.bushing}" damping="0.05" range="-0.35 0.35" limited="true"/>
+      <geom name="skate_${name}_hanger" type="capsule" fromto="0 ${-(board.track - 0.02)} 0 0 ${board.track - 0.02} 0" size="0.008" mass="0.16" contype="128" conaffinity="0"/>
+      ${[1, -1].map(w => `<body name="skate_${name}_wheel_${w}" pos="0 ${w * board.track} 0">
+        <joint name="skate_${name}_wheel_${w}" type="hinge" axis="0 1 0" damping="0.00002" frictionloss="0.00002"/>
+        <geom name="skate_${name}_wheel_${w}" type="cylinder" size="${board.wheel} 0.014" euler="1.5708 0 0" mass="0.035" contype="128" conaffinity="0" friction="0.9 0.005 0.0001"/>
+      </body>`).join('')}
+    </body>`;
+  return `<body name="skate_board" pos="${start.map(f).join(' ')}" euler="0 ${f(rollIn)} 0">
+    <freejoint name="skate_board"/>
+    <geom name="skate_deck" type="box" size="${hx} ${hy} ${hz}" mass="0.75" contype="1" conaffinity="1" friction="0.9 0.01 0.01"/>
+    ${[1, -1].map(side => `<geom name="skate_kick_${side}" type="box" pos="${side * (hx + 0.035)} 0 0.011" euler="0 ${-side * 0.25} 0" size="0.04 ${hy} ${hz}" mass="0.07" contype="1" conaffinity="1"/>`).join('')}
+    ${truck(1, 'front')}${truck(-1, 'back')}
+  </body>`;
+}
+
+/** Swap the flat playground (floor and boxes) for the downhill and the board. */
+export function skateXml(xml: string) {
+  const hill = courseXml();
+  const stopper = `<geom name="skate_stopper" type="box" pos="${f(stopperX)} 0 ${f(surfaceAt(stopperX) + 0.008)}" size="0.01 0.3 0.01" contype="1" conaffinity="129"/>`;
+  const replaced = xml.replace(/<geom name="playground_floor"[\s\S]*?(?=<\/worldbody>)/, `${hill.world}\n${stopper}\n${boardXml()}\n`).replace('</asset>', `${hill.asset}\n</asset>`);
+  if (replaced === xml || !replaced.includes('skate_cone')) throw new Error('No se pudo montar la bajada.');
+  return replaced;
+}
+
+type Mesh = THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
+const rotate = (q: ArrayLike<number>, v: number[], inverse = false) => {
+  const w = q[0], x = inverse ? -q[1] : q[1], y = inverse ? -q[2] : q[2], z = inverse ? -q[3] : q[3];
+  const tx = 2 * (y * v[2] - z * v[1]), ty = 2 * (z * v[0] - x * v[2]), tz = 2 * (x * v[1] - y * v[0]);
+  return [v[0] + w * tx + y * tz - z * ty, v[1] + w * ty + z * tx - x * tz, v[2] + w * tz + x * ty - y * tx];
+};
+const mul = (a: number[], b: number[]) => [a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3], a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2], a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1], a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0]];
+const raceY = (x: number) => {
+  if (x <= raceLine[0][0]) return raceLine[0][1];
+  for (let i = 1; i < raceLine.length; i++) if (raceLine[i][0] >= x) return raceLine[i - 1][1] + (x - raceLine[i - 1][0]) / (raceLine[i][0] - raceLine[i - 1][0]) * (raceLine[i][1] - raceLine[i - 1][1]);
+  return raceLine[raceLine.length - 1][1];
+};
+
+export class Skate {
+  readonly drawables: { id: number; mesh: Mesh; name: string; collision: boolean; body?: { id: number; position: THREE.Vector3; quaternion: THREE.Quaternion } }[] = [];
+  private boardBody: number;
+  private boardQ: number;
+  private boardV: number;
+  private stopper: number;
+  private deckGeoms = new Set<number>();
+  private cones: { q: number; x: number; y: number; down: boolean }[] = [];
+  private stopperMesh: THREE.Group;
+  private released = false;
+  private releasedAt = 0;
+  private finishedAt = -1;
+  private pilot = false;
+  private top = 0;
+  private onDeck = true;
+  private offBoard = false;
+  private stuckSince = -1;
+  private restartAt = -1;
+  private route = '';
+  private feed: { id: number; text: string }[] = [];
+  private feedId = 0;
+  private held = new Map<string, [number, number, number]>();
+  private pilotTurn = 0;
+  private travel = 1;
+  private edge = 1;
+  private lean = 0;
+  private stick: [number, number] = [0, 0];
+  private target: [number, number] = [0, 0];
+  private weight: [number, number] = [0, 0];
+  private correcting = [false, false, false];
+  private axes = [0, 0, 0, 0];
+  private steer: (lx: number, ly: number, rx: number, ry: number, nowUs: number) => void;
+  private mujoco: MainModule;
+  private model: MjModel;
+  private feet: Set<number>;
+
+  // Plain fields rather than parameter properties, so Node can run this file in tests.
+  constructor(mujoco: MainModule, model: MjModel, scene: THREE.Scene, feet: Set<number>, steer: (lx: number, ly: number, rx: number, ry: number, nowUs: number) => void) {
+    this.mujoco = mujoco; this.model = model; this.feet = feet; this.steer = steer;
+    const id = (type: number, name: string) => { const value = mujoco.mj_name2id(model, type, name); if (value < 0) throw new Error(`Falta ${name} en la bajada.`); return value; };
+    this.boardBody = id(1, 'skate_board');
+    const joint = id(3, 'skate_board');
+    this.boardQ = model.jnt_qposadr[joint];
+    this.boardV = model.jnt_dofadr[joint];
+    this.stopper = id(5, 'skate_stopper');
+    for (const name of ['skate_deck', 'skate_kick_1', 'skate_kick_-1']) this.deckGeoms.add(id(5, name));
+    obstacles.cones.forEach(([x, y], i) => this.cones.push({ q: model.jnt_qposadr[model.body_jntadr[id(1, `skate_cone_${i}`)]], x, y, down: false }));
+    this.stopperMesh = buildCourse(scene, { x: stopperX, z: surfaceAt(stopperX), angle: rollIn });
+    this.buildBoard(scene);
+  }
+
+  private attach(scene: THREE.Scene, bodyId: number, mesh: Mesh, name: string) {
+    mesh.castShadow = mesh.receiveShadow = true;
+    scene.add(mesh);
+    // The mesh's own placement is its offset in the body frame; the renderer
+    // composes it with the body pose every frame.
+    this.drawables.push({ id: -1, mesh, name, collision: false, body: { id: bodyId, position: mesh.position.clone(), quaternion: mesh.quaternion.clone() } });
+  }
+
+  private buildBoard(scene: THREE.Scene) {
+    const m = this.model;
+    // The physical primitives of the board, shown only in the collision view.
+    const wire = new THREE.MeshBasicMaterial({ color: '#dc5f2b', wireframe: true });
+    for (let id = 0; id < m.ngeom; id++) {
+      if (m.geom_bodyid[id] < this.boardBody) continue;
+      const name = this.mujoco.mj_id2name(m, 5, id) ?? '';
+      if (!/^skate_(deck|kick|front|back)/.test(name)) continue;
+      const s = [m.geom_size[id * 3], m.geom_size[id * 3 + 1], m.geom_size[id * 3 + 2]];
+      const geometry = m.geom_type[id] === 6 ? new THREE.BoxGeometry(s[0] * 2, s[1] * 2, s[2] * 2)
+        : m.geom_type[id] === 3 ? new THREE.CapsuleGeometry(s[0], s[1] * 2, 4, 12).rotateX(Math.PI / 2)
+          : new THREE.CylinderGeometry(s[0], s[0], s[1] * 2, 24).rotateX(Math.PI / 2);
+      const mesh = new THREE.Mesh(geometry, wire);
+      mesh.visible = false;
+      scene.add(mesh);
+      this.drawables.push({ id, mesh, name, collision: true });
+    }
+    const body = (name: string) => this.mujoco.mj_name2id(m, 1, name);
+    for (const part of skateboardParts(board)) {
+      const name = part.side === 1 ? 'front' : 'back';
+      const bodyId = part.body === 'deck' ? this.boardBody : part.body === 'hanger' ? body(`skate_${name}_hanger`) : body(`skate_${name}_wheel_${part.wheel}`);
+      this.attach(scene, bodyId, part.mesh as Mesh, `skate_${part.body}`);
+    }
+    obstacles.cones.forEach((_, i) => {
+      for (const child of [...coneMesh().children] as Mesh[]) this.attach(scene, body(`skate_cone_${i}`), child, 'skate_cone');
+    });
+  }
+
+  /** Called after mj_resetData: stand Jumper sideways on the deck. */
+  reset(data: MjData) {
+    this.released = false; this.releasedAt = 0; this.finishedAt = -1;
+    this.top = 0; this.onDeck = true; this.offBoard = false; this.route = ''; this.stuckSince = -1; this.restartAt = -1;
+    this.feed = [];
+    this.held.clear(); this.stick = [0, 0]; this.pilotTurn = 0; this.target = [0, 0]; this.weight = [0, 0];
+    this.correcting = [false, false, false]; this.axes = [0, 0, 0, 0]; this.travel = 1; this.lean = 0;
+    for (const cone of this.cones) cone.down = false;
+    this.setStopper(true);
+    const pitch = [Math.cos(rollIn / 2), 0, Math.sin(rollIn / 2), 0];
+    const q = mul(pitch, [Math.SQRT1_2, 0, 0, -Math.SQRT1_2]);
+    // Robot frame in deck coordinates: its x across the deck, its y along it.
+    const offset = [0, comAhead, board.half[2] + 0.1075];
+    const r = mul(mul(pitch, [0, ...offset]), [pitch[0], -pitch[1], -pitch[2], -pitch[3]]);
+    for (let i = 0; i < 3; i++) data.qpos[i] = start[i] + r[i + 1];
+    for (let i = 0; i < 4; i++) data.qpos[3 + i] = q[i];
+  }
+
+  private setStopper(on: boolean) {
+    this.model.geom_contype[this.stopper] = on ? 1 : 0;
+    this.model.geom_conaffinity[this.stopper] = on ? 129 : 0;
+    this.stopperMesh.rotation.z = on ? 0 : Math.PI / 2;
+  }
+
+  private say(text: string) { this.feed = [...this.feed.slice(-3), { id: ++this.feedId, text }]; }
+
+  release(time = 0) {
+    if (this.released) return;
+    this.released = true; this.releasedAt = time;
+    this.setStopper(false);
+  }
+  togglePilot() { this.pilot = !this.pilot; this.pilotTurn = 0; return this.pilot; }
+
+  /** Walking keys shift weight on the deck instead of stepping off it. Jumping is off. */
+  key(code: string, down: boolean) {
+    if (code === 'Space') return true;
+    const shift = weightKeys[code];
+    if (!shift) return false;
+    if (down) this.held.set(code, shift); else this.held.delete(code);
+    return true;
+  }
+  /** The touch stick: sideways turns (relative to travel), up/down is toes/heels. */
+  pad(x: number, y: number) { this.stick = [y, -x]; }
+  letGo() { this.held.clear(); this.stick = [0, 0]; }
+
+  // Feet stay planted unless the stance is off target by more than about a
+  // centimetre; then the shipped walking command takes the smallest step that
+  // carries the base back. The posture pitch leans the body over toes or heels.
+  private balance(data: MjData, mode: string, policyRunning: boolean) {
+    const nowUs = Math.round(data.time * 1e6);
+    const q = data.qpos.subarray(this.boardQ + 3, this.boardQ + 7);
+    // Turning left or right depends on the way the board is rolling: carving
+    // left going nose-first loads the heels, going tail-first the toes.
+    const velocity = rotate(q, [data.qvel[this.boardV], data.qvel[this.boardV + 1], data.qvel[this.boardV + 2]], true);
+    if (Math.abs(velocity[0]) > 0.15) this.travel = Math.sign(velocity[0]);
+    let lean = 0, turn = this.pilot ? this.pilotTurn : 0;
+    for (const [a, , c] of this.held.values()) { lean += a; turn += c; }
+    lean = THREE.MathUtils.clamp(lean + this.stick[0] + (turn - this.stick[1]) * this.travel, -1, 1);
+    const across = lean < 0 ? lean * stance.toes : lean * stance.heels;
+    const step = stance.shift * 0.005;
+    this.target = [this.target[0] + THREE.MathUtils.clamp(across - this.target[0], -step, step), 0];
+    // The body lean eases in like a rider's, about 0.4 s end to end.
+    this.lean += THREE.MathUtils.clamp(lean - this.lean, -0.025, 0.025);
+    const local = rotate(q, [data.qpos[0] - data.qpos[this.boardQ], data.qpos[1] - data.qpos[this.boardQ + 1], data.qpos[2] - data.qpos[this.boardQ + 2]], true);
+    const heading = rotate(q, rotate(data.qpos.subarray(3, 7), [1, 0, 0]), true);
+    // The feet's stance, as where the centre of mass sits when standing level.
+    this.weight = [local[1] + comAhead * heading[1], local[0] + comAhead * heading[0]];
+    if (!policyRunning || mode !== 'locomotion' || !this.onDeck) { this.correcting = [false, false, false]; this.send(0, 0, 0, 0, nowUs); return; }
+    const error = [this.target[0] - this.weight[0], this.target[1] - this.weight[1], Math.atan2(heading[1], heading[0]) + Math.PI / 2];
+    if (error[2] > Math.PI) error[2] -= 2 * Math.PI;
+    const start = [0.012, 0.015, 0.08], stop = [0.004, 0.005, 0.03];
+    const command = error.map((e, i) => {
+      if (Math.abs(e) > start[i]) this.correcting[i] = true; else if (Math.abs(e) < stop[i]) this.correcting[i] = false;
+      return this.correcting[i] ? e : 0;
+    });
+    // Body frame: its forward is the deck's -y, its left the deck's +x. Speeds
+    // stay just above the policy's 0.06 m/s standing band, so it shuffles.
+    const speed = (e: number) => e && Math.sign(e) * THREE.MathUtils.clamp(Math.abs(e) * 8, 0.08, 0.4);
+    const forward = -speed(command[0]), left = speed(command[1]);
+    const rx = command[2] ? Math.sign(command[2]) * 0.56 : 0;
+    // Ry is the posture pitch: negative tips its nose (the toe side) down,
+    // extending the rear legs; positive sits back onto the heels.
+    this.send(-left / 0.8, -forward / 0.8, rx, Math.round(this.lean * 20) / 20, nowUs);
+  }
+  // Only report the stick when it moves, as a real pad does.
+  private send(lx: number, ly: number, rx: number, ry: number, nowUs: number) {
+    if (lx === this.axes[0] && ly === this.axes[1] && rx === this.axes[2] && ry === this.axes[3]) return;
+    this.axes = [lx, ly, rx, ry];
+    this.steer(lx, ly, rx, ry, nowUs);
+  }
+
+  /** Before each controller tick. The pilot steers with the same weight input a person has. */
+  beforeControl(data: MjData, mode: string, policyRunning: boolean) {
+    if (this.pilot && policyRunning) {
+      if (!this.released && mode === 'locomotion' && data.time > 2.5) this.release(data.time);
+      // Pure pursuit on the race line, 2.4 m ahead, damped by the yaw rate.
+      const x = data.qpos[this.boardQ], y = data.qpos[this.boardQ + 1], q = data.qpos.subarray(this.boardQ + 3, this.boardQ + 7);
+      const nose = rotate(q, [1, 0, 0]), ahead = 2.4;
+      const error = Math.atan2(raceY(x + ahead) - y, ahead) - Math.atan2(nose[1], nose[0]);
+      const yawRate = rotate(q, [data.qvel[this.boardV + 3], data.qvel[this.boardV + 4], data.qvel[this.boardV + 5]])[2];
+      this.pilotTurn = THREE.MathUtils.clamp(error * 4 - yawRate * 0.6, -1, 1);
+    }
+    this.balance(data, mode, policyRunning);
+  }
+
+  /** After physics: read the ride back from contacts and the bodies' motion. */
+  afterControl(data: MjData) {
+    const x = data.qpos[this.boardQ], y = data.qpos[this.boardQ + 1], t = data.time;
+    const speed = Math.hypot(data.qvel[this.boardV], data.qvel[this.boardV + 1]);
+    let deck = false, ground = false;
+    const contacts = data.contact;
+    try {
+      for (let i = 0; i < data.ncon; i++) {
+        const contact = contacts.get(i);
+        if (!contact) continue;
+        const foot = this.feet.has(contact.geom1) ? contact.geom2 : this.feet.has(contact.geom2) ? contact.geom1 : -1;
+        const body = foot >= 0 ? this.model.geom_bodyid[foot] : -1;
+        // Robot links are bodies 1…board-1; anything else a foot touches is outside the deck.
+        if (this.deckGeoms.has(foot)) deck = true;
+        else if (foot >= 0 && (body === 0 || body >= this.boardBody)) ground = true;
+        contact.delete();
+      }
+    } finally { contacts.delete(); }
+    if (ground && !this.offBoard) { this.offBoard = true; this.say('Fuera de la tabla'); }
+    this.onDeck = deck;
+    // Closest foot to a side edge of the deck, in metres (negative: overhanging).
+    const q = data.qpos.subarray(this.boardQ + 3, this.boardQ + 7);
+    this.edge = 1;
+    for (const foot of this.feet) {
+      const p = rotate(q, [data.geom_xpos[foot * 3] - data.qpos[this.boardQ], data.geom_xpos[foot * 3 + 1] - data.qpos[this.boardQ + 1], data.geom_xpos[foot * 3 + 2] - data.qpos[this.boardQ + 2]], true);
+      this.edge = Math.min(this.edge, board.half[1] - Math.abs(p[1]));
+    }
+    if (deck && this.finishedAt < 0) this.top = Math.max(this.top, speed);
+    // A cone is down once it has tipped past 35° or slid 4 cm.
+    for (const cone of this.cones) {
+      if (cone.down) continue;
+      const c = data.qpos, up = 1 - 2 * (c[cone.q + 4] ** 2 + c[cone.q + 5] ** 2);
+      if (up < Math.cos(35 * Math.PI / 180) || Math.hypot(c[cone.q] - cone.x, c[cone.q + 1] - cone.y) > 0.04) { cone.down = true; this.say('Cono derribado'); }
+    }
+    // Stopped, or no longer riding, for 2 s: back to the start (also after the finish).
+    const stuck = this.released && t - this.releasedAt > 1.5 && (speed < 0.05 || this.offBoard);
+    if (!stuck) this.stuckSince = -1;
+    else if (this.stuckSince < 0) this.stuckSince = t;
+    else if (t - this.stuckSince > 2 && this.restartAt < 0) { this.restartAt = t; if (this.finishedAt < 0) this.say('Atascado · vuelta a la salida'); }
+    const { x0, x1 } = obstacles.island;
+    if (!this.route && x > (x0 + x1) / 2 && x < x1) { this.route = y > 0 ? 'izquierda' : 'derecha'; this.say(`Por la ${this.route}`); }
+    if (this.finishedAt < 0 && this.released && x > obstacles.finish) {
+      this.finishedAt = t;
+      const down = this.cones.filter(cone => cone.down).length;
+      this.say(`Meta · ${(t - this.releasedAt).toFixed(1).replace('.', ',')} s${down ? ` · ${down} ${down === 1 ? 'cono' : 'conos'}` : ' · limpio'}`);
+    }
+  }
+
+  stats(data: MjData): SkateStats {
+    const time = !this.released ? 0 : (this.finishedAt >= 0 ? this.finishedAt : data.time) - this.releasedAt;
+    return {
+      released: this.released, pilot: this.pilot, speed: Math.hypot(data.qvel[this.boardV], data.qvel[this.boardV + 1]), top: this.top, time,
+      finished: this.finishedAt >= 0, cones: this.cones.filter(cone => cone.down).length, feed: this.feed, weight: this.weight, target: this.target, lean: this.lean, edge: this.edge,
+    };
+  }
+  /** True once the ride has been stuck for 2 s; the host then resets the scene. */
+  get wantsRestart() { return this.restartAt >= 0; }
+  /** Board position and heading, for the chase camera. */
+  boardPose(data: MjData) {
+    const q = data.qpos.subarray(this.boardQ + 3, this.boardQ + 7), nose = rotate(q, [1, 0, 0]);
+    const v = [data.qvel[this.boardV], data.qvel[this.boardV + 1]];
+    return { x: data.qpos[this.boardQ], y: data.qpos[this.boardQ + 1], z: data.qpos[this.boardQ + 2], heading: Math.hypot(v[0], v[1]) > 0.3 ? Math.atan2(v[1], v[0]) : Math.atan2(nose[1], nose[0]) };
+  }
+}
