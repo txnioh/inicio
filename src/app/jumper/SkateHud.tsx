@@ -1,17 +1,53 @@
-import { stance, type SkateStats } from './skate';
+import { stance, type BoardKind, type SkateStats } from './skate';
 import './skate.css';
 
 const kmh = (speed: number) => (speed * 3.6).toFixed(1).replace('.', ',');
 
-export default function SkateHud({ stats, onRelease, onPilot }: { stats: SkateStats; onRelease: () => void; onPilot: () => void }) {
+export default function SkateHud({ stats }: { stats: SkateStats }) {
   return <section className="skate-hud" aria-label="Skate">
-    <div className="skate-speed" aria-live="off"><span>{kmh(stats.speed)}</span> km/h<small>máx {kmh(stats.top)} · {stats.time.toFixed(1).replace('.', ',')} s{stats.cones ? ` · ${stats.cones} ${stats.cones === 1 ? 'cono' : 'conos'}` : ''}</small></div>
+    <div className="skate-speed" aria-live="off"><span>{kmh(stats.speed)}</span> km/h<small>máx {kmh(stats.top)} · {stats.time.toFixed(1).replace('.', ',')} s{stats.cones ? ` · ${stats.cones} ${stats.cones === 1 ? 'cono' : 'conos'}` : ''}{stats.pilot ? ' · piloto' : ''}</small></div>
     <Weight stats={stats} />
     <ol className="skate-feed" aria-live="polite">{stats.feed.map(item => <li key={item.id}>{item.text}</li>)}</ol>
-    <div className="skate-actions">
-      <button onClick={onRelease} disabled={stats.released} title="Enter">{stats.released ? 'Suelto' : 'Soltar'}</button>
-      <button onClick={onPilot} aria-pressed={stats.pilot} title="P">Piloto{stats.pilot ? ' · on' : ''}</button>
+  </section>;
+}
+
+const boardOptions: { kind: BoardKind; name: string; note: string }[] = [
+  { kind: 'skate', name: 'Skate', note: 'Corta y ágil: gira antes.' },
+  { kind: 'longboard', name: 'Longboard', note: 'Larga y baja: más estable.' },
+];
+
+/** Board outline seen from above, for the picker. */
+function Outline({ kind }: { kind: BoardKind }) {
+  return kind === 'skate'
+    ? <svg width="96" height="34" viewBox="0 0 96 34" aria-hidden="true"><rect x="2" y="3" width="92" height="28" rx="14" /><circle cx="27" cy="9" r="1.6" /><circle cx="27" cy="25" r="1.6" /><circle cx="69" cy="9" r="1.6" /><circle cx="69" cy="25" r="1.6" /></svg>
+    : <svg width="132" height="34" viewBox="0 0 132 34" aria-hidden="true"><path d="M20 3H112A18 14 0 0 1 112 31H20A18 14 0 0 1 20 3Z" /><path className="skate-cut" d="M34 3q8 5 16 0M34 31q8-5 16 0M82 3q8 5 16 0M82 31q8-5 16 0" /></svg>;
+}
+
+/** Centre panel before the run: pick a board, then go or let the pilot ride. */
+export function SkateStart({ stats, board, onBoard, onStart, onPilot }: { stats: SkateStats; board: BoardKind; onBoard: (kind: BoardKind) => void; onStart: () => void; onPilot: () => void }) {
+  return <section className="skate-start" aria-label="Empezar la bajada">
+    <h2>Bajada</h2>
+    <p>Jumper no empuja ni salta: solo mueve su peso sobre la tabla para girar.</p>
+    <div className="skate-boards" role="radiogroup" aria-label="Tabla">
+      {boardOptions.map(option => <button key={option.kind} role="radio" aria-checked={board === option.kind} onClick={() => onBoard(option.kind)}>
+        <Outline kind={option.kind} /><strong>{option.name}</strong><span>{option.note}</span>
+      </button>)}
     </div>
+    <div className="skate-go">
+      <button className="skate-primary" onClick={onStart} autoFocus>Empezar <kbd>Enter</kbd></button>
+      <button className="skate-secondary" onClick={onPilot} aria-pressed={stats.pilot}>{stats.pilot ? 'Piloto activado' : 'Piloto automático'} <kbd>P</kbd></button>
+    </div>
+    <p className="skate-keys"><kbd>←</kbd><kbd>→</kbd> girar · <kbd>W</kbd><kbd>S</kbd> puntas / talones · <kbd>R</kbd> reiniciar</p>
+    <p className="skate-touch">Joystick a los lados para girar, arriba y abajo para puntas y talones.</p>
+  </section>;
+}
+
+/** Centre panel at the finish. */
+export function SkateFinish({ stats, onAgain }: { stats: SkateStats; onAgain: () => void }) {
+  return <section className="skate-start skate-finish" aria-live="polite">
+    <h2>{stats.time.toFixed(1).replace('.', ',')} s</h2>
+    <p>{stats.cones ? `${stats.cones} ${stats.cones === 1 ? 'cono derribado' : 'conos derribados'}` : 'Sin tocar un cono'} · máx {kmh(stats.top)} km/h</p>
+    <div className="skate-go"><button className="skate-primary" onClick={onAgain}>Otra vez <kbd>R</kbd></button></div>
   </section>;
 }
 

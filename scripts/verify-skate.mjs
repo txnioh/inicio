@@ -38,13 +38,15 @@ for (const file of manifest.runtime.meshes) {
   for (const part of file.split('/').slice(0, -1)) { dir += '/' + part; if (!mj.FS.analyzePath(dir, false).exists) mj.FS.mkdir(dir); }
   mj.FS.writeFile('/jumper/' + file, await readFile(root + file));
 }
-mj.FS.writeFile('/jumper/scene.xml', skateXml(await readFile(root + 'scene.xml', 'utf8')));
+// BOARD=longboard rides the drop-through instead of the skate.
+const kind = process.env.BOARD ?? 'skate';
+mj.FS.writeFile('/jumper/scene.xml', skateXml(await readFile(root + 'scene.xml', 'utf8'), kind));
 const model = mj.MjModel.mj_loadXML('/jumper/scene.xml'), data = new mj.MjData(model), velocity = new mj.DoubleBuffer(6);
 const qa = [], va = [], motors = [];
 for (const name of names) { const id = mj.mj_name2id(model, 3, name); qa.push(model.jnt_qposadr[id]); va.push(model.jnt_dofadr[id]); motors.push(mj.mj_name2id(model, 19, name + '_motor')); }
 const feet = new Set(physical.feet.map(name => mj.mj_name2id(model, 5, name)));
 const queue = [];
-const skate = new Skate(mj, model, new THREE.Scene(), feet, (lx, ly, rx, ry, now) => { globalThis.AX = [lx, ly, rx, ry]; fsm.setAxis('Lx', lx); fsm.setAxis('Ly', ly); fsm.setAxis('Rx', rx); fsm.setAxis('Ry', ry); fsm.padFrame(now); });
+const skate = new Skate(mj, model, new THREE.Scene(), feet, (lx, ly, rx, ry, now) => { globalThis.AX = [lx, ly, rx, ry]; fsm.setAxis('Lx', lx); fsm.setAxis('Ly', ly); fsm.setAxis('Rx', rx); fsm.setAxis('Ry', ry); fsm.padFrame(now); }, kind);
 const heat = new Float32Array(22);
 mj.mj_resetData(model, data);
 qa.forEach((a, i) => { data.qpos[a] = c.default_joint_pos[names[i]]; });
@@ -93,7 +95,7 @@ for (let i = 0; i < Math.round(45 / .005) && !skate.stats(data).finished; i++) {
 }
 const stats = skate.stats(data);
 console.log(seen.join('\n'));
-console.log(`top ${(stats.top * 3.6).toFixed(1)} km/h · ${stats.time.toFixed(1)} s · cones down ${stats.cones} · safe frames ${safe} · closest foot to a deck edge ${(edge * 100).toFixed(1)} cm · widest |y| ${worst.toFixed(2)} m`);
+console.log(`${kind}: top ${(stats.top * 3.6).toFixed(1)} km/h · ${stats.time.toFixed(1)} s · cones down ${stats.cones} · safe frames ${safe} · closest foot to a deck edge ${(edge * 100).toFixed(1)} cm · widest |y| ${worst.toFixed(2)} m`);
 assert(stats.finished, 'The pilot reaches the finish by weight alone');
 assert(!seen.some(s => s.includes('Fuera')), 'Stays on the board');
 assert.equal(safe, 0, 'Never trips the tilt safety');

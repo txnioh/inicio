@@ -29,24 +29,42 @@ free bodies: 12 cm street cones with a square foot, 80 g. They meet the deck,
 the robot and the road, but not the wheels. A cone the nose knocks flat goes under the board instead of wedging
 the trucks like a chock, which stopped the board dead in testing.
 
-## The board
+## The boards
 
-- Deck 72 × 44 cm with 8 cm kicks (14°), 0.75 kg: a wide cruiser. Jumper stands
-  sideways like a skater. Its claws reach 19 cm forward and its rear feet 14 cm
-  back, so a 40 cm deck left almost no room to load the toes.
-- Traditional-geometry trucks: each hanger turns about a 45° pivot axis against a
-  4 N·m/rad bushing spring. Leaning the deck turns the trucks.
-- The drawing (`skateboard.ts`) is attached to the physical bodies, so trucks
-  turn and wheels spin.
-  - Deck: popsicle shape with rounded nose and tail, curved kicks, concave and
-    a sanded maple margin around the grip. The grip shows grit, wear on the
-    kicks and a logo. The rim is rounded, with seven plies (two dyed), and the
-    bottom carries a graphic.
-  - Trucks: riser pads, baseplates with bolts and nuts, a pivot cup, an angled
-    kingpin with bushings, washer and nut, and a rounded hanger with tapered
-    axle housings, axle, speed washers and nuts.
-  - Wheels: urethane with radiused lips, a coloured core and sealed bearings.
-  - The collision primitives show only in the *Colisiones* view.
+Both are as wide as Jumper needs. It stands sideways like a skater, and its
+claws reach 19 cm forward while its rear feet reach 14 cm back. Proportions
+otherwise follow real boards. A popsicle skate deck is 28–32" long and
+7.5–8.75" wide, with symmetric kicked nose and tail, concave and a 13–15"
+wheelbase. A drop-through longboard is about 39" × 9.25", with a 73 cm
+wheelbase, wheel cut-outs, 50° reverse-kingpin trucks and 70 mm wheels.
+
+| | Skate | Longboard |
+|---|---|---|
+| Deck | 72 cm + two 8 cm kicks (14°) × 44 cm, popsicle with near half-circle ends | 116 × 46 cm, round ends lifting 1 cm, wheel cut-outs |
+| Wheelbase | 50 cm | 80 cm (about 70 % of the length) |
+| Trucks | traditional, 45° pivot, bushings 4 N·m/rad, top-mounted on risers | reverse kingpin, 50° pivot, bushings 2.5 N·m/rad, drop-through |
+| Wheels | 48 mm, cream, orange cores | 68 mm, amber, wider, white cores |
+| Deck height | 6.0 cm | 5.0 cm (lower despite the bigger wheels) |
+| Pilot run | 18.1 s, up to 11.4 km/h | 16.3 s, up to 13.9 km/h |
+
+The longboard rolls faster and turns less per degree of lean; softer bushings,
+as on real longboards, give it back enough turn for the course.
+
+The drawing (`skateboard.ts`) is attached to the physical bodies, so trucks
+turn and wheels spin.
+
+- Deck: concave and a sanded maple margin around the grip. The grip shows grit,
+  wear and a logo. The rim is rounded, with seven plies (two dyed), and the
+  bottom carries a graphic (maple grain and stripes on the longboard).
+- Trucks: baseplates with bolts and nuts (risers on the skate, on top of the
+  deck on the drop-through), a pivot cup, a kingpin with bushings, washer and
+  nut, and a rounded hanger with tapered axle housings, axle and nuts.
+- Wheels: urethane with radiused lips, a coloured core and sealed bearings.
+- The collision primitives show only in the *Colisiones* view.
+
+Sources for the proportions: [Skate Warehouse deck guide](https://blog.skatewarehouse.com/news/articles/Skateboard_Deck_Buying_Guide.html),
+[Longboard (Wikipedia)](https://en.wikipedia.org/wiki/Longboard_(skateboard)),
+[SkatePro drop-through listing](https://www.skatepro.com/en-us/83-17829.htm).
 
 ## Weight, not walking
 
@@ -99,7 +117,7 @@ of the island, through the slalom and the chicane gaps.
 
 ## Verified headless
 
-`node scripts/verify-skate.mjs` rides the page's own `Skate` class with the
+`node scripts/verify-skate.mjs` (or `BOARD=longboard node scripts/verify-skate.mjs`) rides the page's own `Skate` class with the
 shipped controller, ONNX policies and servo model, and checks that no external
 force is ever applied. With the pilot it finishes in 18.1 s, clean, at up to
 11.4 km/h. No foot comes within 3 cm of a deck edge (the pads are about 1 cm in
@@ -110,6 +128,9 @@ long in the direction of travel and stays above a 10 cm bar for about 0.2 s. It
 would have to pass at more than 3 m/s, so the run asks for steering instead.
 
 ## Controls
+
+A panel in the middle of the screen picks the board and starts the run (Enter)
+or the pilot (P). At the finish it shows the time with *Otra vez*.
 
 Enter: release. ←/→ or A/D: turn. W/S: toes/heels. P: pilot. R: reset. The HUD
 shows speed, top speed, time and cones down. It also draws the deck from above:

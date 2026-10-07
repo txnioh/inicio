@@ -8,7 +8,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { dressEva } from './eva';
-import { Skate, skateXml } from './skate';
+import { Skate, skateXml, type BoardKind } from './skate';
 import { flushInputs, modeBinding, queueMode, type InputEdge } from './inputs';
 import { type Joint, type SkinId, type Stats, boxes, skins } from './settings';
 
@@ -87,7 +87,7 @@ export class Playground {
 
   private skate?: Skate;
 
-  constructor(private host: HTMLElement, onStats: (stats: Stats) => void, private onError: (message: string) => void, private skateMode = false) {
+  constructor(private host: HTMLElement, onStats: (stats: Stats) => void, private onError: (message: string) => void, private skateMode: false | BoardKind = false) {
     this.onStats = onStats;
     this.robot = new RobotController(this.abort.signal);
     // Antialias the scene's render target; canvas MSAA cannot filter that image.
@@ -223,7 +223,7 @@ export class Playground {
     };
     await Promise.all(Array.from({ length: 6 }, download));
     if (this.disposed) return [];
-    mujoco.FS.writeFile('/jumper/scene.xml', this.skateMode ? skateXml(xml) : xml);
+    mujoco.FS.writeFile('/jumper/scene.xml', this.skateMode ? skateXml(xml, this.skateMode) : xml);
     this.model = mujoco.MjModel.mj_loadXML('/jumper/scene.xml');
     this.data = new mujoco.MjData(this.model);
     this.velocityBuffer = new mujoco.DoubleBuffer(6);
@@ -246,7 +246,7 @@ export class Playground {
       this.skate = new Skate(mujoco, this.model, this.scene, this.footGeoms, (lx, ly, rx, ry, nowUs) => {
         const fsm = this.robot.fsm;
         fsm.setAxis('Lx', lx); fsm.setAxis('Ly', ly); fsm.setAxis('Rx', rx); fsm.setAxis('Ry', ry); fsm.padFrame(nowUs);
-      });
+      }, this.skateMode);
       for (const { id, mesh, name, collision, body } of this.skate.drawables) this.drawables.push({ id, mesh: mesh as Drawable['mesh'], name, color: new THREE.Color(), collision, body });
     }
     this.reset();

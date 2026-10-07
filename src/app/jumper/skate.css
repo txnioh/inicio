@@ -10,9 +10,32 @@
 .skate-feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; min-height: 64px; }
 .skate-feed li { animation: skate-in .35s ease-out; color: #a3a29d; }
 .skate-feed li:last-child { color: #111; }
-.skate-actions { display: flex; gap: 14px; }
-.jumper-page .skate-actions button { pointer-events: auto; font-size: 11px; }
-.jumper-page .skate-actions button[aria-pressed="true"] { color: #111; }
 @keyframes skate-in { from { opacity: 0; transform: translateY(4px); } }
 @media (prefers-reduced-motion: reduce) { .skate-feed li { animation: none; } }
 @media (pointer: coarse), (max-width: 700px) { .skate-hud { left: 20px; top: 62px; } }
+.skate-start { position: fixed; z-index: 3; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(520px, calc(100vw - 32px)); padding: 28px 28px 22px; background: #fdfdfcee; backdrop-filter: blur(14px); border-radius: 14px; box-shadow: 0 10px 50px #1111110f; color: #111; text-align: center; animation: skate-in .3s ease-out; }
+.skate-start h2 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
+.skate-start p { margin: 8px 0 0; font-size: 13px; color: #77766f; line-height: 1.45; }
+.skate-boards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+.jumper-page .skate-boards button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 10px 12px; border: 1px solid #e3e2dc; border-radius: 10px; background: #fff; color: #111; }
+.jumper-page .skate-boards button[aria-checked="true"] { border-color: #111; box-shadow: inset 0 0 0 1px #111; }
+.skate-boards svg { height: 34px; }
+.skate-boards svg rect, .skate-boards svg path { fill: #2a2a2c; }
+.skate-boards svg circle { fill: #c9cdd2; }
+.skate-boards svg .skate-cut { fill: none; stroke: #fdfdfc; stroke-width: 3; }
+.skate-boards strong { font-size: 15px; font-weight: 600; }
+.skate-boards span { font-size: 12px; color: #77766f; }
+.skate-go { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.jumper-page .skate-go .skate-primary { padding: 15px; border-radius: 10px; background: #111; color: #fdfdfc; font-size: 17px; font-weight: 600; }
+.jumper-page .skate-go .skate-primary:hover { background: #2b2b2b; color: #fdfdfc; }
+.jumper-page .skate-go .skate-secondary { padding: 11px; border-radius: 10px; border: 1px solid #e3e2dc; background: #fff; color: #111; font-size: 14px; }
+.jumper-page .skate-go .skate-secondary[aria-pressed="true"] { border-color: #d4583a; color: #d4583a; }
+.skate-start kbd { margin-left: 6px; padding: 1px 6px; border-radius: 4px; border: 1px solid currentColor; font: inherit; font-size: 11px; opacity: .55; }
+.skate-start .skate-keys { margin-top: 14px; font-size: 12px; }
+.skate-start .skate-keys kbd { margin: 0 2px; }
+.skate-finish h2 { font-size: 40px; font-variant-numeric: tabular-nums; }
+.skate-start .skate-touch { display: none; }
+@media (pointer: coarse) {
+  .skate-start .skate-keys, .skate-start kbd { display: none; }
+  .skate-start .skate-touch { display: block; margin-top: 14px; font-size: 12px; }
+}

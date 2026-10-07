@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { Playground } from './playground';
 import { initialStats, motions, skins, type SkinId } from './settings';
-import SkateHud from './SkateHud';
+import SkateHud, { SkateFinish, SkateStart } from './SkateHud';
+import type { BoardKind } from './skate';
 import './jumper.css';
 
 function Icon({ name }: { name: 'play' | 'pause' | 'reset' | 'jump' }) {
@@ -25,12 +26,14 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
   const [skin, setSkin] = useState<SkinId>('original');
   const [grid, setGrid] = useState(false);
   const [collision, setCollision] = useState(false);
+  const [board, setBoard] = useState<BoardKind>('skate');
 
   useEffect(() => {
     const title = document.title;
     document.title = variant === 'eva' ? 'EVA-01' : variant === 'skate' ? 'Jumper · Skate' : 'Jumper';
     let active = true;
     let playground: Playground | undefined;
+    setReady(false); setProgress(0); setStats(initialStats);
     try {
       playground = new Playground(host.current!, value => {
         if (!active) return;
@@ -43,7 +46,7 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
           host.current.dataset.time = String(value.time);
           host.current.dataset.parity = JSON.stringify(value.parity);
         }
-      }, message => { if (active) setError(message); }, variant === 'skate');
+      }, message => { if (active) setError(message); }, variant === 'skate' ? board : false);
       engine.current = playground;
       void playground.load(value => { if (active) setProgress(value); }).then(() => {
         if (!active) return;
@@ -55,7 +58,7 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
       });
     } catch (error) { setError(error instanceof Error ? error.message : 'WebGL no está disponible.'); }
     return () => { active = false; playground?.dispose(); engine.current = null; document.title = title; };
-  }, [variant]);
+  }, [variant, board]);
 
   useEffect(() => {
     function clear() { engine.current?.release(); }
@@ -114,7 +117,9 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
       <span className="jumper-hint">{variant === 'skate' ? 'Enter soltar · ←/→ o A/D girar · W/S puntas/talones · P piloto · R reiniciar' : 'WASD · J/L · Espacio'}</span>
       <span className="jumper-mode">{ready && !stats.policyRunning ? stats.controllerMode === 'safe' ? 'Detenido' : 'Preparando' : stats.controllerMode === 'locomotion' ? '' : motions.find(item => item.id === stats.controllerMode)?.name}</span>
     </footer>
-    {variant === 'skate' && ready && stats.skate ? <SkateHud stats={stats.skate} onRelease={() => engine.current?.releaseBoard()} onPilot={() => engine.current?.togglePilot()} /> : null}
+    {variant === 'skate' && ready && stats.skate ? <SkateHud stats={stats.skate} /> : null}
+    {variant === 'skate' && ready && stats.skate && !stats.skate.released ? <SkateStart stats={stats.skate} board={board} onBoard={setBoard} onStart={() => engine.current?.releaseBoard()} onPilot={() => engine.current?.togglePilot()} /> : null}
+    {variant === 'skate' && ready && stats.skate?.finished ? <SkateFinish stats={stats.skate} onAgain={() => engine.current?.reset()} /> : null}
     {ready ? <div className="jumper-touch"><div className="jumper-joystick" aria-label={`Mover a ${modelName}`} onPointerDown={joystick} onPointerMove={joystick} onPointerUp={releaseJoystick} onPointerCancel={releaseJoystick} onLostPointerCapture={releaseJoystick}><span /></div>{variant === 'skate' ? null : <button aria-label="Saltar" title="Saltar" onPointerDown={event => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); engine.current?.padButton('A', true); }} onPointerUp={() => engine.current?.padButton('A', false)} onPointerCancel={() => engine.current?.padButton('A', false)} onLostPointerCapture={() => engine.current?.padButton('A', false)} onClick={event => { if (event.detail === 0) engine.current?.action('jump'); }}><Icon name="jump" /></button>}</div> : null}
   </main>;
 }
