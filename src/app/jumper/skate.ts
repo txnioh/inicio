@@ -1,7 +1,7 @@
 import type { MainModule, MjData, MjModel } from '@mujoco/mujoco';
 import * as THREE from 'three';
 import { buildCourse, coneMesh, courseXml, obstacles, raceLine, road, surfaceAt } from './course.ts';
-import { skateboardParts } from './skateboard.ts';
+import { safeTurn, skateboardParts } from './skateboard.ts';
 
 // Jumper riding a skateboard down a hill (see course.ts). The board is a free
 // body with real truck geometry: each hanger turns about a 45° pivot axis
@@ -10,22 +10,24 @@ import { skateboardParts } from './skateboard.ts';
 // only control is where Jumper puts its weight on the deck.
 
 // Two boards, both as wide as Jumper needs: it stands sideways, as a skater
-// does, and its feet spread 40 cm along the deck and 33 cm across.
-// - skate: a popsicle deck, 72 cm between the kicks plus two 8 cm kicks, 44 cm
-//   wide, 50 cm wheelbase, traditional 45° trucks, 48 mm wheels.
-// - longboard: a drop-through deck, 116 × 46 cm with wheel cut-outs, 80 cm
+// does, and its feet spread 40 cm along the deck and 33 cm across. A real deck
+// is half as wide, so wheels and trucks are scaled up with the deck too.
+// - skate: a popsicle deck, 66 cm flat plus two 13 cm kicks at 19°, 44 cm wide,
+//   50 cm wheelbase, traditional 45° high trucks on 6 mm risers and 64 mm
+//   wheels, which clear the deck through about 9° of truck turn.
+// - longboard: a drop-through deck, 116 × 46 cm with wheel wells, 80 cm
 //   wheelbase (about 70 % of its length, as real drop-throughs), reverse-kingpin
-//   50° trucks with softer bushings (2.5 against 4 N·m/rad) and 68 mm wheels.
-//   Mounted through the deck, it sits lower than the
+//   50° trucks with softer bushings (2.5 against 4 N·m/rad) and 88 mm wheels
+//   (about 15° of truck turn). Mounted through the deck, it sits lower than the
 //   skate despite the bigger wheels.
 export type BoardKind = 'skate' | 'longboard';
 export interface Board {
-  kind: BoardKind; half: number[]; kicks: boolean; base: number; track: number; wheel: number; wheelHalf: number;
+  kind: BoardKind; half: number[]; kicks: boolean; kick: [number, number]; base: number; track: number; wheel: number; wheelHalf: number;
   axle: number; pivot: number; bushing: number; start: number; mass: number;
 }
 export const boards: Record<BoardKind, Board> = {
-  skate: { kind: 'skate', half: [0.36, 0.22, 0.006], kicks: true, base: 0.25, track: 0.19, wheel: 0.024, wheelHalf: 0.014, axle: -0.036, pivot: 45, bushing: 4, start: -0.5, mass: 0.75 },
-  longboard: { kind: 'longboard', half: [0.58, 0.23, 0.0065], kicks: false, base: 0.4, track: 0.2, wheel: 0.034, wheelHalf: 0.019, axle: -0.016, pivot: 50, bushing: 2.5, start: -0.62, mass: 1.15 },
+  skate: { kind: 'skate', half: [0.33, 0.22, 0.006], kicks: true, kick: [0.13, 0.33], base: 0.25, track: 0.19, wheel: 0.032, wheelHalf: 0.017, axle: -0.064, pivot: 50, bushing: 4, start: -0.5, mass: 0.75 },
+  longboard: { kind: 'longboard', half: [0.58, 0.23, 0.0065], kicks: false, kick: [0, 0], base: 0.4, track: 0.2, wheel: 0.044, wheelHalf: 0.024, axle: -0.016, pivot: 50, bushing: 2.5, start: -0.62, mass: 1.15 },
 };
 /** The default board; the scene takes another by kind. */
 export const board = boards.skate;
@@ -57,11 +59,13 @@ const stopperOf = (b: Board) => b.start + (b.base + b.wheel + 0.012) * Math.cos(
 
 const f = (value: number) => value.toFixed(5);
 function boardXml(board: Board) {
+  // Trucks stop turning just before a wheel would touch the deck (wheelbite).
+  const turn = safeTurn(board);
   const start = startOf(board), c = Math.cos(board.pivot * Math.PI / 180), s = Math.sin(board.pivot * Math.PI / 180), [hx, hy, hz] = board.half;
   const truck = (side: number, name: string) => `
     <geom name="skate_${name}_base" type="box" pos="${side * board.base} 0 -0.011" size="0.04 0.03 0.005" mass="0.06" contype="0" conaffinity="0"/>
     <body name="skate_${name}_hanger" pos="${side * board.base} 0 ${board.axle}">
-      <joint name="skate_${name}_pivot" type="hinge" pos="0 0 0.014" axis="${f(-side * c)} 0 ${f(-s)}" stiffness="${board.bushing}" damping="0.05" range="-0.35 0.35" limited="true"/>
+      <joint name="skate_${name}_pivot" type="hinge" pos="0 0 0.014" axis="${f(-side * c)} 0 ${f(-s)}" stiffness="${board.bushing}" damping="0.05" range="${f(-turn)} ${f(turn)}" limited="true"/>
       <geom name="skate_${name}_hanger" type="capsule" fromto="0 ${-(board.track - 0.02)} 0 0 ${board.track - 0.02} 0" size="0.008" mass="0.16" contype="128" conaffinity="0"/>
       ${[1, -1].map(w => `<body name="skate_${name}_wheel_${w}" pos="0 ${w * board.track} 0">
         <joint name="skate_${name}_wheel_${w}" type="hinge" axis="0 1 0" damping="0.00002" frictionloss="0.00002"/>
@@ -71,7 +75,7 @@ function boardXml(board: Board) {
   return `<body name="skate_board" pos="${start.map(f).join(' ')}" euler="0 ${f(rollIn)} 0">
     <freejoint name="skate_board"/>
     <geom name="skate_deck" type="box" size="${hx} ${hy} ${hz}" mass="${board.mass}" contype="1" conaffinity="1" friction="0.9 0.01 0.01"/>
-    ${(board.kicks ? [1, -1] : []).map(side => `<geom name="skate_kick_${side}" type="box" pos="${side * (hx + 0.035)} 0 0.011" euler="0 ${-side * 0.25} 0" size="0.04 ${hy} ${hz}" mass="0.07" contype="1" conaffinity="1"/>`).join('')}
+    ${(board.kicks ? [1, -1] : []).map(side => { const [length, angle] = board.kick; return `<geom name="skate_kick_${side}" type="box" pos="${f(side * (hx + length / 2 * Math.cos(angle)))} 0 ${f(length / 2 * Math.sin(angle))}" euler="0 ${f(-side * angle)} 0" size="${f(length / 2)} ${hy} ${hz}" mass="0.09" contype="1" conaffinity="1"/>`; }).join('')}
     ${truck(1, 'front')}${truck(-1, 'back')}
   </body>`;
 }
@@ -332,6 +336,8 @@ export class Skate {
     if (!stuck) this.stuckSince = -1;
     else if (this.stuckSince < 0) this.stuckSince = t;
     else if (t - this.stuckSince > 2 && this.restartAt < 0) { this.restartAt = t; if (this.finishedAt < 0) this.say('Atascado · vuelta a la salida'); }
+    // After the finish, 6 s to read the time; the board may rock in the run-out.
+    if (this.finishedAt >= 0 && t - this.finishedAt > 6 && this.restartAt < 0) this.restartAt = t;
     const { x0, x1 } = obstacles.island;
     if (!this.route && x > (x0 + x1) / 2 && x < x1) { this.route = y > 0 ? 'izquierda' : 'derecha'; this.say(`Por la ${this.route}`); }
     if (this.finishedAt < 0 && this.released && x > obstacles.finish) {

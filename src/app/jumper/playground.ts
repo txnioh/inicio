@@ -7,6 +7,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { dressEva } from './eva';
 import { Skate, skateXml, type BoardKind } from './skate';
 import { flushInputs, modeBinding, queueMode, type InputEdge } from './inputs';
@@ -106,6 +107,14 @@ export class Playground {
     this.composer.addPass(new OutputPass());
     this.scene.fog = skateMode ? new THREE.Fog('#fdfdfc', 8, 26) : new THREE.Fog('#fdfdfc', 3, 7);
     if (skateMode) { this.camera.far = 45; this.camera.updateProjectionMatrix(); }
+    // A soft studio environment, only on the skate run, so the trucks' aluminium
+    // and steel read as metal and the urethane and clear coat catch highlights.
+    if (skateMode) {
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      this.scene.environmentIntensity = 0.35;
+      pmrem.dispose();
+    }
     this.renderer.domElement.setAttribute('aria-label', 'Modelo 3D de Jumper. Arrastra para girar; usa la rueda para acercarte.');
     this.host.append(this.renderer.domElement);
     this.camera.up.set(0, 0, 1);
@@ -549,6 +558,7 @@ export class Playground {
     cancelAnimationFrame(this.frame);
     this.resize.disconnect();
     this.controls.dispose();
+    this.scene.environment?.dispose();
     this.scene.traverse(object => {
       if (object instanceof THREE.Mesh || object instanceof THREE.LineSegments) {
         object.geometry.dispose();

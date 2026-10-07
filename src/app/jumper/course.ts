@@ -29,8 +29,8 @@ function profile() {
   line(1.2);                                // start ramp with the stopper
   turn(3, -7); line(1.6);                   // drop: builds about 2 m/s
   turn(4, -1.5); marks.cones = x; line(7);     // loose cones
-  turn(4, -1); marks.split = x; line(9.5);     // island: pick a side
-  turn(4, -0.9); marks.slalom = x; line(18);   // slalom
+  turn(4, -0.8); marks.split = x; line(9.5);   // island: pick a side
+  turn(4, -0.6); marks.slalom = x; line(18);   // slalom
   turn(4, -1); marks.chicane = x; line(9);     // bollard chicane
   turn(4, 0); marks.finish = x + 0.6; line(2.5);
   turn(3, 4); line(4);                      // uphill run-out
@@ -54,11 +54,11 @@ export const obstacles = {
   // Spacing follows what the board can do: at ~2.5 m/s, full lean turns about
   // 16°/s after half a second, so moving 1 m sideways takes 4–5 m of road. The
   // slopes keep it near that speed: about 1° balances the rolling losses.
-  // Loose cones (x, y).
+  // Loose cones (x, y); the slalom is 6 m between cones.
   cones: [
     [marks.cones + 2.5, 0.4], [marks.cones + 5.5, -0.1],
     [marks.split + 5.5, 0.95],
-    [marks.slalom + 4, -0.3], [marks.slalom + 9.5, 0.3], [marks.slalom + 15, -0.3],
+    [marks.slalom + 3.5, -0.3], [marks.slalom + 9.5, 0.3], [marks.slalom + 15.5, -0.3],
   ] as Point[],
   island: { x0: marks.split + 3, x1: marks.split + 8.3, half: 0.25, height: 0.2 },
   // Two rows of bollards from the curbs: the first leaves the left open, the second the right.
@@ -72,7 +72,7 @@ export const obstacles = {
 export const raceLine: Point[] = [
   [road.start, 0], [marks.cones, 0], [marks.cones + 2.5, -0.35], [marks.cones + 5.5, -0.8],
   [marks.split + 8.6, -0.85],
-  [marks.slalom + 4, 0.35], [marks.slalom + 9.5, -0.35], [marks.slalom + 15, 0.35],
+  [marks.slalom + 3.5, 0.35], [marks.slalom + 9.5, -0.35], [marks.slalom + 15.5, 0.35],
   [marks.chicane + 2, 0.45], [marks.chicane + 8, -0.45], [marks.finish + 1, 0], [marks.end, 0],
 ];
 
