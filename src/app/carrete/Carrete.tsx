@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import InfiniteGrid from './InfiniteGrid';
 import MediaViewer from './MediaViewer';
@@ -7,6 +7,8 @@ import EffectSettings from './EffectSettings';
 import PhotoLibrary from './PhotoLibrary';
 import LoadingProgress from './LoadingProgress';
 import usePersonalPhotos from './usePersonalPhotos';
+import useSemanticSearch from './useSemanticSearch';
+import SearchRoll from './SearchRoll';
 import { useMediaQuality } from './quality';
 import NowPlaying from '../components/NowPlaying';
 import { collection, loadImage, loadMedia, type LoadedMedia } from './media';
@@ -72,12 +74,26 @@ export default function Carrete() {
     if (entered) setGridReplay(value => value + 1);
     else setOrbitReplay(value => value + 1);
   };
-  const ordered = source === 'personal' ? personal.media : loaded;
+  const library = source === 'personal' ? personal.media : loaded;
+  const search = useSemanticSearch(library, source, personal.media);
+  const matches = useRef(search.matches);
+  matches.current = search.matches;
+  const ordered = useMemo(() => {
+    if (search.matches === null) return library;
+    const byId = new Map(library.map(media => [media.item.id, media]));
+    return search.matches.flatMap(match => {
+      const media = byId.get(match.id);
+      return media ? [media] : [];
+    });
+  }, [library, search.matches]);
+  const displayedMedia = useRef(ordered);
+  displayedMedia.current = ordered;
   const frames = source === 'personal' ? personal.media : collection.flatMap(item => {
     const frame = loaded.find(media => media.item.id === item.id) ?? previews.find(media => media.item.id === item.id);
     return frame ? [frame] : [];
   });
   const changeSource = (next: 'antonio' | 'personal') => {
+    search.clear();
     setSelected(null);
     setSource(next);
     setEntered(false);
@@ -147,8 +163,12 @@ export default function Carrete() {
       setSelected(current => {
         if (!current) return current;
         if (current.source.closest('.carrete-grid')?.getAttribute('data-collection') === 'personal') return current;
-        const id = previous[current.index]?.item.id;
-        const index = next.findIndex(media => media.item.id === id);
+        const id = displayedMedia.current[current.index]?.item.id;
+        const nextOrder = matches.current === null ? next : matches.current.flatMap(match => {
+          const media = next.find(media => media.item.id === match.id);
+          return media ? [media] : [];
+        });
+        const index = nextOrder.findIndex(media => media.item.id === id);
         return index < 0 ? null : { ...current, index };
       });
       setLoaded(next);
@@ -174,6 +194,7 @@ export default function Carrete() {
         {entered && <span className="carrete-count">{String(ordered.length).padStart(2, '0')}</span>}
       </div>
       <nav className="carrete-header-actions" aria-label="Carrete">
+        <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-search" aria-haspopup="dialog">Search</button>
         <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-library" aria-haspopup="dialog">{source === 'personal' ? 'Photo library' : 'Your photos'}</button>
         {canConfigure && <button className="minimal-basic-link carrete-text-button" popoverTarget="carrete-settings" aria-haspopup="dialog">Settings</button>}
         <a className="minimal-basic-link" href="/">Back home</a>
@@ -181,9 +202,17 @@ export default function Carrete() {
     </header>
 
     {entered && <div className="carrete-explore">
-      <InfiniteGrid key={`${source}:${ordered.length}`} collection={source} media={ordered} reducedMotion={reducedMotion} quality={quality}
+      {ordered.length > 0 && <InfiniteGrid key={`${source}:${search.matches?.map(match => match.id).join(',') ?? 'all'}:${ordered.length}`} collection={source} media={ordered} reducedMotion={reducedMotion} quality={quality}
         settings={settings} replay={gridReplay} onOpen={open}
-        selection={selected} videoPositions={videoPositions} />
+        selection={selected} videoPositions={videoPositions} />}
+      {search.matches !== null && <div className="carrete-search-summary" role="status">
+        <span>“{search.label}” · {ordered.length} {ordered.length === 1 ? 'match' : 'matches'}</span>
+        <button type="button" className="minimal-basic-link carrete-text-button" onClick={() => { setSelected(null); search.clear(); }}>Show all</button>
+      </div>}
+      {search.matches !== null && ordered.length === 0 && <div className="carrete-search-empty">
+        <p>No moments matched this search.</p>
+        <button type="button" className="minimal-basic-link carrete-text-button" popoverTarget="carrete-search">Try another search</button>
+      </div>}
     </div>}
 
     {introVisible && <section className="carrete-intro" aria-label="Load camera roll" inert={entered}>
@@ -214,6 +243,7 @@ export default function Carrete() {
 
     <PhotoLibrary personal={personal} source={source} onSource={changeSource} onImport={importPhotos}
       onClear={() => { changeSource('antonio'); personal.clear(); }} />
+    <SearchRoll search={search} canSearch={settled && library.length > 0} onResults={() => { setSelected(null); setEntered(true); }} />
 
     {canConfigure && <EffectSettings settings={settings} setSettings={setSettings} entered={entered}
       canEnter={settled && ordered.length > 0} reducedMotion={reducedMotion}

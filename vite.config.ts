@@ -93,7 +93,7 @@ function softWatercolour(): Plugin {
 
 export default defineConfig({
   // Built from source, so the patch above applies in development too.
-  optimizeDeps: { exclude: ['p5.brush'] },
+  optimizeDeps: { exclude: ['p5.brush'], include: ['@huggingface/transformers'] },
   plugins: [softWatercolour(), react(), {
     name: 'preview-client-routes',
     configurePreviewServer(server) {

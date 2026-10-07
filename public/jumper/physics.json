@@ -1,0 +1,967 @@
+{
+  "source": "KingKongRobotics/jumper@61d065219fca767f3142c8f10aff59eae5a5a004",
+  "options": {
+    "timestep": 0.005,
+    "integrator": "implicitfast",
+    "impratio": 1.0,
+    "cone": "pyramidal",
+    "jacobian": "auto",
+    "solver": "Newton",
+    "iterations": 10,
+    "tolerance": 1e-08,
+    "ls_iterations": 20,
+    "ls_tolerance": 0.01,
+    "ccd_iterations": 50,
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "collisions": {
+    "LF_palm_pad_b_link_meshcol": {
+      "contype": 3,
+      "conaffinity": 124,
+      "condim": 3,
+      "priority": 1,
+      "friction": [
+        1.2,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RF_palm_pad_b_link_meshcol": {
+      "contype": 5,
+      "conaffinity": 122,
+      "condim": 3,
+      "priority": 1,
+      "friction": [
+        1.2,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LM_foot_tip_link_meshcol": {
+      "contype": 9,
+      "conaffinity": 118,
+      "condim": 3,
+      "priority": 1,
+      "friction": [
+        1.2,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RM_foot_tip_link_meshcol": {
+      "contype": 17,
+      "conaffinity": 110,
+      "condim": 3,
+      "priority": 1,
+      "friction": [
+        1.2,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LR_foot_tip_link_meshcol": {
+      "contype": 33,
+      "conaffinity": 94,
+      "condim": 3,
+      "priority": 1,
+      "friction": [
+        1.2,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RR_foot_tip_link_meshcol": {
+      "contype": 65,
+      "conaffinity": 62,
+      "condim": 3,
+      "priority": 1,
+      "friction": [
+        1.2,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "base_link_meshcol": {
+      "contype": 1,
+      "conaffinity": 0,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "upper_shell_link_meshcol": {
+      "contype": 1,
+      "conaffinity": 0,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "camera_link_meshcol": {
+      "contype": 1,
+      "conaffinity": 0,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "tof_sensor_link_meshcol": {
+      "contype": 1,
+      "conaffinity": 0,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "display_module_link_meshcol": {
+      "contype": 1,
+      "conaffinity": 0,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LF_shoulder_link_meshcol": {
+      "contype": 3,
+      "conaffinity": 124,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LF_upper_arm_link_meshcol": {
+      "contype": 3,
+      "conaffinity": 124,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LF_forearm_link_meshcol": {
+      "contype": 3,
+      "conaffinity": 124,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RF_shoulder_link_meshcol": {
+      "contype": 5,
+      "conaffinity": 122,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RF_upper_arm_link_meshcol": {
+      "contype": 5,
+      "conaffinity": 122,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RF_forearm_link_meshcol": {
+      "contype": 5,
+      "conaffinity": 122,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LM_hip_link_meshcol": {
+      "contype": 9,
+      "conaffinity": 118,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LM_thigh_link_meshcol": {
+      "contype": 9,
+      "conaffinity": 118,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RM_hip_link_meshcol": {
+      "contype": 17,
+      "conaffinity": 110,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RM_thigh_link_meshcol": {
+      "contype": 17,
+      "conaffinity": 110,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LR_hip_link_meshcol": {
+      "contype": 33,
+      "conaffinity": 94,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LR_thigh_link_meshcol": {
+      "contype": 33,
+      "conaffinity": 94,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RR_hip_link_meshcol": {
+      "contype": 65,
+      "conaffinity": 62,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RR_thigh_link_meshcol": {
+      "contype": 65,
+      "conaffinity": 62,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LF_palm_link_meshcol": {
+      "contype": 3,
+      "conaffinity": 124,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LF_finger_link_meshcol": {
+      "contype": 3,
+      "conaffinity": 124,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LF_finger_tip_link_meshcol": {
+      "contype": 3,
+      "conaffinity": 124,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LF_palm_pad_f_link_meshcol": {
+      "contype": 3,
+      "conaffinity": 124,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LF_finger_grip_insert_link_meshcol": {
+      "contype": 3,
+      "conaffinity": 124,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LF_palm_grip_insert_link_meshcol": {
+      "contype": 3,
+      "conaffinity": 124,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RF_palm_link_meshcol": {
+      "contype": 5,
+      "conaffinity": 122,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RF_finger_link_meshcol": {
+      "contype": 5,
+      "conaffinity": 122,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RF_finger_tip_link_meshcol": {
+      "contype": 5,
+      "conaffinity": 122,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RF_palm_pad_f_link_meshcol": {
+      "contype": 5,
+      "conaffinity": 122,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RF_finger_grip_insert_link_meshcol": {
+      "contype": 5,
+      "conaffinity": 122,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RF_palm_grip_insert_link_meshcol": {
+      "contype": 5,
+      "conaffinity": 122,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LM_calf_link_meshcol": {
+      "contype": 9,
+      "conaffinity": 118,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RM_calf_link_meshcol": {
+      "contype": 17,
+      "conaffinity": 110,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "LR_calf_link_meshcol": {
+      "contype": 33,
+      "conaffinity": 94,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    },
+    "RR_calf_link_meshcol": {
+      "contype": 65,
+      "conaffinity": 62,
+      "condim": 1,
+      "priority": 0,
+      "friction": [
+        1,
+        0.01,
+        0.01
+      ],
+      "solref": [
+        0.02,
+        1.0
+      ],
+      "solimp": [
+        0.8,
+        0.9,
+        0.002,
+        0.5,
+        2.0
+      ]
+    }
+  },
+  "feet": [
+    "LF_palm_pad_b_link_meshcol",
+    "RF_palm_pad_b_link_meshcol",
+    "LM_foot_tip_link_meshcol",
+    "RM_foot_tip_link_meshcol",
+    "LR_foot_tip_link_meshcol",
+    "RR_foot_tip_link_meshcol"
+  ],
+  "standHeight": 0.10647,
+  "home": {
+    "LF_J0_joint": -0.5507,
+    "LF_J1_joint": -1.0658,
+    "LF_J2_joint": -0.4408,
+    "LF_J3_joint": -1.374,
+    "LF_J4_joint": 0.0,
+    "RF_J0_joint": 0.5524,
+    "RF_J1_joint": -1.066,
+    "RF_J2_joint": 0.4414,
+    "RF_J3_joint": 1.4173,
+    "RF_J4_joint": 0.0,
+    "LM_J0_joint": 0.0012,
+    "LM_J1_joint": 0.5356,
+    "LM_J2_joint": -1.8271,
+    "RM_J0_joint": -0.0012,
+    "RM_J1_joint": -0.5376,
+    "RM_J2_joint": 1.8313,
+    "LR_J0_joint": 0.6313,
+    "LR_J1_joint": 0.5534,
+    "LR_J2_joint": -1.8648,
+    "RR_J0_joint": -0.6326,
+    "RR_J1_joint": -0.5548,
+    "RR_J2_joint": 1.8678
+  },
+  "servo": {
+    "plateau_torque_nm": 1.7464,
+    "corner_speed_rpm": 293.5,
+    "decay_speed_rpm": 240.5,
+    "cutoff_speed_rpm": 611.0,
+    "thermal_continuous_torque_nm": 1.2,
+    "peak_duration_s": 0.3,
+    "thermal_time_constant_s": 0.469532845448761
+  }
+}

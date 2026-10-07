@@ -19,16 +19,16 @@ export default function Sparkline({ values, current, forecast, label }: Props) {
   const y = (v: number) => height - pad - ((v - min) / span) * (height - pad * 2);
   const solid = forecast ? values.slice(0, -1) : values;
   return (
-    <svg className="sparkline" width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label}>
+    <svg className="h-auto w-full overflow-visible" width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label}>
       {forecast && (
-        <line x1={x(values.length - 1)} x2={x(values.length - 1)} y1={y(forecast[0])} y2={y(forecast[1])} className="sparkline-range" />
+        <line x1={x(values.length - 1)} x2={x(values.length - 1)} y1={y(forecast[0])} y2={y(forecast[1])} className="stroke-muted-foreground/30 [stroke-linecap:round] [stroke-width:5]" />
       )}
-      <polyline points={solid.map((v, k) => `${x(k)},${y(v)}`).join(' ')} className="sparkline-line" />
+      <polyline points={solid.map((v, k) => `${x(k)},${y(v)}`).join(' ')} className="fill-none stroke-foreground [stroke-linejoin:round] [stroke-width:1.5]" />
       {forecast && (
-        <line x1={x(values.length - 2)} y1={y(values[values.length - 2])} x2={x(values.length - 1)} y2={y(values[values.length - 1])} className="sparkline-line is-forecast" />
+        <line x1={x(values.length - 2)} y1={y(values[values.length - 2])} x2={x(values.length - 1)} y2={y(values[values.length - 1])} className="fill-none stroke-foreground [stroke-dasharray:3_2] [stroke-width:1.5]" />
       )}
       {values.map((v, k) => (
-        <circle key={k} cx={x(k)} cy={y(v)} r={k === current ? 3 : 1.75} className={k === current ? 'sparkline-dot is-current' : 'sparkline-dot'} />
+        <circle key={k} cx={x(k)} cy={y(v)} r={k === current ? 3 : 1.75} className={k === current ? 'fill-primary stroke-background [stroke-width:1.5]' : 'fill-foreground'} />
       ))}
     </svg>
   );

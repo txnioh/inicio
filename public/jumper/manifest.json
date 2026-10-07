@@ -1,0 +1,1663 @@
+{
+  "repository": "https://github.com/KingKongRobotics/jumper",
+  "commit": "61d065219fca767f3142c8f10aff59eae5a5a004",
+  "meshes": [
+    "urdf/jumper/meshes/visual/base_link.stl",
+    "urdf/jumper/meshes/visual/upper_shell_link.stl",
+    "urdf/jumper/meshes/visual/display_module_link.stl",
+    "urdf/jumper/meshes/visual/tof_sensor_link.stl",
+    "urdf/jumper/meshes/visual/camera_link.stl",
+    "urdf/jumper/meshes/visual/LF_shoulder_link.stl",
+    "urdf/jumper/meshes/visual/LF_upper_arm_link.stl",
+    "urdf/jumper/meshes/visual/LF_forearm_link.stl",
+    "urdf/jumper/meshes/visual/LF_palm_link.stl",
+    "urdf/jumper/meshes/visual/LF_palm_pad_f_link.stl",
+    "urdf/jumper/meshes/visual/LF_palm_pad_b_link.stl",
+    "urdf/jumper/meshes/visual/LF_finger_link.stl",
+    "urdf/jumper/meshes/visual/LF_finger_tip_link.stl",
+    "urdf/jumper/meshes/visual/LF_finger_grip_insert_link.stl",
+    "urdf/jumper/meshes/visual/LF_palm_grip_insert_link.stl",
+    "urdf/jumper/meshes/visual/RF_shoulder_link.stl",
+    "urdf/jumper/meshes/visual/RF_upper_arm_link.stl",
+    "urdf/jumper/meshes/visual/RF_forearm_link.stl",
+    "urdf/jumper/meshes/visual/RF_palm_link.stl",
+    "urdf/jumper/meshes/visual/RF_palm_pad_f_link.stl",
+    "urdf/jumper/meshes/visual/RF_palm_pad_b_link.stl",
+    "urdf/jumper/meshes/visual/RF_palm_grip_insert_link.stl",
+    "urdf/jumper/meshes/visual/RF_finger_link.stl",
+    "urdf/jumper/meshes/visual/RF_finger_grip_insert_link.stl",
+    "urdf/jumper/meshes/visual/RF_finger_tip_link.stl",
+    "urdf/jumper/meshes/visual/LM_hip_link.stl",
+    "urdf/jumper/meshes/visual/LM_thigh_link.stl",
+    "urdf/jumper/meshes/visual/LM_calf_link.stl",
+    "urdf/jumper/meshes/visual/LM_foot_tip_link.stl",
+    "urdf/jumper/meshes/visual/RM_hip_link.stl",
+    "urdf/jumper/meshes/visual/RM_thigh_link.stl",
+    "urdf/jumper/meshes/visual/RM_calf_link.stl",
+    "urdf/jumper/meshes/visual/RM_foot_tip_link.stl",
+    "urdf/jumper/meshes/visual/LR_hip_link.stl",
+    "urdf/jumper/meshes/visual/LR_thigh_link.stl",
+    "urdf/jumper/meshes/visual/LR_calf_link.stl",
+    "urdf/jumper/meshes/visual/LR_foot_tip_link.stl",
+    "urdf/jumper/meshes/visual/RR_hip_link.stl",
+    "urdf/jumper/meshes/visual/RR_thigh_link.stl",
+    "urdf/jumper/meshes/visual/RR_calf_link.stl",
+    "urdf/jumper/meshes/visual/RR_foot_tip_link.stl",
+    "meshes/base_link_col.STL",
+    "meshes/upper_shell_link_col.STL",
+    "meshes/display_module_link_col.STL",
+    "meshes/tof_sensor_link_col.STL",
+    "meshes/camera_link_col.STL",
+    "meshes/LF_shoulder_link_col.STL",
+    "meshes/LF_upper_arm_link_col.STL",
+    "meshes/LF_forearm_link_col.STL",
+    "meshes/LF_palm_link_col.STL",
+    "meshes/LF_palm_pad_f_link_col.STL",
+    "meshes/LF_finger_link_col.STL",
+    "meshes/LF_finger_tip_link_col.STL",
+    "meshes/LF_finger_grip_insert_link_col.STL",
+    "meshes/LF_palm_grip_insert_link_col.STL",
+    "meshes/RF_shoulder_link_col.STL",
+    "meshes/RF_upper_arm_link_col.STL",
+    "meshes/RF_forearm_link_col.STL",
+    "meshes/RF_palm_link_col.STL",
+    "meshes/RF_palm_pad_f_link_col.STL",
+    "meshes/RF_palm_grip_insert_link_col.STL",
+    "meshes/RF_finger_link_col.STL",
+    "meshes/RF_finger_grip_insert_link_col.STL",
+    "meshes/RF_finger_tip_link_col.STL",
+    "meshes/LM_hip_link_col.STL",
+    "meshes/LM_thigh_link_col.STL",
+    "meshes/LM_calf_link_col.STL",
+    "meshes/RM_hip_link_col.STL",
+    "meshes/RM_thigh_link_col.STL",
+    "meshes/RM_calf_link_col.STL",
+    "meshes/LR_hip_link_col.STL",
+    "meshes/LR_thigh_link_col.STL",
+    "meshes/LR_calf_link_col.STL",
+    "meshes/RR_hip_link_col.STL",
+    "meshes/RR_thigh_link_col.STL",
+    "meshes/RR_calf_link_col.STL"
+  ],
+  "files": [
+    {
+      "file": "jumper.xml",
+      "sha256": "3342ca15a5bbcaf40e1f16dedb60044b91360dddae5f7f03f05eb3e6c830cf37"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/base_link.stl",
+      "sha256": "0c1bd088c12db6ace677238800f81bd270a04270891dee934a3ed8b46dfcd68f"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/upper_shell_link.stl",
+      "sha256": "25cadf3b3a05f56de945468858315a867f4d3c9b5967911c9e395d81f3176fc9"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/display_module_link.stl",
+      "sha256": "c019dd2abf703c94dc2dbf693acce85e8b62ee9ada1af21a0786afd00bd94b2e"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/tof_sensor_link.stl",
+      "sha256": "4813e253c3b471319254a330f06715473f388f3b91dc7fb8da097cec9724aafd"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/camera_link.stl",
+      "sha256": "02fb606f9630c1c2d6e33ebc99ab27be12bd88664805845f5b72bbb1355f20ae"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LF_shoulder_link.stl",
+      "sha256": "2565d7fd191af7356479053ce6ba0b1aa4d6c12a1f10ecef13b82690644c9cb2"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LF_upper_arm_link.stl",
+      "sha256": "f8a5eee25c2e251f7b00e8667150cd01e92bcdd2e31287b2022a972199490abc"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LF_forearm_link.stl",
+      "sha256": "e7b2d8f16bb5efa514c8170e15f093ec0dbca345672534386f0b77b7ff455e4e"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LF_palm_link.stl",
+      "sha256": "0a69f36298ed1f64b782668b6d0266ccc4b4299593f0071e76333e6577efc177"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LF_palm_pad_f_link.stl",
+      "sha256": "bd1f4af5c9d4b0a67836a423027d3bd83a913ce9cefe4ee6b276f7ee99c4520f"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LF_palm_pad_b_link.stl",
+      "sha256": "3acff9d1d21951868df1e0b170c88153e9605861bc3193eb82d8516607abb20e"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LF_finger_link.stl",
+      "sha256": "29f8b316d6d3df884bda9a1e19b8f7a6ffc2dcada28c3f52bd560710ea4473b9"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LF_finger_tip_link.stl",
+      "sha256": "a557c0a840392724c0f544d19299ca6e55651f75143d7d9fce79afe11ae07da8"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LF_finger_grip_insert_link.stl",
+      "sha256": "cf5faec0faa0693b191d89ef58c427e562e983dcb47a6c3eed2f135e0d500c18"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LF_palm_grip_insert_link.stl",
+      "sha256": "db76fb24837159e3b141420ea5b5b1f2dc8ba2e366a6edeb44f344c0e060795a"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RF_shoulder_link.stl",
+      "sha256": "f0a00584b81b67ea041220a80fa46d56a5f0af93f509fdb941dde89f707a36d5"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RF_upper_arm_link.stl",
+      "sha256": "3e40d4a4e96d7cca0fa5540d1a08dfb6ef53f0b0302d0adce72e440429c0a5ce"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RF_forearm_link.stl",
+      "sha256": "af869fb7e3e1a9a4e41acd7187598aac8101276d40ce4e9c9c3da427022d6096"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RF_palm_link.stl",
+      "sha256": "9d74629431797a8472c24e36c8b79e629c28190b490b6a79e28743183d92f33e"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RF_palm_pad_f_link.stl",
+      "sha256": "1f777ecee4bcde201aa7614c44af7ad026400819c4735687934c6122ccafebec"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RF_palm_pad_b_link.stl",
+      "sha256": "793bc432bc333286093f1a5ba5e69b806c4d129a24829757e3b0c7c1ff48bbef"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RF_palm_grip_insert_link.stl",
+      "sha256": "f3299e00de883e90b8a2f69fd70f1aa291edc9c87f33c051a50d3f4a3040c4d8"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RF_finger_link.stl",
+      "sha256": "618b0e23e3f3e7bc8c4d2425692d2580308f721c3062b6479d349defafd26ec4"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RF_finger_grip_insert_link.stl",
+      "sha256": "bbaff916342d374f7f78c1f03ca71e8dc235174b5d4651e7e2df4e6dc2ca01da"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RF_finger_tip_link.stl",
+      "sha256": "16ab474a946915080faa128e6c2f98766e262f3ca8baccd91330e33ef5e2350a"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LM_hip_link.stl",
+      "sha256": "a8f14193f1ffa7c177dbecb349b00a461393de7d444d9bd3771b1370fc14298e"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LM_thigh_link.stl",
+      "sha256": "4724f8aa3248794f7e783a94dc3379dbf04a21dcef2f8c956c29f16652b5b012"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LM_calf_link.stl",
+      "sha256": "42883897518fd83e09892b3215a8a8564a5bff9cc48602316a1d282d77fbc28d"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LM_foot_tip_link.stl",
+      "sha256": "364dcfdbf94243f914272f024e6cd1cad95799ab427b38e0235bdadfd10193fc"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RM_hip_link.stl",
+      "sha256": "f0c70f361ecdca1835a9c94b42389ffbf25f0475daded643dac65e61609bfb39"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RM_thigh_link.stl",
+      "sha256": "e441e75bf98ac85066f56aafc89ec440f04cea6d647cfdab56b2c2e416e545d3"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RM_calf_link.stl",
+      "sha256": "18972e56b4f0fd023907bde4e08ecd37b8c7d0b46d906eaf9b34b4caa3dd7f78"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RM_foot_tip_link.stl",
+      "sha256": "d0e1306ebf0c47412d86dcce89923d3b7a41defecf8bc956bf67634a6202440b"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LR_hip_link.stl",
+      "sha256": "341240e34b243160b564471f1510b993b7247f87acbcb284b65135cd3e37e3c4"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LR_thigh_link.stl",
+      "sha256": "7b08f377b6712838b90c2225afb2c719111452223554bb08fb503058675db6a0"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LR_calf_link.stl",
+      "sha256": "65345119ca4fe8fffea9d0eaf13f1b01509b805eaeb4d17957ecebf82a0e066f"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/LR_foot_tip_link.stl",
+      "sha256": "a9f78dcf40dfa524087764fb2d7604b3411128426dc64bc412ada199c36294a9"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RR_hip_link.stl",
+      "sha256": "15cb10d1ef80ecbd9ab5515cd2b4ccf67fb9e350fa938cc31dedb3881c95b803"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RR_thigh_link.stl",
+      "sha256": "fee24f277a740042a758754c3e81efb805045984698aadd4a3baed557f9cb083"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RR_calf_link.stl",
+      "sha256": "61a2343865b7bc2982c876b0c682b608c083a6d543b1c33c8c16e08600e8060c"
+    },
+    {
+      "file": "urdf/jumper/meshes/visual/RR_foot_tip_link.stl",
+      "sha256": "dfd85194297519dc276d98647e34f1ed88fca2dd06e6d639ce4753cd839d868d"
+    },
+    {
+      "file": "meshes/base_link_col.STL",
+      "sha256": "68b4524bbdc344d94d7ecedc1ed1580c5acc6ea0c29d91fe0afd3193125406d2"
+    },
+    {
+      "file": "meshes/upper_shell_link_col.STL",
+      "sha256": "8da8944f3817b16e90f2680aaec2d66cc2ee29acd661e76d9efd0c032e7b0598"
+    },
+    {
+      "file": "meshes/display_module_link_col.STL",
+      "sha256": "eabcd70b0e8aa5df3dcaacbc39aef4569f4f5e082ac47b2f3812d0051bba1fc7"
+    },
+    {
+      "file": "meshes/tof_sensor_link_col.STL",
+      "sha256": "034285a5663ed4baf656150b6c1674007b7d558edb2cfedc7792e9bc4b23ce3b"
+    },
+    {
+      "file": "meshes/camera_link_col.STL",
+      "sha256": "87e569e9618b17524174cf7a0e9ed701a960344f79ae29d7a007f423ced0eb78"
+    },
+    {
+      "file": "meshes/LF_shoulder_link_col.STL",
+      "sha256": "2ec17a16658e1f0f00c262efe1b7293b6989745dac460017d78b73281ec1c139"
+    },
+    {
+      "file": "meshes/LF_upper_arm_link_col.STL",
+      "sha256": "2c27d432b34bdffb5b59b242c5ff6f98201d0e2e28093313f77ebe106867bc99"
+    },
+    {
+      "file": "meshes/LF_forearm_link_col.STL",
+      "sha256": "9e16eb823f0dd0bf8ebc91659eecd4a80a84689ec929add44fd589e07a983449"
+    },
+    {
+      "file": "meshes/LF_palm_link_col.STL",
+      "sha256": "eade0561eb15c922e40d9b5ff84065a8a8e581e33c8d3fd0d2659d26d09899dc"
+    },
+    {
+      "file": "meshes/LF_palm_pad_f_link_col.STL",
+      "sha256": "2ffdc177dd21572207dd05c2b2af5ba1b716fb81b0ca56de84ee90acf2ef6c4e"
+    },
+    {
+      "file": "meshes/LF_finger_link_col.STL",
+      "sha256": "7becb09ce6b69adb4c7a9da8c41f649dea4069927ccb0ffb60c8422a982fc061"
+    },
+    {
+      "file": "meshes/LF_finger_tip_link_col.STL",
+      "sha256": "574526b440c9d2da656c7ae07a6053505c0fbb17f4e87acd291c6e1579936d4e"
+    },
+    {
+      "file": "meshes/LF_finger_grip_insert_link_col.STL",
+      "sha256": "8ef120709688dabd7cdc34bfb7708107b0ae8bf5c3f82d68fefd96b803366bf5"
+    },
+    {
+      "file": "meshes/LF_palm_grip_insert_link_col.STL",
+      "sha256": "cf8aeccd02ca1a931558890ada7834a33335aa6b5cfc37cdd8dfc122dfaf26c9"
+    },
+    {
+      "file": "meshes/RF_shoulder_link_col.STL",
+      "sha256": "6d8fb06511fdce72b770c17fbbef719f084f364a6b1abcf38c493b554be501a0"
+    },
+    {
+      "file": "meshes/RF_upper_arm_link_col.STL",
+      "sha256": "dcd9f9aec1be925f9dacbb81bbe39439067137eb8fe5fd0c6a7c90bea879d4f1"
+    },
+    {
+      "file": "meshes/RF_forearm_link_col.STL",
+      "sha256": "3523972ffd335900039ec2c0355a331dab96e8374f6e4667edcfe9e462fa8891"
+    },
+    {
+      "file": "meshes/RF_palm_link_col.STL",
+      "sha256": "db2908b66dea0bafebb59dcd8c79eb1bcfa7361deab8158cf9cd3d039f75cc5c"
+    },
+    {
+      "file": "meshes/RF_palm_pad_f_link_col.STL",
+      "sha256": "fc675bf34315eae68b8c4d7a3c52086737289fa9255de065b0a02c999b1a6c19"
+    },
+    {
+      "file": "meshes/RF_palm_grip_insert_link_col.STL",
+      "sha256": "806aa4932a85a007ee58946393439408ccdc33c7557e71b7671e5c7bafea214e"
+    },
+    {
+      "file": "meshes/RF_finger_link_col.STL",
+      "sha256": "ad7698060eda431b012551862e41c7ddd5b5bc2cb50c590ed5978f4f2c5779c8"
+    },
+    {
+      "file": "meshes/RF_finger_grip_insert_link_col.STL",
+      "sha256": "7fd2c6ca2af55173086ccd26290c5eeea355e3c35e8e452fe598ff1d2898d122"
+    },
+    {
+      "file": "meshes/RF_finger_tip_link_col.STL",
+      "sha256": "c3a6ed313ea3c3cf9edfa7e99cf7398def750b85e1f71c0fe99d8c9116d660f0"
+    },
+    {
+      "file": "meshes/LM_hip_link_col.STL",
+      "sha256": "8ab7541f40c421119d3b84a2c20b2c9599c2733a2ffad4c20ab075aa9a750e5d"
+    },
+    {
+      "file": "meshes/LM_thigh_link_col.STL",
+      "sha256": "1b97a532b19524f150dbe08ca066e6958d80bfe247c7d0253e5ef86f3a0c3d27"
+    },
+    {
+      "file": "meshes/LM_calf_link_col.STL",
+      "sha256": "69cb67a77563e74dcbebce8d151139c845f6b58a4d93a39a7c66e301fc718219"
+    },
+    {
+      "file": "meshes/RM_hip_link_col.STL",
+      "sha256": "44c1339a43cf0dc1b77c2dcc6bed840c2ae83bd097ad8d300d62b91f7934ea76"
+    },
+    {
+      "file": "meshes/RM_thigh_link_col.STL",
+      "sha256": "3f50890ec0b1ce4dc11f9e37d0d130e454c48bff30ba6bc660cbf662c2f14824"
+    },
+    {
+      "file": "meshes/RM_calf_link_col.STL",
+      "sha256": "8afb3ef3e8f1b8d15fed84dfb75c51d6de8f2ccbaa601143da038418a3c3c89b"
+    },
+    {
+      "file": "meshes/LR_hip_link_col.STL",
+      "sha256": "c419095963b65825a65ba075269b526459e29a209357a61d3492dd07e3299779"
+    },
+    {
+      "file": "meshes/LR_thigh_link_col.STL",
+      "sha256": "1b97a532b19524f150dbe08ca066e6958d80bfe247c7d0253e5ef86f3a0c3d27"
+    },
+    {
+      "file": "meshes/LR_calf_link_col.STL",
+      "sha256": "69cb67a77563e74dcbebce8d151139c845f6b58a4d93a39a7c66e301fc718219"
+    },
+    {
+      "file": "meshes/RR_hip_link_col.STL",
+      "sha256": "44c1339a43cf0dc1b77c2dcc6bed840c2ae83bd097ad8d300d62b91f7934ea76"
+    },
+    {
+      "file": "meshes/RR_thigh_link_col.STL",
+      "sha256": "3f50890ec0b1ce4dc11f9e37d0d130e454c48bff30ba6bc660cbf662c2f14824"
+    },
+    {
+      "file": "meshes/RR_calf_link_col.STL",
+      "sha256": "8afb3ef3e8f1b8d15fed84dfb75c51d6de8f2ccbaa601143da038418a3c3c89b"
+    },
+    {
+      "file": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "file": "NOTICE",
+      "sha256": "a90beae366174de85563834fec891645ff0b4ebacacedec8671c29f830fbdb70"
+    }
+  ],
+  "runtime": {
+    "model": "scene.xml",
+    "geometry": "visuals.bin.gz",
+    "meshes": [
+      "urdf/jumper/meshes/visual/LF_palm_pad_b_link.stl",
+      "urdf/jumper/meshes/visual/RF_palm_pad_b_link.stl",
+      "urdf/jumper/meshes/visual/LM_foot_tip_link.stl",
+      "urdf/jumper/meshes/visual/RM_foot_tip_link.stl",
+      "urdf/jumper/meshes/visual/LR_foot_tip_link.stl",
+      "urdf/jumper/meshes/visual/RR_foot_tip_link.stl",
+      "meshes/base_link_col.STL",
+      "meshes/upper_shell_link_col.STL",
+      "meshes/display_module_link_col.STL",
+      "meshes/tof_sensor_link_col.STL",
+      "meshes/camera_link_col.STL",
+      "meshes/LF_shoulder_link_col.STL",
+      "meshes/LF_upper_arm_link_col.STL",
+      "meshes/LF_forearm_link_col.STL",
+      "meshes/LF_palm_link_col.STL",
+      "meshes/LF_palm_pad_f_link_col.STL",
+      "meshes/LF_finger_link_col.STL",
+      "meshes/LF_finger_tip_link_col.STL",
+      "meshes/LF_finger_grip_insert_link_col.STL",
+      "meshes/LF_palm_grip_insert_link_col.STL",
+      "meshes/RF_shoulder_link_col.STL",
+      "meshes/RF_upper_arm_link_col.STL",
+      "meshes/RF_forearm_link_col.STL",
+      "meshes/RF_palm_link_col.STL",
+      "meshes/RF_palm_pad_f_link_col.STL",
+      "meshes/RF_palm_grip_insert_link_col.STL",
+      "meshes/RF_finger_link_col.STL",
+      "meshes/RF_finger_grip_insert_link_col.STL",
+      "meshes/RF_finger_tip_link_col.STL",
+      "meshes/LM_hip_link_col.STL",
+      "meshes/LM_thigh_link_col.STL",
+      "meshes/LM_calf_link_col.STL",
+      "meshes/RM_hip_link_col.STL",
+      "meshes/RM_thigh_link_col.STL",
+      "meshes/RM_calf_link_col.STL",
+      "meshes/LR_hip_link_col.STL",
+      "meshes/LR_thigh_link_col.STL",
+      "meshes/LR_calf_link_col.STL",
+      "meshes/RR_hip_link_col.STL",
+      "meshes/RR_thigh_link_col.STL",
+      "meshes/RR_calf_link_col.STL"
+    ],
+    "geometries": [
+      {
+        "vertices": 0,
+        "vertexCount": 195930,
+        "normals": 783720,
+        "faces": 1567440,
+        "faceCount": 228114
+      },
+      {
+        "vertices": 2479896,
+        "vertexCount": 45780,
+        "normals": 2663016,
+        "faces": 2846136,
+        "faceCount": 54432
+      },
+      {
+        "vertices": 3063864,
+        "vertexCount": 2073,
+        "normals": 3072156,
+        "faces": 3080448,
+        "faceCount": 2547
+      },
+      {
+        "vertices": 3090636,
+        "vertexCount": 4728,
+        "normals": 3109548,
+        "faces": 3128460,
+        "faceCount": 6264
+      },
+      {
+        "vertices": 3153516,
+        "vertexCount": 1770,
+        "normals": 3160596,
+        "faces": 3167676,
+        "faceCount": 1944
+      },
+      {
+        "vertices": 3175452,
+        "vertexCount": 29814,
+        "normals": 3294708,
+        "faces": 3413964,
+        "faceCount": 45222
+      },
+      {
+        "vertices": 3594852,
+        "vertexCount": 29949,
+        "normals": 3714648,
+        "faces": 3834444,
+        "faceCount": 36330
+      },
+      {
+        "vertices": 3979764,
+        "vertexCount": 21930,
+        "normals": 4067484,
+        "faces": 4155204,
+        "faceCount": 27030
+      },
+      {
+        "vertices": 4263324,
+        "vertexCount": 35778,
+        "normals": 4406436,
+        "faces": 4549548,
+        "faceCount": 45240
+      },
+      {
+        "vertices": 4730508,
+        "vertexCount": 11922,
+        "normals": 4778196,
+        "faces": 4825884,
+        "faceCount": 17802
+      },
+      {
+        "vertices": 4897092,
+        "vertexCount": 11646,
+        "normals": 4943676,
+        "faces": 4990260,
+        "faceCount": 17238
+      },
+      {
+        "vertices": 5059212,
+        "vertexCount": 20913,
+        "normals": 5142864,
+        "faces": 5226516,
+        "faceCount": 24486
+      },
+      {
+        "vertices": 5324460,
+        "vertexCount": 25830,
+        "normals": 5427780,
+        "faces": 5531100,
+        "faceCount": 42402
+      },
+      {
+        "vertices": 5700708,
+        "vertexCount": 6372,
+        "normals": 5726196,
+        "faces": 5751684,
+        "faceCount": 6912
+      },
+      {
+        "vertices": 5779332,
+        "vertexCount": 7581,
+        "normals": 5809656,
+        "faces": 5839980,
+        "faceCount": 7698
+      },
+      {
+        "vertices": 5870772,
+        "vertexCount": 29814,
+        "normals": 5990028,
+        "faces": 6109284,
+        "faceCount": 45222
+      },
+      {
+        "vertices": 6290172,
+        "vertexCount": 29949,
+        "normals": 6409968,
+        "faces": 6529764,
+        "faceCount": 36330
+      },
+      {
+        "vertices": 6675084,
+        "vertexCount": 21930,
+        "normals": 6762804,
+        "faces": 6850524,
+        "faceCount": 27030
+      },
+      {
+        "vertices": 6958644,
+        "vertexCount": 35778,
+        "normals": 7101756,
+        "faces": 7244868,
+        "faceCount": 45240
+      },
+      {
+        "vertices": 7425828,
+        "vertexCount": 11646,
+        "normals": 7472412,
+        "faces": 7518996,
+        "faceCount": 17238
+      },
+      {
+        "vertices": 7587948,
+        "vertexCount": 11922,
+        "normals": 7635636,
+        "faces": 7683324,
+        "faceCount": 17802
+      },
+      {
+        "vertices": 7754532,
+        "vertexCount": 7581,
+        "normals": 7784856,
+        "faces": 7815180,
+        "faceCount": 7698
+      },
+      {
+        "vertices": 7845972,
+        "vertexCount": 20913,
+        "normals": 7929624,
+        "faces": 8013276,
+        "faceCount": 24486
+      },
+      {
+        "vertices": 8111220,
+        "vertexCount": 6372,
+        "normals": 8136708,
+        "faces": 8162196,
+        "faceCount": 6912
+      },
+      {
+        "vertices": 8189844,
+        "vertexCount": 25830,
+        "normals": 8293164,
+        "faces": 8396484,
+        "faceCount": 42402
+      },
+      {
+        "vertices": 8566092,
+        "vertexCount": 31566,
+        "normals": 8692356,
+        "faces": 8818620,
+        "faceCount": 39504
+      },
+      {
+        "vertices": 8976636,
+        "vertexCount": 21930,
+        "normals": 9064356,
+        "faces": 9152076,
+        "faceCount": 27030
+      },
+      {
+        "vertices": 9260196,
+        "vertexCount": 34434,
+        "normals": 9397932,
+        "faces": 9535668,
+        "faceCount": 43074
+      },
+      {
+        "vertices": 9707964,
+        "vertexCount": 3693,
+        "normals": 9722736,
+        "faces": 9737508,
+        "faceCount": 5802
+      },
+      {
+        "vertices": 9760716,
+        "vertexCount": 31566,
+        "normals": 9886980,
+        "faces": 10013244,
+        "faceCount": 39504
+      },
+      {
+        "vertices": 10171260,
+        "vertexCount": 21930,
+        "normals": 10258980,
+        "faces": 10346700,
+        "faceCount": 27030
+      },
+      {
+        "vertices": 10454820,
+        "vertexCount": 31518,
+        "normals": 10580892,
+        "faces": 10706964,
+        "faceCount": 40158
+      },
+      {
+        "vertices": 10867596,
+        "vertexCount": 3693,
+        "normals": 10882368,
+        "faces": 10897140,
+        "faceCount": 5802
+      },
+      {
+        "vertices": 10920348,
+        "vertexCount": 31566,
+        "normals": 11046612,
+        "faces": 11172876,
+        "faceCount": 39504
+      },
+      {
+        "vertices": 11330892,
+        "vertexCount": 21930,
+        "normals": 11418612,
+        "faces": 11506332,
+        "faceCount": 27030
+      },
+      {
+        "vertices": 11614452,
+        "vertexCount": 34434,
+        "normals": 11752188,
+        "faces": 11889924,
+        "faceCount": 43074
+      },
+      {
+        "vertices": 12062220,
+        "vertexCount": 3693,
+        "normals": 12076992,
+        "faces": 12091764,
+        "faceCount": 5802
+      },
+      {
+        "vertices": 12114972,
+        "vertexCount": 31566,
+        "normals": 12241236,
+        "faces": 12367500,
+        "faceCount": 39504
+      },
+      {
+        "vertices": 12525516,
+        "vertexCount": 21930,
+        "normals": 12613236,
+        "faces": 12700956,
+        "faceCount": 27030
+      },
+      {
+        "vertices": 12809076,
+        "vertexCount": 34434,
+        "normals": 12946812,
+        "faces": 13084548,
+        "faceCount": 43074
+      },
+      {
+        "vertices": 13256844,
+        "vertexCount": 3693,
+        "normals": 13271616,
+        "faces": 13286388,
+        "faceCount": 5802
+      }
+    ],
+    "visuals": [
+      {
+        "name": "base_link_visual",
+        "body": "base_link",
+        "geometry": 0,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "upper_shell_link_visual",
+        "body": "upper_shell_link",
+        "geometry": 1,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "display_module_link_visual",
+        "body": "display_module_link",
+        "geometry": 2,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "tof_sensor_link_visual",
+        "body": "tof_sensor_link",
+        "geometry": 3,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "camera_link_visual",
+        "body": "camera_link",
+        "geometry": 4,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "LF_shoulder_link_visual",
+        "body": "LF_shoulder_link",
+        "geometry": 5,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "LF_upper_arm_link_visual",
+        "body": "LF_upper_arm_link",
+        "geometry": 6,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "LF_forearm_link_visual",
+        "body": "LF_forearm_link",
+        "geometry": 7,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.6800000071525574,
+          0.699999988079071,
+          0.7200000286102295
+        ]
+      },
+      {
+        "name": "LF_palm_link_visual",
+        "body": "LF_palm_link",
+        "geometry": 8,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "LF_palm_pad_f_link_visual",
+        "body": "LF_palm_pad_f_link",
+        "geometry": 9,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "LF_palm_pad_b_link_visual",
+        "body": "LF_palm_pad_b_link",
+        "geometry": 10,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "LF_finger_link_visual",
+        "body": "LF_finger_link",
+        "geometry": 11,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "LF_finger_tip_link_visual",
+        "body": "LF_finger_tip_link",
+        "geometry": 12,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "LF_finger_grip_insert_link_visual",
+        "body": "LF_finger_grip_insert_link",
+        "geometry": 13,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "LF_palm_grip_insert_link_visual",
+        "body": "LF_palm_grip_insert_link",
+        "geometry": 14,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "RF_shoulder_link_visual",
+        "body": "RF_shoulder_link",
+        "geometry": 15,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "RF_upper_arm_link_visual",
+        "body": "RF_upper_arm_link",
+        "geometry": 16,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "RF_forearm_link_visual",
+        "body": "RF_forearm_link",
+        "geometry": 17,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.6800000071525574,
+          0.699999988079071,
+          0.7200000286102295
+        ]
+      },
+      {
+        "name": "RF_palm_link_visual",
+        "body": "RF_palm_link",
+        "geometry": 18,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "RF_palm_pad_f_link_visual",
+        "body": "RF_palm_pad_f_link",
+        "geometry": 19,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "RF_palm_pad_b_link_visual",
+        "body": "RF_palm_pad_b_link",
+        "geometry": 20,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "RF_palm_grip_insert_link_visual",
+        "body": "RF_palm_grip_insert_link",
+        "geometry": 21,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "RF_finger_link_visual",
+        "body": "RF_finger_link",
+        "geometry": 22,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "RF_finger_grip_insert_link_visual",
+        "body": "RF_finger_grip_insert_link",
+        "geometry": 23,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "RF_finger_tip_link_visual",
+        "body": "RF_finger_tip_link",
+        "geometry": 24,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "LM_hip_link_visual",
+        "body": "LM_hip_link",
+        "geometry": 25,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "LM_thigh_link_visual",
+        "body": "LM_thigh_link",
+        "geometry": 26,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.6800000071525574,
+          0.699999988079071,
+          0.7200000286102295
+        ]
+      },
+      {
+        "name": "LM_calf_link_visual",
+        "body": "LM_calf_link",
+        "geometry": 27,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "LM_foot_tip_link_visual",
+        "body": "LM_foot_tip_link",
+        "geometry": 28,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "RM_hip_link_visual",
+        "body": "RM_hip_link",
+        "geometry": 29,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "RM_thigh_link_visual",
+        "body": "RM_thigh_link",
+        "geometry": 30,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.6800000071525574,
+          0.699999988079071,
+          0.7200000286102295
+        ]
+      },
+      {
+        "name": "RM_calf_link_visual",
+        "body": "RM_calf_link",
+        "geometry": 31,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "RM_foot_tip_link_visual",
+        "body": "RM_foot_tip_link",
+        "geometry": 32,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "LR_hip_link_visual",
+        "body": "LR_hip_link",
+        "geometry": 33,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "LR_thigh_link_visual",
+        "body": "LR_thigh_link",
+        "geometry": 34,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.6800000071525574,
+          0.699999988079071,
+          0.7200000286102295
+        ]
+      },
+      {
+        "name": "LR_calf_link_visual",
+        "body": "LR_calf_link",
+        "geometry": 35,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "LR_foot_tip_link_visual",
+        "body": "LR_foot_tip_link",
+        "geometry": 36,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      },
+      {
+        "name": "RR_hip_link_visual",
+        "body": "RR_hip_link",
+        "geometry": 37,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "RR_thigh_link_visual",
+        "body": "RR_thigh_link",
+        "geometry": 38,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.6800000071525574,
+          0.699999988079071,
+          0.7200000286102295
+        ]
+      },
+      {
+        "name": "RR_calf_link_visual",
+        "body": "RR_calf_link",
+        "geometry": 39,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8500000238418579,
+          0.07999999821186066,
+          0.05000000074505806
+        ]
+      },
+      {
+        "name": "RR_foot_tip_link_visual",
+        "body": "RR_foot_tip_link",
+        "geometry": 40,
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "quaternion": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "color": [
+          0.8159999847412109,
+          0.8199999928474426,
+          0.8040000200271606
+        ]
+      }
+    ],
+    "engine": "3.15.0",
+    "bytes": 6921531,
+    "unpackedBytes": 13309596,
+    "sha256": "8a97ad6d8f1457a3ae5de17bc33de1a796edd397f865aea840d334004d93702d",
+    "joints": 22,
+    "bodies": 42,
+    "boxes": [
+      {
+        "x": 0.72,
+        "y": 0,
+        "width": 0.4,
+        "depth": 0.38,
+        "height": 0.03
+      },
+      {
+        "x": 1.28,
+        "y": 0.18,
+        "width": 0.48,
+        "depth": 0.4,
+        "height": 0.05
+      },
+      {
+        "x": 1.88,
+        "y": -0.14,
+        "width": 0.52,
+        "depth": 0.46,
+        "height": 0.08
+      },
+      {
+        "x": 2.55,
+        "y": 0.1,
+        "width": 0.64,
+        "depth": 0.58,
+        "height": 0.1
+      },
+      {
+        "x": 0.6,
+        "y": -0.78,
+        "width": 0.38,
+        "depth": 0.38,
+        "height": 0.16
+      },
+      {
+        "x": 0.95,
+        "y": 0.85,
+        "width": 0.5,
+        "depth": 0.5,
+        "height": 0.22
+      },
+      {
+        "x": 1.7,
+        "y": -0.85,
+        "width": 0.55,
+        "depth": 0.38,
+        "height": 0.32
+      },
+      {
+        "x": 2.1,
+        "y": 1.1,
+        "width": 0.65,
+        "depth": 0.54,
+        "height": 0.14
+      }
+    ]
+  }
+}

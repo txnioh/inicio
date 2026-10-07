@@ -1,0 +1,29 @@
+- main [ref=f7e1]:
+  - generic:
+    - heading "Carrete by Antonio" [level=1] [ref=f7e3]
+    - navigation "Carrete" [ref=f7e4]:
+      - button "Search" [active] [ref=f7e5] [cursor=pointer]
+      - button "Your photos" [ref=f7e6] [cursor=pointer]
+      - button "Settings" [ref=f7e7] [cursor=pointer]
+      - link "Back home" [ref=f7e8] [cursor=pointer]:
+        - /url: /
+  - region "Load camera roll" [ref=f7e9]:
+    - button "Open camera roll" [ref=f7e10] [cursor=pointer]
+    - generic:
+      - heading "Carrete" [level=1]
+      - generic: Tap to explore
+      - status: 59 items ready. You can enter now.
+    - generic:
+      - generic: Photography & video
+      - generic: "@txnioh · 59"
+  - dialog [ref=f7e11]:
+    - generic [ref=f7e12]:
+      - heading "Find a moment." [level=2] [ref=f7e13]
+      - button "Close search" [ref=f7e14] [cursor=pointer]: ×
+    - paragraph [ref=f7e15]: Describe what you remember, or find moments that look like a photo.
+    - generic [ref=f7e16]:
+      - generic [ref=f7e17]: Describe a photo or video
+      - searchbox "Describe a photo or video" [ref=f7e18]
+      - button "Search" [disabled] [ref=f7e19]
+    - button "Search with a photo" [ref=f7e20] [cursor=pointer]
+    - paragraph [ref=f7e21]: Search runs on your device. The first search downloads the model (about 284 MB); your photos and searches stay here. Requires WebGPU.

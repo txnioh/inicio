@@ -1,0 +1,51 @@
+.jumper-page { min-height: 100svh; background: #fdfdfc; font-size: 14px; }
+.jumper-canvas { position: fixed; inset: 0; outline: none; }
+.jumper-canvas canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.jumper-page button { border: 0; padding: 0; background: none; color: #a3a29d; font: inherit; cursor: pointer; touch-action: manipulation; }
+.jumper-page button:disabled { opacity: .3; cursor: default; }
+.jumper-page button:hover, .jumper-page button[aria-expanded="true"] { color: #111; }
+.jumper-page button:focus-visible, .jumper-page select:focus-visible, .jumper-page input:focus-visible { outline: 1px solid #111; outline-offset: 4px; }
+.jumper-header { position: fixed; left: 32px; right: 32px; top: 30px; z-index: 2; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+.jumper-header > div { display: flex; gap: 24px; align-items: center; }
+.jumper-header h1 { font-size: 14px; font-weight: 500; margin: 0; }
+.jumper-models { display: flex; align-items: center; gap: 12px; }
+.jumper-models a { color: #a3a29d; text-decoration: none; }
+.jumper-models a:hover { color: #111; }
+.jumper-models > span { color: #d1d0ca; font-size: 11px; }
+.jumper-header a, .jumper-header button { pointer-events: auto; }
+.jumper-header .minimal-basic-link { color: #a3a29d; }
+.jumper-controls { position: fixed; z-index: 2; bottom: 30px; left: 32px; right: 32px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 24px; pointer-events: none; }
+.jumper-actions { display: flex; gap: 12px; }
+.jumper-actions button { width: 28px; height: 28px; display: grid; place-items: center; pointer-events: auto; }
+.jumper-hint { color: #a3a29d; font-size: 11px; }
+.jumper-mode { text-align: right; color: #a3a29d; font-size: 11px; }
+.jumper-page input[type="range"] { accent-color: #77766f; height: 12px; padding: 0; margin: 0; cursor: pointer; }
+.jumper-settings { position: fixed; z-index: 3; top: 70px; right: 24px; width: 248px; max-height: calc(100svh - 145px); overflow-y: auto; padding: 20px 18px; background: #fdfdfcf5; box-shadow: 0 6px 40px #11111105; backdrop-filter: blur(16px); border-radius: 4px; font-size: 12px; }
+.jumper-setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 36px; color: #77766f; }
+.jumper-setting > input[type="range"] { width: 112px; }
+.jumper-setting input[type="checkbox"] { accent-color: #77766f; width: 13px; height: 13px; margin: 0; }
+.jumper-setting select { min-width: 0; max-width: 136px; background: transparent; border: 0; color: #111; font: inherit; padding: 4px 0; cursor: pointer; }
+.jumper-colors { display: flex; align-items: center; gap: 12px; padding-right: 2px; }
+.jumper-colors button { width: 12px; height: 12px; border-radius: 50%; position: relative; }
+.jumper-colors button[aria-pressed="true"]::after { content: ''; position: absolute; inset: -4px; border: 1px solid #bdbdb5; border-radius: 50%; }
+.jumper-views { display: flex; gap: 13px; font-size: 11px; }
+.jumper-loading { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fdfdfc; font-size: 12px; color: #a3a29d; padding: 24px; text-align: center; }
+.jumper-error { color: #a95137; font-size: 11px; line-height: 1.5; }
+.jumper-runtime-error { position: fixed; left: 32px; bottom: 70px; z-index: 3; max-width: 350px; }
+.jumper-measurements { display: flex; justify-content: space-between; margin-top: 20px; font-size: 10px; color: #a3a29d; font-variant-numeric: tabular-nums; }
+.jumper-provenance { margin: 16px 0; font-size: 10px; line-height: 1.7; color: #a3a29d; }
+.jumper-links { display: flex; gap: 18px; font-size: 11px; }
+.jumper-links a { color: #a3a29d; text-decoration: none; }
+.jumper-links a:hover { color: #111; }
+.jumper-touch { display: none; }
+@media (pointer: coarse), (max-width: 700px) {
+  .jumper-header { top: 24px; left: 20px; right: 20px; font-size: 13px; }
+  .jumper-header h1 { font-size: 13px; }
+  .jumper-controls { bottom: 20px; left: 20px; right: 20px; }
+  .jumper-touch { position: fixed; z-index: 2; bottom: 75px; left: 22px; right: 22px; display: flex; align-items: center; justify-content: space-between; pointer-events: none; }
+  .jumper-joystick { height: 74px; width: 74px; display: grid; place-items: center; border: 1px solid #d9d8d080; border-radius: 50%; background: #fdfdfc40; touch-action: none; pointer-events: auto; }
+  .jumper-joystick span { height: 25px; width: 25px; border-radius: 50%; background: #a3a29d60; pointer-events: none; }
+  .jumper-touch > button { height: 46px; width: 46px; display: grid; place-items: center; border: 1px solid #d9d8d080; border-radius: 50%; background: #fdfdfc80; pointer-events: auto; }
+  .jumper-hint { visibility: hidden; }
+  .jumper-settings { top: 58px; right: 12px; }
+}

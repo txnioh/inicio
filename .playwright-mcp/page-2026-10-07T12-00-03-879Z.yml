@@ -1,0 +1,258 @@
+- main [ref=f7e1]:
+  - region "Camera roll. Drag or use the arrow keys to explore. Press Enter to open the center image." [ref=f7e32]:
+    - generic [ref=f7e33]:
+      - 'button "Open: A space in the silence" [ref=f7e34]':
+        - generic:
+          - generic "A space in the silence"
+          - generic "Video": film
+      - 'button "Open: Silhouette in front of a facade lit in red" [ref=f7e35]':
+        - generic:
+          - img "Silhouette in front of a facade lit in red"
+      - 'button "Open: Walkway between buildings" [ref=f7e36]':
+        - generic:
+          - img "Walkway between buildings"
+      - 'button "Open: Portrait against the city at night" [ref=f7e37]':
+        - generic:
+          - img "Portrait against the city at night"
+      - 'button "Open: Lights and buildings in the city at night" [ref=f7e38]':
+        - generic:
+          - generic "Lights and buildings in the city at night"
+          - generic "Video": film
+      - 'button "Open: Streetlight silhouetted against the clouds" [ref=f7e39]':
+        - generic:
+          - img "Streetlight silhouetted against the clouds"
+      - 'button "Open: Crowd beneath illuminated screens" [ref=f7e40]':
+        - generic:
+          - img "Crowd beneath illuminated screens"
+      - 'button "Open: Portrait against the city at night" [ref=f7e41]':
+        - generic:
+          - img "Portrait against the city at night"
+      - 'button "Open: Walkway between buildings" [ref=f7e42]':
+        - generic:
+          - img "Walkway between buildings"
+      - 'button "Open: City lights seen from above" [ref=f7e43]':
+        - generic:
+          - generic "City lights seen from above"
+          - generic "Video": film
+      - 'button "Open: View between skyscrapers" [ref=f7e44]':
+        - generic:
+          - img "View between skyscrapers"
+      - 'button "Open: Crowd beneath illuminated screens" [ref=f7e45]':
+        - generic:
+          - img "Crowd beneath illuminated screens"
+      - 'button "Open: City lights seen from above" [ref=f7e46]':
+        - generic:
+          - generic "City lights seen from above"
+          - generic "Video": film
+      - 'button "Open: Silhouette in front of a facade lit in red" [ref=f7e47]':
+        - generic:
+          - img "Silhouette in front of a facade lit in red"
+      - 'button "Open: Walkway between buildings" [ref=f7e48]':
+        - generic:
+          - img "Walkway between buildings"
+      - 'button "Open: View between skyscrapers" [ref=f7e49]':
+        - generic:
+          - img "View between skyscrapers"
+      - 'button "Open: City lights seen from above" [ref=f7e50]':
+        - generic:
+          - generic "City lights seen from above"
+          - generic "Video": film
+      - 'button "Open: Moon above a building" [ref=f7e51]':
+        - generic:
+          - img "Moon above a building"
+      - 'button "Open: Moon above a building" [ref=f7e52]':
+        - generic:
+          - img "Moon above a building"
+      - 'button "Open: Illuminated skyscraper at night" [ref=f7e53]':
+        - generic:
+          - img "Illuminated skyscraper at night"
+      - 'button "Open: Streetlight silhouetted against the clouds" [ref=f7e54]':
+        - generic:
+          - img "Streetlight silhouetted against the clouds"
+      - 'button "Open: A space in the silence" [ref=f7e55]':
+        - generic:
+          - generic "A space in the silence"
+          - generic "Video": film
+      - 'button "Open: Moon above a building" [ref=f7e56]':
+        - generic:
+          - img "Moon above a building"
+      - 'button "Open: Panorama of the illuminated city" [ref=f7e57]':
+        - generic:
+          - generic "Panorama of the illuminated city"
+          - generic "Video": film
+      - 'button "Open: A space in the silence" [ref=f7e58]':
+        - generic:
+          - generic "A space in the silence"
+          - generic "Video": film
+      - 'button "Open: Silhouette in front of a facade lit in red" [ref=f7e59]':
+        - generic:
+          - img "Silhouette in front of a facade lit in red"
+      - 'button "Open: Panorama of the illuminated city" [ref=f7e60]':
+        - generic:
+          - generic "Panorama of the illuminated city"
+          - generic "Video": film
+      - 'button "Open: A space in the silence" [ref=f7e61]':
+        - generic:
+          - generic "A space in the silence"
+          - generic "Video": film
+      - 'button "Open: Silhouette in front of a facade lit in red" [ref=f7e62]':
+        - generic:
+          - img "Silhouette in front of a facade lit in red"
+      - 'button "Open: Lights and buildings in the city at night" [ref=f7e63]':
+        - generic:
+          - generic "Lights and buildings in the city at night"
+          - generic "Video": film
+      - 'button "Open: Portrait against the city at night" [ref=f7e64]':
+        - generic:
+          - img "Portrait against the city at night"
+      - 'button "Open: Illuminated skyscraper at night" [ref=f7e65]':
+        - generic:
+          - img "Illuminated skyscraper at night"
+      - 'button "Open: Lights and buildings in the city at night" [ref=f7e66]':
+        - generic:
+          - generic "Lights and buildings in the city at night"
+      - 'button "Open: Portrait against the city at night" [ref=f7e67]':
+        - generic:
+          - img "Portrait against the city at night"
+      - 'button "Open: Streetlight silhouetted against the clouds" [ref=f7e68]':
+        - generic:
+          - img "Streetlight silhouetted against the clouds"
+      - 'button "Open: Lights and buildings in the city at night" [ref=f7e69]':
+        - generic:
+          - generic "Lights and buildings in the city at night"
+          - generic "Video": film
+      - 'button "Open: Portrait against the city at night" [ref=f7e70]':
+        - generic:
+          - img "Portrait against the city at night"
+      - 'button "Open: Panorama of the illuminated city" [ref=f7e71]':
+        - generic:
+          - generic "Panorama of the illuminated city"
+          - generic "Video": film
+      - 'button "Open: Crowd beneath illuminated screens" [ref=f7e72]':
+        - generic:
+          - img "Crowd beneath illuminated screens"
+      - 'button "Open: View between skyscrapers" [ref=f7e73]':
+        - generic:
+          - img "View between skyscrapers"
+      - 'button "Open: Silhouette in front of a facade lit in red" [ref=f7e74]':
+        - generic:
+          - img "Silhouette in front of a facade lit in red"
+      - 'button "Open: Crowd beneath illuminated screens" [ref=f7e75]':
+        - generic:
+          - img "Crowd beneath illuminated screens"
+      - 'button "Open: View between skyscrapers" [ref=f7e76]':
+        - generic:
+          - img "View between skyscrapers"
+      - 'button "Open: Moon above a building" [ref=f7e77]':
+        - generic:
+          - img "Moon above a building"
+      - 'button "Open: Illuminated skyscraper at night" [ref=f7e78]':
+        - generic:
+          - img "Illuminated skyscraper at night"
+      - 'button "Open: Streetlight silhouetted against the clouds" [ref=f7e79]':
+        - generic:
+          - img "Streetlight silhouetted against the clouds"
+      - 'button "Open: Walkway between buildings" [ref=f7e80]':
+        - generic:
+          - img "Walkway between buildings"
+      - 'button "Open: Moon above a building" [ref=f7e81]':
+        - generic:
+          - img "Moon above a building"
+      - 'button "Open: City lights seen from above" [ref=f7e82]':
+        - generic:
+          - generic "City lights seen from above"
+          - generic "Video": film
+      - 'button "Open: Streetlight silhouetted against the clouds" [ref=f7e83]':
+        - generic:
+          - img "Streetlight silhouetted against the clouds"
+      - 'button "Open: Walkway between buildings" [ref=f7e84]':
+        - generic:
+          - img "Walkway between buildings"
+      - 'button "Open: Panorama of the illuminated city" [ref=f7e85]':
+        - generic:
+          - generic "Panorama of the illuminated city"
+          - generic "Video": film
+      - 'button "Open: A space in the silence" [ref=f7e86]':
+        - generic:
+          - generic "A space in the silence"
+          - generic "Video": film
+      - 'button "Open: Walkway between buildings" [ref=f7e87]':
+        - generic:
+          - img "Walkway between buildings"
+      - 'button "Open: Lights and buildings in the city at night" [ref=f7e88]':
+        - generic:
+          - generic "Lights and buildings in the city at night"
+          - generic "Video": film
+      - 'button "Open: Illuminated skyscraper at night" [ref=f7e89]':
+        - generic:
+          - img "Illuminated skyscraper at night"
+      - 'button "Open: A space in the silence" [ref=f7e90]':
+        - generic:
+          - generic "A space in the silence"
+          - generic "Video": film
+      - 'button "Open: Lights and buildings in the city at night" [ref=f7e91]':
+        - generic:
+          - generic "Lights and buildings in the city at night"
+          - generic "Video": film
+      - 'button "Open: Illuminated skyscraper at night" [ref=f7e92]':
+        - generic:
+          - img "Illuminated skyscraper at night"
+      - 'button "Open: Portrait against the city at night" [ref=f7e93]':
+        - generic:
+          - img "Portrait against the city at night"
+      - 'button "Open: City lights seen from above" [ref=f7e94]':
+        - generic:
+          - generic "City lights seen from above"
+          - generic "Video": film
+      - 'button "Open: Silhouette in front of a facade lit in red" [ref=f7e95]':
+        - generic:
+          - img "Silhouette in front of a facade lit in red"
+      - 'button "Open: Streetlight silhouetted against the clouds" [ref=f7e96]':
+        - generic:
+          - img "Streetlight silhouetted against the clouds"
+      - 'button "Open: Panorama of the illuminated city" [ref=f7e97]':
+        - generic:
+          - generic "Panorama of the illuminated city"
+          - generic "Video": film
+      - 'button "Open: Crowd beneath illuminated screens" [ref=f7e98]':
+        - generic:
+          - img "Crowd beneath illuminated screens"
+      - 'button "Open: View between skyscrapers" [ref=f7e99]':
+        - generic:
+          - img "View between skyscrapers"
+      - 'button "Open: Panorama of the illuminated city" [ref=f7e100]':
+        - generic:
+          - generic "Panorama of the illuminated city"
+          - generic "Video": film
+      - 'button "Open: Crowd beneath illuminated screens" [ref=f7e101]':
+        - generic:
+          - img "Crowd beneath illuminated screens"
+      - 'button "Open: Moon above a building" [ref=f7e102]':
+        - generic:
+          - img "Moon above a building"
+      - 'button "Open: Lights and buildings in the city at night" [ref=f7e103]':
+        - generic:
+          - generic "Lights and buildings in the city at night"
+          - generic "Video": film
+      - 'button "Open: Illuminated skyscraper at night" [ref=f7e104]':
+        - generic:
+          - img "Illuminated skyscraper at night"
+      - 'button "Open: View between skyscrapers" [ref=f7e105]':
+        - generic:
+          - img "View between skyscrapers"
+  - dialog "Lights and buildings in the city at night" [ref=f7e124]:
+    - generic:
+      - generic [ref=f7e125]:
+        - generic [ref=f7e126]: Carrete
+        - generic [ref=f7e127]: "12"
+      - button "Back" [active] [ref=f7e128] [cursor=pointer]
+    - group "Video view" [ref=f7e129]:
+      - button "Video" [pressed] [ref=f7e130] [cursor=pointer]
+      - button "Frames" [ref=f7e131] [cursor=pointer]: Frames ↗
+    - button "Close video" [ref=f7e134]
+    - generic [ref=f7e136]:
+      - generic [ref=f7e137]:
+        - text: "04"
+        - generic [ref=f7e138]: / 12
+      - button "Previous item" [ref=f7e139] [cursor=pointer]: ←
+      - button "Next item" [ref=f7e140] [cursor=pointer]: →

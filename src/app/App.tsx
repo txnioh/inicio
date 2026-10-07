@@ -8,6 +8,8 @@ import { VinylPlayer } from './components/VinylPlayer';
 import usePageNavigation from './usePageNavigation';
 
 const Acuarela = lazy(() => import('./acuarela/Acuarela'));
+const Critters = lazy(() => import('./critters/Critters'));
+const Jumper = lazy(() => import('./jumper/Jumper'));
 const Neural = lazy(() => import('./neural/Neural'));
 const Robot = lazy(() => import('./robot/Robot'));
 const Trenes = lazy(() => import('./trenes/Trenes'));
@@ -23,8 +25,10 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
 
 export default function App() {
   const { path, Article, Carrete, arrived } = usePageNavigation();
+  if (path === '/jumper' || path === '/jumper/eva') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Cargando Jumper" />}><Jumper key={path} variant={path === '/jumper/eva' ? 'eva' : 'jumper'} /></Suspense>;
   if (path === '/neural') return <Suspense fallback={<main style={{ position: 'fixed', inset: 0, background: '#000' }} aria-label="Cargando la red neuronal" />}><Neural /></Suspense>;
   if (path === '/acuarela') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading Acuarela" />}><Acuarela /></Suspense>;
+  if (path === '/critters') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading critters" />}><Critters /></Suspense>;
   if (path === '/robot') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Cargando el robot" />}><Robot /></Suspense>;
   if (path === '/trains' || path === '/trenes') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading the station" />}><Trenes /></Suspense>;
   if (path === '/') return <Home arrived={arrived} />;

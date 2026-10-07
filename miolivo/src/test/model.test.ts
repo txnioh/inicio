@@ -20,9 +20,9 @@ test('the same seed grows the same farm', () => {
   assert.notDeepEqual(generateFarm(7).trees[1234], farm.trees[1234]);
 });
 
-test('about 15,000 trees on about 150 ha, each inside its plot', () => {
+test('about 15,000 real olives on about 115 ha of real parcels, each inside its plot', () => {
   const hectares = farm.plots.reduce((sum, p) => sum + p.hectares, 0);
-  assert.ok(hectares > 140 && hectares < 160, `${hectares} ha`);
+  assert.ok(hectares > 105 && hectares < 125, `${hectares} ha`);
   assert.ok(farm.trees.length > 14_000 && farm.trees.length < 17_000, `${farm.trees.length} trees`);
   for (const tree of farm.trees) assert.ok(pointInPolygon(tree.x, tree.y, farm.plots[tree.plot].polygon), tree.id);
   assert.equal(new Set(farm.trees.map(t => t.id)).size, farm.trees.length);

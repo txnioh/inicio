@@ -9,8 +9,10 @@ Este primer prototipo web recorre el bucle del MVP
 
 ## Qué hay
 
-- **Mapa** de la finca (Canvas 2D) con unos 15.000 olivos dibujados a escala de
-  copa. Capas: Estado, Vigor, Estrés hídrico, Copa Δ y Pérdida €. Arrastra para
+- **Mapa** de la finca (deck.gl, WebGL) con unos 15.000 olivos dibujados a escala de
+  copa sobre la ortofoto real del PNOA (© IGN, CC BY 4.0), o sobre un plano. En
+  **3D** cada olivo es un modelo generado en código (`src/map/olive-mesh.ts`)
+  escalado a su copa y su altura, con sombra; clic derecho y arrastrar para girar. Capas: Estado, Vigor, Estrés hídrico, Copa Δ y Pérdida €. Arrastra para
   moverte; rueda, pellizco o doble clic para acercar; <kbd>Mayús</kbd> + arrastrar
   (o *Seleccionar área*) para seleccionar; <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + clic
   añade o quita un olivo; teclado: flechas, <kbd>+</kbd> <kbd>−</kbd> y <kbd>0</kbd>.
@@ -26,16 +28,35 @@ Este primer prototipo web recorre el bucle del MVP
   en *Lo que ha aprendido el gemelo*. Las tareas y los supuestos se guardan en
   este navegador.
 
-## Qué está simulado
+## Qué es real y qué está simulado
 
-Todo. `src/model/generate.ts` genera a partir de una semilla la *Finca Las
-Viñas*: 151 ha al norte de Jaén, 12 parcelas de olivar tradicional (secano y
-goteo) e intensivo, y tres campañas de observaciones por árbol, como las que
-darían un vuelo de dron RGB, multiespectral y térmico más la báscula de la
-cooperativa. En la finca hay cuatro problemas plantados: un sector de goteo
-averiado, un rodal con déficit de nitrógeno, filas sin podar desde 2022 y
-varios focos de verticilosis. El diagnóstico no ve esas causas: solo las
-observaciones.
+**Real**: el terreno de la *Finca Las Viñas*, al sur de Villacarrillo (Jaén).
+
+- Las lindes son 21 parcelas catastrales (114,7 ha), del servicio INSPIRE del
+  Catastro, solo la geometría. La app les pone números inventados para no
+  atribuir los problemas simulados a referencias catastrales reales.
+- Cada olivo es una copa detectada en la ortofoto del PNOA (© IGN, CC BY 4.0),
+  unos 15.000, con su posición y su diámetro de copa medidos. El detector
+  (`scripts/detect-olives.ts`) es visión clásica, sin modelos: oscuridad
+  frente al suelo de alrededor, descarte de lo que tiene tinte (placas
+  solares, balsas), fusión de los lóbulos de un mismo olivo y centros por
+  transformada de distancias.
+
+**Simulado**, a partir de una semilla en `src/model/generate.ts`: lo que una foto
+no dice. El manejo de cada parcela (secano o goteo, variedad, poda; el marco y
+el sistema salen de la densidad real), la altura, y tres campañas de
+observaciones por árbol, como las que darían un vuelo de dron multiespectral y
+térmico más la báscula de la cooperativa. En la finca hay cuatro problemas
+plantados: un sector de goteo averiado, un rodal con déficit de nitrógeno,
+filas sin podar desde 2022 y varios focos de verticilosis. El diagnóstico no ve
+esas causas: solo las observaciones.
+
+Para regenerar el terreno (descarga unas 500 teselas, que se guardan en
+`scripts/.cache`):
+
+```sh
+npm run build:farm   # escribe src/model/parcels.json y src/model/olives.json
+```
 
 ## Cómo diagnostica y valora
 

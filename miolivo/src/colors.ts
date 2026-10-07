@@ -7,8 +7,8 @@ import { dec, int, signedPercent } from './format.ts';
 export type Theme = 'light' | 'dark';
 
 export const THEME = {
-  light: { ground: '#ece6d6', plot: '#e3dbc6', plotLine: '#c9bd9f', label: '#6b6350', ink: '#1d1c19', route: '#2f5fd0', selection: '#1d1c19', neutral: '#b7ae96', highlight: 'rgba(255,255,255,.22)' },
-  dark: { ground: '#171714', plot: '#1f1e1a', plotLine: '#3a372e', label: '#8d8670', ink: '#f2efe6', route: '#7aa2ff', selection: '#f2efe6', neutral: '#4f4c42', highlight: 'rgba(255,255,255,.1)' },
+  light: { ground: '#f5f5f3', plot: '#ecece7', plotLine: '#d6d6cf', label: '#7a7a72', ink: '#1d1c19', route: '#2f5fd0', selection: '#1d1c19', neutral: '#b7ae96', highlight: 'rgba(255,255,255,.22)' },
+  dark: { ground: '#0e0e0d', plot: '#181816', plotLine: '#2b2b28', label: '#85857c', ink: '#f2efe6', route: '#7aa2ff', selection: '#f2efe6', neutral: '#4f4c42', highlight: 'rgba(255,255,255,.1)' },
 };
 
 export const STATUS = {

@@ -2,6 +2,15 @@
 
 Minimal portfolio for Antonio J. Gonzalez (txnio).
 
+## Jumper
+
+`/jumper` runs KingKong Robotics' original Rust controller and trained ONNX
+policies against its 22-joint CAD model in MuJoCo. WASD walks, J/L turns, Space
+requests the trained jump, and R resets. The minimal settings menu holds the
+other policies, view and appearance controls. Physics uses the upstream servo
+limits and contact parameters; physical hardware calibration remains unverified.
+See [the playground guide](docs/jumper-playground.md) for provenance and validation.
+
 ## Carrete
 
 Carrete opens on Antonio’s archive. **Your photos** opens the device’s native
@@ -33,6 +42,20 @@ no visible entry label, drag hint, or grid navigation footer on either screen si
 Drag with a mouse or touch, or use a trackpad. Keyboard
 arrows pan, Home recenters, and Enter opens the central photograph. The viewer
 supports left/right arrows and Escape.
+
+**Search** finds photos and films by content, with text in any supported language
+or a reference photo. EmbeddingGemma 2 runs in a dedicated WebGPU worker using
+Transformers.js 4.3.1. The text and vision encoders download only on the first
+search (about 284 MB in q4, plus the runtime), and the browser caches the model.
+Photos are embedded from their pixels; films use six evenly spaced frames from
+the existing volume atlases. The audio encoder is not loaded. Queries and personal
+photos are processed locally and never uploaded. Media vectors remain in memory
+for this Carrete session; changing collections clears the results, and clearing
+personal photos removes their vectors. Search requires a browser with WebGPU.
+Results filter the existing grid and retain its photo and video viewer; **Show all**
+restores the collection. Failed media can be retried with another search, and an
+empty result offers a new query. Run `node --test scripts/test-carrete-search.mjs`
+for cosine ranking, collection isolation, empty results and invalid vectors.
 
 The intro shows a small, muted percentage based on successfully decoded
 archive items. Opening Frames shows the same indicator beneath the mode switch,

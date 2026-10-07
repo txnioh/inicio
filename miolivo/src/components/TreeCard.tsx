@@ -1,4 +1,7 @@
+import { Crosshair, X } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ANOMALY_INFO, primaryAnomaly, type Twin } from '../model/analyze.ts';
 import { costOfInaction, euros } from '../model/economics.ts';
 import type { Feedback } from '../model/feedback.ts';
@@ -21,9 +24,9 @@ export default function TreeCard({ twin, feedback, lossKg }: { twin: Twin; feedb
 
   if (index === null) {
     return (
-      <div className="empty">
-        <p><strong>Pulsa un olivo en el mapa</strong> para ver su ficha: geometría, vigor, estrés, cosechas y lo que conviene hacer.</p>
-        <p>Cada olivo tiene una identidad permanente y un historial por campaña.</p>
+      <div className="grid gap-1 py-8 text-center text-muted-foreground">
+        <p className="font-medium text-foreground">Ningún olivo abierto</p>
+        <p>Pulsa un olivo en el mapa para ver su ficha.</p>
       </div>
     );
   }
@@ -45,7 +48,7 @@ export default function TreeCard({ twin, feedback, lossKg }: { twin: Twin; feedb
 
   const rows: [string, ReactNode][] = [
     ['Posición', coordinates(tree.lat, tree.lon)],
-    ['Parcela', <>{plot.id} <span className="muted">· SIGPAC {plot.sigpac}</span></>],
+    ['Parcela', <>{plot.id} <span className="text-muted-foreground">· SIGPAC {plot.sigpac}</span></>],
     ['Variedad', `${tree.variety} · ${plot.system} · ${plot.irrigation} · plantado hacia ${tree.plantedYear}`],
     ['Volumen de copa', `${dec(snap.volume, 1)} m³ · Ø ${dec(snap.canopyDiameter, 1)} m · ${dec(snap.height, 1)} m de altura`],
     ['Evolución de copa', campaign === 0 ? 'Campaña de referencia' : `${signedPercent(analysis.canopyChange[index])} de área desde 2024 (entorno ${signedPercent(analysis.reference.change[index])})`],
@@ -58,61 +61,80 @@ export default function TreeCard({ twin, feedback, lossKg }: { twin: Twin; feedb
     ['Riesgo', RISK[status]],
   ];
 
+  const STATUS_TEXT = ['text-ok', 'text-warn', 'text-bad'];
+
   return (
-    <article className="tree-card" aria-labelledby="tree-title">
-      <header>
-        <div>
-          <h2 id="tree-title">Olivo {tree.id}</h2>
-          <span className={`badge is-${status}`}>{['Normal', 'Revisar', 'Actuar'][status]}</span>
+    <article className="grid gap-6" aria-labelledby="tree-title">
+      <header className="flex items-start justify-between gap-2">
+        <div className="grid gap-1">
+          <div className="flex items-center gap-2">
+            <h2 id="tree-title" className="text-lg font-semibold tracking-tight">Olivo {tree.id}</h2>
+            <Badge variant="outline" className={STATUS_TEXT[status]}>
+              <i className={`size-1.5 rounded-full bg-current`} aria-hidden="true" />{['Normal', 'Revisar', 'Actuar'][status]}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">{tree.variety} · Parcela {plot.id} · {dec(snap.volume, 1)} m³ de copa</p>
         </div>
-        <button type="button" className="icon-button" aria-label="Cerrar ficha" onClick={() => openTree(null)}>×</button>
+        <div className="flex">
+          <Button variant="ghost" size="icon-sm" aria-label="Centrar en el mapa" title="Centrar" onClick={() => { focusOn([index], 25); setState({ tree: index }); }}><Crosshair /></Button>
+          <Button variant="ghost" size="icon-sm" aria-label="Cerrar ficha" onClick={() => openTree(null)}><X /></Button>
+        </div>
       </header>
 
       {primary && (
-        <section className={`diagnosis is-${status}`}>
-          <h3>{ANOMALY_INFO[primary.type].label[0].toUpperCase() + ANOMALY_INFO[primary.type].label.slice(1)}</h3>
-          <ul>{anomalies!.map(a => <li key={a.type}>{a.evidence}</li>)}</ul>
-          {lossKg[index] > 0 && <p>{campaign === FORECAST ? 'Producción prevista' : 'Cosecha'} frente a su potencial: {signedPercent(-lossKg[index] / analysis.potentialKg[index])} · {eur(euros(lossKg[index], assumptions))} esta campaña</p>}
-          <p className="recommendation"><strong>Recomendación:</strong> {ANOMALY_INFO[primary.type].action}</p>
-          {high > 0 && <p className="cost">Coste estimado de no actuar: <strong>{int(low)}–{int(high)} €</strong>/campaña</p>}
+        <section className="grid gap-2 border-l-2 pl-3" style={{ borderColor: `var(--${status === 2 ? 'bad' : 'warn'})` }}>
+          <h3 className={`font-medium ${STATUS_TEXT[status]}`}>{ANOMALY_INFO[primary.type].label[0].toUpperCase() + ANOMALY_INFO[primary.type].label.slice(1)}</h3>
+          <ul className="grid gap-1 text-muted-foreground">{anomalies!.map(a => <li key={a.type}>{a.evidence}</li>)}</ul>
+          {lossKg[index] > 0 && <p className="text-muted-foreground">{campaign === FORECAST ? 'Producción prevista' : 'Cosecha'} frente a su potencial: {signedPercent(-lossKg[index] / analysis.potentialKg[index])} · {eur(euros(lossKg[index], assumptions))} esta campaña</p>}
+          <p>{ANOMALY_INFO[primary.type].action}</p>
+          {high > 0 && <p className="text-muted-foreground">No actuar cuesta <span className="font-medium text-foreground">{int(low)}–{int(high)} €</span> por campaña</p>}
         </section>
       )}
 
-      <div className="trends">
-        <figure><figcaption>Copa</figcaption><Sparkline label="Volumen de copa por campaña" current={campaign} values={tree.snapshots.map(s => s.volume)} /></figure>
-        <figure><figcaption>Vigor</figcaption><Sparkline label="Vigor por campaña" current={campaign} values={tree.snapshots.map(s => s.vigor)} /></figure>
-        <figure><figcaption>Estrés</figcaption><Sparkline label="Estrés hídrico por campaña" current={campaign} values={tree.snapshots.map(s => s.waterStress)} /></figure>
-        <figure><figcaption>Cosecha</figcaption><Sparkline label="Cosecha por campaña; 2026 es previsión" current={campaign} values={[twin.campaigns[0].kg[index], twin.campaigns[1].kg[index], forecast.kg[index]]} forecast={[forecast.kgLow[index], forecast.kgHigh[index]]} /></figure>
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          ['Copa', <Sparkline label="Volumen de copa por campaña" current={campaign} values={tree.snapshots.map(s => s.volume)} />],
+          ['Vigor', <Sparkline label="Vigor por campaña" current={campaign} values={tree.snapshots.map(s => s.vigor)} />],
+          ['Estrés', <Sparkline label="Estrés hídrico por campaña" current={campaign} values={tree.snapshots.map(s => s.waterStress)} />],
+          ['Cosecha', <Sparkline label="Cosecha por campaña; 2026 es previsión" current={campaign} values={[twin.campaigns[0].kg[index], twin.campaigns[1].kg[index], forecast.kg[index]]} forecast={[forecast.kgLow[index], forecast.kgHigh[index]]} />],
+        ].map(([label, chart]) => (
+          <figure key={label as string} className="m-0 grid gap-1">
+            <figcaption className="text-[11px] text-muted-foreground">{label}</figcaption>
+            {chart}
+          </figure>
+        ))}
       </div>
 
-      <dl className="facts">
+      <dl className="m-0 grid divide-y">
         {rows.map(([label, value]) => (
-          <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+          <div key={label} className="grid grid-cols-[120px_1fr] gap-3 py-2">
+            <dt className="text-xs text-muted-foreground">{label}</dt>
+            <dd className="m-0 text-[13px]">{value}</dd>
+          </div>
         ))}
       </dl>
 
-      <section className="history">
-        <h3>Historial</h3>
-        <ul>
+      <section className="grid gap-2">
+        <h3 className="text-xs font-medium text-muted-foreground">Historial</h3>
+        <ul className="grid gap-1.5 text-[13px]">
           {history.map(({ task, outcome }) => (
-            <li key={task.id}>
-              <span>{new Date(task.completedAt ?? task.createdAt).toLocaleDateString('es-ES')}</span>
+            <li key={task.id} className="grid grid-cols-[96px_1fr] gap-3">
+              <span className="text-muted-foreground">{new Date(task.completedAt ?? task.createdAt).toLocaleDateString('es-ES')}</span>
               {TASK_LABEL[task.type]} · {outcome === 'confirmado' ? 'problema confirmado en campo' : 'sin problema en campo (falso positivo)'}
             </li>
           ))}
-          {tree.pruneYears.slice().reverse().map(year => <li key={year}><span>{plot.pruneMonth} {year}</span>Poda</li>)}
-          {plot.treatments.slice().reverse().map(t => <li key={t.date + t.label}><span>{t.date}</span>{t.label}</li>)}
+          {tree.pruneYears.slice().reverse().map(year => <li key={year} className="grid grid-cols-[96px_1fr] gap-3"><span className="text-muted-foreground">{plot.pruneMonth} {year}</span>Poda</li>)}
+          {plot.treatments.slice().reverse().map(t => <li key={t.date + t.label} className="grid grid-cols-[96px_1fr] gap-3"><span className="text-muted-foreground">{t.date}</span>{t.label}</li>)}
         </ul>
       </section>
 
-      <div className="actions">
-        <button type="button" className="button is-primary" onClick={() => createTask(primary ? ANOMALY_INFO[primary.type].task : 'inspeccion', [index], primary?.type)}>
-          Crear tarea para este olivo
-        </button>
-        <button type="button" className="button" onClick={() => select([index], 'toggle')}>
-          {selected ? 'Quitar de la selección' : 'Añadir a la selección'}
-        </button>
-        <button type="button" className="button is-quiet" onClick={() => { focusOn([index], 25); setState({ tree: index }); }}>Centrar</button>
+      <div className="sticky bottom-0 -mx-4 -mb-4 flex gap-2 border-t bg-background/90 px-4 py-3 backdrop-blur">
+        <Button className="flex-1" onClick={() => createTask(primary ? ANOMALY_INFO[primary.type].task : 'inspeccion', [index], primary?.type)}>
+          Crear tarea
+        </Button>
+        <Button variant="outline" className="flex-1" onClick={() => select([index], 'toggle')}>
+          {selected ? 'Quitar de selección' : 'Añadir a selección'}
+        </Button>
       </div>
     </article>
   );

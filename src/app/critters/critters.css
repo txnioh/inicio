@@ -1,0 +1,91 @@
+/* Critters: DevDay 2025's animals in their places, as text or as pixels,
+   on black stages inside the usual page. */
+.critters-shell {
+  max-width: 672px;
+}
+
+.critters-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 20px;
+  color: #111;
+}
+
+.critters-header h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.critters-header p {
+  margin: 0;
+  color: #6f6e69;
+}
+
+.cr-switch {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 2px;
+  margin: 28px 0 16px;
+  padding: 2px;
+  border-radius: 999px;
+  background: #efeeea;
+}
+
+.cr-switch button {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: #6f6e69;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+
+.cr-switch button[aria-checked="true"] {
+  background: #fff;
+  color: #111;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+}
+
+.cr-switch button:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+.cr-scenes {
+  display: grid;
+  gap: 28px;
+}
+
+.cr-scene {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+.cr-scene canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 6 / 5;
+  border-radius: 8px;
+  background: #000;
+}
+
+.cr-scene canvas.cr-pixelated {
+  image-rendering: pixelated;
+}
+
+.cr-scene figcaption {
+  color: #111;
+  font-size: 13px;
+}
+
+.cr-scene figcaption span {
+  color: #a3a29d;
+}

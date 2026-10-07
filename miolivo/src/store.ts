@@ -6,6 +6,7 @@ import { planRoute, taskHours } from './model/route.ts';
 import type { AnomalyType, CampaignIndex, Outcome, Task, TaskType } from './model/types.ts';
 
 export type Layer = 'estado' | 'vigor' | 'estres' | 'copa' | 'perdida';
+export type Basemap = 'foto' | 'plano';
 export type Tab = 'anomalias' | 'olivo' | 'tareas';
 export type Focus = { minX: number; minY: number; maxX: number; maxY: number; nonce: number };
 export type Draft = { type: TaskType; anomaly?: AnomalyType };
@@ -13,6 +14,9 @@ export type Draft = { type: TaskType; anomaly?: AnomalyType };
 export type State = {
   campaign: CampaignIndex;
   layer: Layer;
+  basemap: Basemap;
+  /** Olives as 3D models under a tilted camera. */
+  threeD: boolean;
   tab: Tab;
   /** The tree whose card is open. */
   tree: number | null;
@@ -49,6 +53,8 @@ function restore(): Partial<State> {
       tasks: Array.isArray(saved.tasks) ? saved.tasks : [],
       assumptions: { ...DEFAULT_ASSUMPTIONS, ...saved.assumptions },
       layer: saved.layer ?? 'estado',
+      basemap: saved.basemap === 'plano' ? 'plano' : 'foto',
+      threeD: saved.threeD === true,
     };
   } catch {
     return {};
@@ -58,6 +64,8 @@ function restore(): Partial<State> {
 let state: State = {
   campaign: 2,
   layer: 'estado',
+  basemap: 'foto',
+  threeD: false,
   tab: 'anomalias',
   tree: null,
   selection: [],
@@ -73,7 +81,7 @@ const listeners = new Set<() => void>();
 
 function persist() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: state.tasks, assumptions: state.assumptions, layer: state.layer }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: state.tasks, assumptions: state.assumptions, layer: state.layer, basemap: state.basemap, threeD: state.threeD }));
   } catch {
     // Private windows and full storage: the session still works, it just won't remember.
   }
@@ -82,7 +90,7 @@ function persist() {
 export function setState(patch: Partial<State> | ((current: State) => Partial<State>)) {
   const next = typeof patch === 'function' ? patch(state) : patch;
   state = { ...state, ...next };
-  if ('tasks' in next || 'assumptions' in next || 'layer' in next) persist();
+  if (['tasks', 'assumptions', 'layer', 'basemap', 'threeD'].some(key => key in next)) persist();
   listeners.forEach(listener => listener());
 }
 

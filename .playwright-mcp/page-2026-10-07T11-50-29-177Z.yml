@@ -1,0 +1,284 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e4]:
+      - link "X" [ref=e6] [cursor=pointer]:
+        - /url: /
+    - generic [ref=e9]:
+      - main [ref=e10]:
+        - generic [ref=e13]:
+          - button "Back" [ref=e14] [cursor=pointer]
+          - heading "Post" [level=2] [ref=e19]
+        - 'heading "Victor M on X: \"Thanks Google, Embedding Gemma 2 is a big deal 🫶 Multimodal embeddings (text, images, video, audio) can run on-device in the browser. No server, no API key, ~20–70 ms per query on WebGPU. Everything stays on your machine (ofc). Now go build (new) things with it 🚀\"" [level=1] [ref=e20]'
+        - status
+        - generic [ref=e23]:
+          - list [ref=e24]:
+            - listitem [ref=e25]:
+              - article [ref=e27]:
+                - generic [ref=e28]:
+                  - generic [ref=e29]:
+                    - generic [ref=e30]:
+                      - link [ref=e442] [cursor=pointer]:
+                        - /url: /victormustar
+                        - img "@victormustar" [ref=e444]
+                      - generic [ref=e37]:
+                        - generic [ref=e445]:
+                          - generic [ref=e446]:
+                            - link "Victor M" [ref=e447] [cursor=pointer]:
+                              - /url: /victormustar
+                            - button "Verified account" [ref=e450] [cursor=pointer]
+                          - link "@victormustar" [ref=e454] [cursor=pointer]:
+                            - /url: /victormustar
+                        - button "More" [ref=e50] [cursor=pointer]
+                    - generic [ref=e54]: Thanks Google, Embedding Gemma 2 is a big deal 🫶 Multimodal embeddings (text, images, video, audio) can run on-device in the browser. No server, no API key, ~20–70 ms per query on WebGPU. Everything stays on your machine (ofc). Now go build (new) things with it 🚀
+                    - generic [ref=e55]:
+                      - generic [ref=e60]:
+                        - button "Play" [ref=e592] [cursor=pointer]
+                        - generic [ref=e593]:
+                          - group "Seek slider" [ref=e595]:
+                            - slider "Seek slider" [ref=e600]: "26.9"
+                          - generic [ref=e601]:
+                            - button "Play" [ref=e603] [cursor=pointer]
+                            - generic [ref=e607]:
+                              - generic [ref=e608]: 00:26 / 00:36
+                              - generic [ref=e610]:
+                                - button "Unmute" [ref=e612] [cursor=pointer]
+                                - button "Settings" [ref=e617] [cursor=pointer]
+                                - generic [ref=e622]:
+                                  - button "Picture-in-Picture" [ref=e624] [cursor=pointer]
+                                  - link "Picture-in-Picture" [ref=e628] [cursor=pointer]:
+                                    - /url: /victormustar/status/2107521244870615416/video/1
+                                - generic [ref=e629]:
+                                  - button "Full screen" [ref=e631] [cursor=pointer]
+                                  - link "Full screen" [ref=e635] [cursor=pointer]:
+                                    - /url: /victormustar/status/2107521244870615416/video/1
+                      - link [ref=e69] [cursor=pointer]:
+                        - article [ref=e70]:
+                          - generic [ref=e72]:
+                            - generic [ref=e73]:
+                              - link [ref=e464]:
+                                - /url: /sundarpichai
+                                - img "@sundarpichai" [ref=e466]
+                              - generic [ref=e77]:
+                                - generic [ref=e467]:
+                                  - generic [ref=e468]:
+                                    - link "Sundar Pichai" [ref=e469]:
+                                      - /url: /sundarpichai
+                                    - generic [ref=e471]:
+                                      - button "Verified account" [ref=e472]
+                                      - link "Google" [ref=e475]:
+                                        - /url: /Google
+                                        - img "Google" [ref=e476]
+                                  - link "@sundarpichai" [ref=e478]:
+                                    - /url: /sundarpichai
+                                - generic [ref=e91]:
+                                  - text: ·
+                                  - link "19h" [ref=e92]:
+                                    - /url: /sundarpichai/status/2107501975671890211
+                            - generic [ref=e93]:
+                              - text: Introducing EmbeddingGemma 2, a new open multimodal model that sets the standard for on-device efficiency. - our first open, natively multimodal embedding model - handles text, code, image, video, and audio tasks within a lightweight, modular 740M parameter form factor - ideal
+                              - button "Show more" [ref=e94]
+                          - generic [ref=e99]:
+                            - button "Play" [ref=e100]
+                            - generic [ref=e481]:
+                              - group "Seek slider" [ref=e483]:
+                                - slider "Seek slider" [ref=e488]: "0.1"
+                              - generic [ref=e489]:
+                                - button "Play" [ref=e491]
+                                - generic [ref=e495]:
+                                  - generic [ref=e496]: 00:00 / 00:53
+                                  - generic [ref=e498]:
+                                    - button "Show captions" [ref=e499]
+                                    - button "Unmute" [ref=e504]
+                                    - button "Settings" [ref=e509]
+                                    - generic [ref=e514]:
+                                      - button "Picture-in-Picture" [ref=e516]
+                                      - link "Picture-in-Picture" [ref=e520]:
+                                        - /url: /sundarpichai/status/2107501975671890211/video/1
+                                    - generic [ref=e521]:
+                                      - button "Full screen" [ref=e523]
+                                      - link "Full screen" [ref=e527]:
+                                        - /url: /sundarpichai/status/2107501975671890211/video/1
+                    - generic [ref=e108]:
+                      - link "7:19 PM · Oct 6, 2026" [ref=e110] [cursor=pointer]:
+                        - /url: /victormustar/status/2107521244870615416
+                      - generic [aria-hidden] [ref=e111]: ·
+                      - link "97.3K Views" [ref=e112] [cursor=pointer]:
+                        - /url: /victormustar/status/2107521244870615416
+                        - generic [ref=e113]: 97.3K
+                        - generic [ref=e114]: Views
+                  - generic [ref=e116]:
+                    - link "Reply" [ref=e118] [cursor=pointer]:
+                      - /url: /compose/post?in_reply_to=2107521244870615416
+                      - generic [ref=e119]: "19"
+                    - button "Repost" [ref=e126] [cursor=pointer]:
+                      - generic [ref=e127]: "117"
+                    - button "Like" [ref=e134] [cursor=pointer]:
+                      - generic [ref=e135]: 1.7K
+                    - generic [ref=e141]:
+                      - button "Bookmark" [ref=e144] [cursor=pointer]:
+                        - generic [ref=e145]: 1.2K
+                      - button "Share" [ref=e151] [cursor=pointer]
+            - listitem [ref=e155]:
+              - link [ref=e157] [cursor=pointer]:
+                - article [ref=e158]:
+                  - generic [ref=e159]:
+                    - link [ref=e528]:
+                      - /url: /victormustar
+                      - img "@victormustar" [ref=e530]
+                    - generic [ref=e165]:
+                      - generic [ref=e166]:
+                        - generic [ref=e167]:
+                          - generic [ref=e168]:
+                            - generic [ref=e531]:
+                              - generic [ref=e532]:
+                                - link "Victor M" [ref=e533]:
+                                  - /url: /victormustar
+                                - button "Verified account" [ref=e536]
+                              - link "@victormustar" [ref=e540]:
+                                - /url: /victormustar
+                            - generic [ref=e180]:
+                              - text: ·
+                              - link "18h" [ref=e181]:
+                                - /url: /victormustar/status/2107521247785419088
+                          - button "More" [ref=e183]
+                        - generic [ref=e187]:
+                          - text: Try the WebGPU demo here (credits to
+                          - link "@xenovacom" [ref=e542]:
+                            - /url: /xenovacom
+                          - text: "):"
+                      - generic [ref=e192]:
+                        - link "EmbeddingGemma 2 WebGPU - a Hugging Face Space by webml-community" [active] [ref=e193]:
+                          - /url: https://t.co/YGNSV0vaxi
+                        - link "From huggingface.co" [ref=e198]:
+                          - /url: https://t.co/YGNSV0vaxi
+                      - generic [ref=e200]:
+                        - link "Reply" [ref=e202]:
+                          - /url: /compose/post?in_reply_to=2107521247785419088
+                        - button "Repost" [ref=e207]:
+                          - generic [ref=e208]: "4"
+                        - button "Like" [ref=e215]:
+                          - generic [ref=e216]: "31"
+                        - button "View count" [ref=e223]:
+                          - generic [ref=e224]: 3.5K
+                        - generic [ref=e230]:
+                          - button "Bookmark" [ref=e233]
+                          - button "Share" [ref=e237]
+            - listitem [ref=e241]:
+              - link [ref=e243] [cursor=pointer]:
+                - article [ref=e244]:
+                  - generic [ref=e245]:
+                    - link [ref=e543]:
+                      - /url: /ytiralugins
+                      - img "@ytiralugins" [ref=e545]
+                    - generic [ref=e251]:
+                      - generic [ref=e252]:
+                        - generic [ref=e253]:
+                          - generic [ref=e254]:
+                            - generic [ref=e546]:
+                              - generic [ref=e547]:
+                                - link "ALEX 💡" [ref=e548]:
+                                  - /url: /ytiralugins
+                                - button "Verified account" [ref=e551]
+                              - link "@ytiralugins" [ref=e555]:
+                                - /url: /ytiralugins
+                            - generic [ref=e266]:
+                              - text: ·
+                              - link "17h" [ref=e267]:
+                                - /url: /ytiralugins/status/2107529986525585522
+                          - button "More" [ref=e269]
+                        - generic [ref=e273]: I did the experiment with Jev + memes templates. And it's hilarious haha
+                      - generic [ref=e280]:
+                        - button "Play" [ref=e281]
+                        - button "Play" [ref=e282]
+                        - generic: 00:31
+                      - generic [ref=e289]:
+                        - link "Reply" [ref=e291]:
+                          - /url: /compose/post?in_reply_to=2107529986525585522
+                          - generic [ref=e292]: "2"
+                        - button "Repost" [ref=e299]
+                        - button "Like" [ref=e304]:
+                          - generic [ref=e305]: "27"
+                        - button "View count" [ref=e312]:
+                          - generic [ref=e313]: 1.5K
+                        - generic [ref=e319]:
+                          - button "Bookmark" [ref=e322]
+                          - button "Share" [ref=e326]
+          - generic [aria-hidden] [ref=e330]:
+            - status [ref=e332]
+            - status [ref=e347]
+        - complementary [ref=e558]:
+          - heading "See all the replies" [level=2] [ref=e560]
+          - link "Continue to X" [ref=e563] [cursor=pointer]:
+            - /url: /i/jf/onboarding/web?mode=login&redirect_after_login=%2Fvictormustar%2Fstatus%2F2107521244870615416
+      - complementary [ref=e361]:
+        - generic [ref=e363]:
+          - generic [ref=e364]:
+            - heading "Log in or sign up for X" [level=2] [ref=e366]
+            - generic [ref=e367]:
+              - paragraph [ref=e368]: See what’s happening and join the conversation
+              - generic [ref=e369]:
+                - link "Continue with phone" [ref=e370] [cursor=pointer]:
+                  - /url: /i/jf/onboarding/web?mode=signup&redirect_after_login=%2Fvictormustar%2Fstatus%2F2107521244870615416
+                - button "Continue with Apple" [ref=e375] [cursor=pointer]
+                - generic [ref=e564]:
+                  - generic [aria-hidden]:
+                    - generic: Continue with Google
+                  - generic [ref=e566]:
+                    - button "Continuar con Google. Se abre en una pestaña nueva." [ref=e568] [cursor=pointer]:
+                      - generic [ref=e570]: Continuar con Google
+                    - iframe [ref=e580]:
+                      - button "Continue with Google. Opens in new tab" [ref=f3e3] [cursor=pointer]:
+                        - generic [ref=f3e5]: Continue with Google
+              - generic [ref=e388]: or
+              - link "Log in with username or email" [ref=e391] [cursor=pointer]:
+                - /url: /i/jf/onboarding/web?mode=login&redirect_after_login=%2Fvictormustar%2Fstatus%2F2107521244870615416
+          - generic [ref=e396]:
+            - heading "Relevant people" [level=2] [ref=e398]
+            - generic [ref=e400]:
+              - link "Victor M" [ref=e401] [cursor=pointer]:
+                - /url: /victormustar
+                - img "Avatar" [ref=e403]
+              - generic [ref=e404]:
+                - generic [ref=e405]:
+                  - link "Victor M @victormustar" [ref=e406] [cursor=pointer]:
+                    - /url: /victormustar
+                    - generic [ref=e407]: Victor M
+                    - generic [ref=e408]: "@victormustar"
+                  - link "Follow" [ref=e409] [cursor=pointer]:
+                    - /url: /i/jf/onboarding/web?mode=login&redirect_after_login=%2Fvictormustar
+                - generic [ref=e410]: 🤗 Head of Product @huggingface
+          - navigation "Footer" [ref=e419]:
+            - generic [ref=e420]:
+              - link "Terms" [ref=e421] [cursor=pointer]:
+                - /url: https://x.com/tos
+              - generic [aria-hidden] [ref=e422]: ·
+            - generic [ref=e423]:
+              - link "Privacy" [ref=e424] [cursor=pointer]:
+                - /url: https://x.com/privacy
+              - generic [aria-hidden] [ref=e425]: ·
+            - generic [ref=e426]:
+              - link "Cookies" [ref=e427] [cursor=pointer]:
+                - /url: https://support.x.com/articles/20170514
+              - generic [aria-hidden] [ref=e428]: ·
+            - generic [ref=e429]:
+              - link "Accessibility" [ref=e430] [cursor=pointer]:
+                - /url: https://help.x.com/resources/accessibility
+              - generic [aria-hidden] [ref=e431]: ·
+            - generic [ref=e432]:
+              - link "Ads Info" [ref=e433] [cursor=pointer]:
+                - /url: https://business.x.com/en/help/troubleshooting/how-twitter-ads-work.html?ref=web-twc-ao-gbl-adsinfo&utm_source=twc&utm_medium=web&utm_campaign=ao&utm_content=adsinfo
+              - generic [aria-hidden] [ref=e434]: ·
+            - button "More" [ref=e435] [cursor=pointer]
+            - generic [ref=e438]: © 2026 X Corp.
+  - region "Cookie consent" [ref=e582]:
+    - generic [ref=e583]:
+      - generic [ref=e584]: Did someone say … cookies?
+      - generic [ref=e585]:
+        - text: X and its partners use cookies to provide you with a better, safer and faster service and to support our business. Some cookies are necessary to use our services, improve our services, and make sure they work properly.
+        - button "Show more about your choices." [ref=e586] [cursor=pointer]
+    - generic [ref=e587]:
+      - button "Accept all cookies" [ref=e588] [cursor=pointer]
+      - button "Refuse non-essential cookies" [ref=e590] [cursor=pointer]
+  - button "Scan to get the app" [ref=e439] [cursor=pointer]
+  - generic:
+    - region "Notifications alt+T"

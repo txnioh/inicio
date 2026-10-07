@@ -1,4 +1,7 @@
+import { ListPlus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ANOMALY_INFO, ANOMALY_ORDER, primaryAnomaly, type Twin } from '../model/analyze.ts';
 import { euros } from '../model/economics.ts';
 import type { Feedback } from '../model/feedback.ts';
@@ -42,40 +45,51 @@ export default function AnomalyList({ twin, feedback, lossKg }: { twin: Twin; fe
   };
 
   return (
-    <div className="anomalies">
-      <div className="chips" role="group" aria-label="Filtrar por tipo">
-        <button type="button" aria-pressed={!filter} onClick={() => setFilter(null)}>Todas</button>
+    <div className="grid gap-4">
+      <ToggleGroup
+        type="single"
+        value={filter ?? 'todas'}
+        onValueChange={value => setFilter(!value || value === 'todas' ? null : value as AnomalyType)}
+        aria-label="Filtrar por tipo"
+        spacing={1}
+        className="flex-wrap"
+      >
+        <ToggleGroupItem value="todas" size="sm" variant="outline" className="rounded-full px-2.5 text-xs">Todas</ToggleGroupItem>
         {ANOMALY_ORDER.filter(type => counts[type]).map(type => (
-          <button key={type} type="button" aria-pressed={filter === type} onClick={() => setFilter(filter === type ? null : type)}>
-            {ANOMALY_INFO[type].short} <span>{int(counts[type]!)}</span>
-          </button>
+          <ToggleGroupItem key={type} value={type} size="sm" variant="outline" className="rounded-full px-2.5 text-xs">
+            {ANOMALY_INFO[type].short} <span className="text-muted-foreground tabular-nums">{int(counts[type]!)}</span>
+          </ToggleGroupItem>
         ))}
-      </div>
+      </ToggleGroup>
 
-      {!shown.length && <p className="empty">Ningún olivo se aparta de su entorno en esta campaña.</p>}
+      {!shown.length && <p className="text-muted-foreground">Ningún olivo se aparta de su entorno en esta campaña.</p>}
 
-      <ol className="group-list">
+      <ol className="-mx-2 grid">
         {shown.map(group => {
           const plot = twin.farm.plots[group.plot];
           const loss = euros(group.lossKg, assumptions);
           return (
-            <li key={group.key} className={`group is-${group.red ? 2 : 1}`}>
-              <button type="button" className="group-main" onClick={() => open(group)}>
-                <span className="group-title">Parcela {plot.id} · {ANOMALY_INFO[group.type].label}</span>
-                <span className="group-meta">
+            <li key={group.key} className="group/item flex items-start gap-3 rounded-lg px-2 py-2.5 hover:bg-muted/60">
+              <i className={`mt-1.5 size-2 flex-none rounded-full ${group.red ? 'bg-bad' : 'bg-warn'}`} aria-hidden="true" />
+              <button type="button" className="grid min-w-0 flex-1 gap-0.5 text-left" onClick={() => open(group)}>
+                <span className="font-medium">Parcela {plot.id} · {ANOMALY_INFO[group.type].label}</span>
+                <span className="text-xs text-muted-foreground">
                   {plural(group.trees.length, 'olivo', 'olivos')}
                   {group.red > 0 && <> · {int(group.red)} para actuar</>}
-                  {loss >= 1 && <> · pérdida estimada <strong>{eur(loss)}</strong></>}
+                  {loss >= 1 && <> · <span className="text-foreground">{eur(loss)}</span></>}
                 </span>
-                <span className="group-action">{ANOMALY_INFO[group.type].action}</span>
+                <span className="text-xs text-muted-foreground">{ANOMALY_INFO[group.type].action}</span>
               </button>
-              <button
-                type="button"
-                className="button is-small"
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Crear tarea"
+                title="Crear tarea"
+                className="opacity-60 group-hover/item:opacity-100"
                 onClick={() => { select(group.trees); setState({ tab: 'tareas', draft: { type: ANOMALY_INFO[group.type].task, anomaly: group.type } }); focusOn(group.trees); }}
               >
-                Crear tarea
-              </button>
+                <ListPlus />
+              </Button>
             </li>
           );
         })}

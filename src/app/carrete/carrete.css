@@ -142,6 +142,17 @@
 .carrete-library-status:empty { display: none; }
 .carrete-library > .carrete-text-button { margin-top: 14px; font-size: 11px; }
 
+.carrete-search form { display: flex; gap: 8px; margin: 20px 0 4px; }
+.carrete-search input[type='search'] { min-width: 0; flex: 1; padding: 10px 12px; border: 1px solid #d9d9d2; border-radius: 7px; background: #fff; color: #111; font: inherit; font-size: 12px; }
+.carrete-search input[type='search']:focus { border-color: #858580; }
+.carrete-search .carrete-library-pick { padding: 10px 14px; }
+.carrete-search-summary { position: absolute; z-index: 3; top: 82px; left: 50%; display: flex; align-items: center; gap: 16px; max-width: calc(100vw - 48px); padding: 10px 16px; border: 1px solid #e6e6e1; border-radius: 10px; background: #fdfdfce8; backdrop-filter: blur(12px); transform: translateX(-50%); font-size: 12px; }
+.carrete-search-summary span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.carrete-search-summary button { flex-shrink: 0; color: #646460; }
+.carrete-search-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #646460; font-size: 13px; }
+.carrete-search-empty p { margin: 0; }
+.has-viewer .carrete-search-summary { visibility: hidden; }
+
 .carrete-viewer {
   --carrete-muted: #858580;
   position: fixed;
@@ -333,6 +344,7 @@ html[data-carrete-mode-transition]::view-transition-new(carrete-volume) { mix-bl
   .carrete-page > .carrete-header .carrete-heading { flex-direction: column; gap: 3px; max-width: 105px; }
   .carrete-page > .carrete-header .carrete-header-actions { column-gap: 14px; row-gap: 8px; }
   .carrete-library { inset: max(100px, env(safe-area-inset-top)) 16px auto auto; padding: 22px; }
+  .carrete-search-summary { top: 105px; font-size: 11px; }
   .carrete-header-actions { flex-wrap: wrap; justify-content: flex-end; }
   .carrete-header { padding: max(24px, env(safe-area-inset-top)) 24px 28px; font-size: 12px; }
   .carrete-header-actions { gap: 14px; }

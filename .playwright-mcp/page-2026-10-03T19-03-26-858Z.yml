@@ -1,0 +1,591 @@
+- main [ref=f1e6]:
+  - generic [ref=f1e7]:
+    - generic [ref=f1e8]:
+      - generic [ref=f1e9]:
+        - link "Startups!" [ref=f1e10] [cursor=pointer]:
+          - /url: /startups
+        - generic [ref=f1e11]: Startups y empleo en España
+        - radiogroup "Tema" [ref=f1e12]:
+          - radio "Yuri" [checked] [ref=f1e13] [cursor=pointer]
+          - radio "Yahoo" [ref=f1e14] [cursor=pointer]
+      - navigation "Vista" [ref=f1e15]:
+        - link "Startups" [ref=f1e16] [cursor=pointer]:
+          - /url: /startups
+        - link "Oportunidades" [ref=f1e20] [cursor=pointer]:
+          - /url: /oportunidades
+        - link "Mapa" [ref=f1e24] [cursor=pointer]:
+          - /url: /mapa
+        - link "Para ti" [ref=f1e28] [cursor=pointer]:
+          - /url: /para-ti
+      - heading "Oportunidades" [level=1] [ref=f1e32]
+      - paragraph [ref=f1e33]:
+        - strong [ref=f1e34]: 54 ofertas de empleo
+        - text: "en 38 empresas.Última recopilación: 3 de octubre de 2026."
+    - generic [ref=f1e35]:
+      - region "Búsqueda y filtros" [ref=f1e36]:
+        - search [ref=f1e37]:
+          - generic [ref=f1e38]:
+            - generic [ref=f1e39]: Qué
+            - searchbox "Qué" [ref=f1e40]
+            - generic [aria-hidden] [ref=f1e41]: /
+          - generic [ref=f1e42]:
+            - generic [ref=f1e43]: Dónde
+            - searchbox "Dónde" [ref=f1e44]
+        - generic [ref=f1e45]:
+          - button "Área" [ref=f1e47] [cursor=pointer]
+          - button "Nivel" [ref=f1e52] [cursor=pointer]
+          - button "Ubicación" [ref=f1e57] [cursor=pointer]
+          - button "Modalidad" [ref=f1e62] [cursor=pointer]
+          - button "Publicada" [ref=f1e67] [cursor=pointer]
+          - button "Empresa" [ref=f1e72] [cursor=pointer]
+        - region "Cobertura y criterios del listado" [ref=f1e76]:
+          - paragraph [ref=f1e77]:
+            - strong [ref=f1e78]: "La selección:"
+            - text: frontend, backend, fullstack y software generalista en España o remoto compatible con España. Hasta cinco años de experiencia requerida.
+          - group [ref=f1e79]:
+            - generic "Cómo leer la selección y los datos" [ref=f1e80] [cursor=pointer]
+        - paragraph [ref=f1e81]: Abre una fila para ver los requisitos y guardar la oferta. “Ver la oferta” te lleva al anuncio original.
+      - region "Listado y ficha" [ref=f1e82]:
+        - generic [ref=f1e83]:
+          - paragraph [ref=f1e84]: 54 ofertas · se muestran 40
+          - generic [ref=f1e85] [cursor=pointer]:
+            - checkbox "Agrupar por empresa" [ref=f1e86]
+            - text: Agrupar por empresa
+          - radiogroup "Orden" [ref=f1e87]:
+            - radio "Recientes" [checked] [ref=f1e88] [cursor=pointer]
+            - radio "Relevancia" [ref=f1e89] [cursor=pointer]
+            - radio "A–Z" [ref=f1e90] [cursor=pointer]
+        - generic [ref=f1e91]:
+          - list "Resultados" [ref=f1e92]:
+            - listitem [aria-hidden] [ref=f1e93]:
+              - generic [ref=f1e94]: "#"
+              - generic [ref=f1e95]: Puesto
+              - generic [ref=f1e96]: Empresa
+              - generic [ref=f1e97]: Ubicación
+              - generic [ref=f1e98]: Fecha
+            - listitem [ref=f1e99]:
+              - button "Founding Engineer, Commercial Systems Rightway Remote 03/10/26 Nuevo Frontend Años sin especificar" [ref=f1e100] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e101]: "01"
+                - generic [ref=f1e102]:
+                  - generic [ref=f1e103]: Founding Engineer, Commercial Systems
+                  - generic [ref=f1e104]: Rightway
+                  - generic [ref=f1e105]: Remote
+                  - time [ref=f1e107]: 03/10/26
+                  - generic [ref=f1e108]:
+                    - generic [ref=f1e109]: Nuevo
+                    - generic [ref=f1e110]: Frontend
+                    - generic [ref=f1e111]: Años sin especificar
+            - listitem [ref=f1e112]:
+              - button "Fullstack Engineer (Typescript/Javascript) - Hybrid working model 100%, Ho Chi Minh City SMG Swiss Marketplace Group Remote 03/10/26 Nuevo Fullstack Años sin especificar" [ref=f1e113] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e114]: "02"
+                - generic [ref=f1e115]:
+                  - generic [ref=f1e116]: Fullstack Engineer (Typescript/Javascript) - Hybrid working model 100%, Ho Chi Minh City
+                  - generic [ref=f1e117]: SMG Swiss Marketplace Group
+                  - generic [ref=f1e118]: Remote
+                  - time [ref=f1e120]: 03/10/26
+                  - generic [ref=f1e121]:
+                    - generic [ref=f1e122]: Nuevo
+                    - generic [ref=f1e123]: Fullstack
+                    - generic [ref=f1e124]: Años sin especificar
+            - listitem [ref=f1e125]:
+              - button "Junior Software Engineer (Remote) PolicyMe Remote 03/10/26 Nuevo Fullstack Años sin especificar" [ref=f1e126] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e127]: "03"
+                - generic [ref=f1e128]:
+                  - generic [ref=f1e129]: Junior Software Engineer (Remote)
+                  - generic [ref=f1e130]: PolicyMe
+                  - generic [ref=f1e131]: Remote
+                  - time [ref=f1e133]: 03/10/26
+                  - generic [ref=f1e134]:
+                    - generic [ref=f1e135]: Nuevo
+                    - generic [ref=f1e136]: Fullstack
+                    - generic [ref=f1e137]: Años sin especificar
+            - listitem [ref=f1e138]:
+              - button "Software Engineer (Remote) PolicyMe Remote 03/10/26 Nuevo Fullstack Años sin especificar" [ref=f1e139] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e140]: "04"
+                - generic [ref=f1e141]:
+                  - generic [ref=f1e142]: Software Engineer (Remote)
+                  - generic [ref=f1e143]: PolicyMe
+                  - generic [ref=f1e144]: Remote
+                  - time [ref=f1e146]: 03/10/26
+                  - generic [ref=f1e147]:
+                    - generic [ref=f1e148]: Nuevo
+                    - generic [ref=f1e149]: Fullstack
+                    - generic [ref=f1e150]: Años sin especificar
+            - listitem [ref=f1e151]:
+              - button "Software Engineer, Networking (Features) Tailscale Remote 03/10/26 Nuevo Backend Años sin especificar" [ref=f1e152] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e153]: "05"
+                - generic [ref=f1e154]:
+                  - generic [ref=f1e155]: Software Engineer, Networking (Features)
+                  - generic [ref=f1e156]: Tailscale
+                  - generic [ref=f1e157]: Remote
+                  - time [ref=f1e159]: 03/10/26
+                  - generic [ref=f1e160]:
+                    - generic [ref=f1e161]: Nuevo
+                    - generic [ref=f1e162]: Backend
+                    - generic [ref=f1e163]: Años sin especificar
+            - listitem [ref=f1e164]:
+              - button "Applications Engineer - JavaScript & AWS (REMOTE) Xcellent Technology Solutions (XTS) Remote 01/10/26 Nuevo Frontend 2 años detectados" [ref=f1e165] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e166]: "06"
+                - generic [ref=f1e167]:
+                  - generic [ref=f1e168]: Applications Engineer - JavaScript & AWS (REMOTE)
+                  - generic [ref=f1e169]: Xcellent Technology Solutions (XTS)
+                  - generic [ref=f1e170]: Remote
+                  - time [ref=f1e172]: 01/10/26
+                  - generic [ref=f1e173]:
+                    - generic [ref=f1e174]: Nuevo
+                    - generic [ref=f1e175]: Frontend
+                    - generic [ref=f1e176]: 2 años detectados
+            - listitem [ref=f1e177]:
+              - button "Frontend Engineer, AI Prototyping 1-800 Contacts Remote 01/10/26 Nuevo Frontend Años sin especificar" [ref=f1e178] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e179]: "07"
+                - generic [ref=f1e180]:
+                  - generic [ref=f1e181]: Frontend Engineer, AI Prototyping
+                  - generic [ref=f1e182]: 1-800 Contacts
+                  - generic [ref=f1e183]: Remote
+                  - time [ref=f1e185]: 01/10/26
+                  - generic [ref=f1e186]:
+                    - generic [ref=f1e187]: Nuevo
+                    - generic [ref=f1e188]: Frontend
+                    - generic [ref=f1e189]: Años sin especificar
+            - listitem [ref=f1e190]:
+              - button "Software Engineer II GLOBALIZATION PARTNERS LTD. Remote 01/10/26 Nuevo Fullstack 3 años detectados" [ref=f1e191] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e192]: "08"
+                - generic [ref=f1e193]:
+                  - generic [ref=f1e194]: Software Engineer II
+                  - generic [ref=f1e195]: GLOBALIZATION PARTNERS LTD.
+                  - generic [ref=f1e196]: Remote
+                  - time [ref=f1e198]: 01/10/26
+                  - generic [ref=f1e199]:
+                    - generic [ref=f1e200]: Nuevo
+                    - generic [ref=f1e201]: Fullstack
+                    - generic [ref=f1e202]: 3 años detectados
+            - listitem [ref=f1e203]:
+              - button "Systems Development Engineer I Jamf Remote 01/10/26 Nuevo Backend 1 año detectado" [ref=f1e204] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e205]: "09"
+                - generic [ref=f1e206]:
+                  - generic [ref=f1e207]: Systems Development Engineer I
+                  - generic [ref=f1e208]: Jamf
+                  - generic [ref=f1e209]: Remote
+                  - time [ref=f1e211]: 01/10/26
+                  - generic [ref=f1e212]:
+                    - generic [ref=f1e213]: Nuevo
+                    - generic [ref=f1e214]: Backend
+                    - generic [ref=f1e215]: 1 año detectado
+            - listitem [ref=f1e216]:
+              - button "Systems Development Engineer II Jamf Remote 01/10/26 Nuevo Backend 2 años detectados" [ref=f1e217] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e218]: "10"
+                - generic [ref=f1e219]:
+                  - generic [ref=f1e220]: Systems Development Engineer II
+                  - generic [ref=f1e221]: Jamf
+                  - generic [ref=f1e222]: Remote
+                  - time [ref=f1e224]: 01/10/26
+                  - generic [ref=f1e225]:
+                    - generic [ref=f1e226]: Nuevo
+                    - generic [ref=f1e227]: Backend
+                    - generic [ref=f1e228]: 2 años detectados
+            - listitem [ref=f1e229]:
+              - button "AI Software Engineer (Remote) M3 USA Remote 30/09/26 Backend Años sin especificar Remoto" [ref=f1e230] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e231]: "11"
+                - generic [ref=f1e232]:
+                  - generic [ref=f1e233]: AI Software Engineer (Remote)
+                  - generic [ref=f1e234]: M3 USA
+                  - generic [ref=f1e235]: Remote
+                  - time [ref=f1e237]: 30/09/26
+                  - generic [ref=f1e238]:
+                    - generic [ref=f1e239]: Backend
+                    - generic [ref=f1e240]: Años sin especificar
+                    - generic [ref=f1e241]: Remoto
+            - listitem [ref=f1e242]:
+              - button "Software Engineer - Alt The Job Sauce Remote 30/09/26 Backend Años sin especificar Remoto" [ref=f1e243] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e244]: "12"
+                - generic [ref=f1e245]:
+                  - generic [ref=f1e246]: Software Engineer - Alt
+                  - generic [ref=f1e247]: The Job Sauce
+                  - generic [ref=f1e248]: Remote
+                  - time [ref=f1e250]: 30/09/26
+                  - generic [ref=f1e251]:
+                    - generic [ref=f1e252]: Backend
+                    - generic [ref=f1e253]: Años sin especificar
+                    - generic [ref=f1e254]: Remoto
+            - listitem [ref=f1e255]:
+              - button "Software Engineer II - Captive Octane® Remote 30/09/26 Fullstack 5 años detectados Remoto" [ref=f1e256] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e257]: "13"
+                - generic [ref=f1e258]:
+                  - generic [ref=f1e259]: Software Engineer II - Captive
+                  - generic [ref=f1e260]: Octane®
+                  - generic [ref=f1e261]: Remote
+                  - time [ref=f1e263]: 30/09/26
+                  - generic [ref=f1e264]:
+                    - generic [ref=f1e265]: Fullstack
+                    - generic [ref=f1e266]: 5 años detectados
+                    - generic [ref=f1e267]: Remoto
+            - listitem [ref=f1e268]:
+              - button "Software Engineer || - Authentication Pindrop Remote 29/09/26 Software generalista Años sin especificar Remoto" [ref=f1e269] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e270]: "14"
+                - generic [ref=f1e271]:
+                  - generic [ref=f1e272]: Software Engineer || - Authentication
+                  - generic [ref=f1e273]: Pindrop
+                  - generic [ref=f1e274]: Remote
+                  - time [ref=f1e276]: 29/09/26
+                  - generic [ref=f1e277]:
+                    - generic [ref=f1e278]: Software generalista
+                    - generic [ref=f1e279]: Años sin especificar
+                    - generic [ref=f1e280]: Remoto
+            - listitem [ref=f1e281]:
+              - button "Software Engineer 3 MongoDB Remote 29/09/26 Fullstack Años sin especificar Remoto" [ref=f1e282] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e283]: "15"
+                - generic [ref=f1e284]:
+                  - generic [ref=f1e285]: Software Engineer 3
+                  - generic [ref=f1e286]: MongoDB
+                  - generic [ref=f1e287]: Remote
+                  - time [ref=f1e289]: 29/09/26
+                  - generic [ref=f1e290]:
+                    - generic [ref=f1e291]: Fullstack
+                    - generic [ref=f1e292]: Años sin especificar
+                    - generic [ref=f1e293]: Remoto
+            - listitem [ref=f1e294]:
+              - button "Software Engineer II - Athlete Performance Hudl Remote 29/09/26 Software generalista Años sin especificar Remoto" [ref=f1e295] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e296]: "16"
+                - generic [ref=f1e297]:
+                  - generic [ref=f1e298]: Software Engineer II - Athlete Performance
+                  - generic [ref=f1e299]: Hudl
+                  - generic [ref=f1e300]: Remote
+                  - time [ref=f1e302]: 29/09/26
+                  - generic [ref=f1e303]:
+                    - generic [ref=f1e304]: Software generalista
+                    - generic [ref=f1e305]: Años sin especificar
+                    - generic [ref=f1e306]: Remoto
+            - listitem [ref=f1e307]:
+              - button "Fullstack Developer – Distributed Systems (Typescript, Node.js, Vue.js) TopDoctors España 28/09/26 Fullstack Años sin especificar Remoto" [ref=f1e308] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e309]: "17"
+                - generic [ref=f1e310]:
+                  - generic [ref=f1e311]: Fullstack Developer – Distributed Systems (Typescript, Node.js, Vue.js)
+                  - generic [ref=f1e312]: TopDoctors
+                  - generic [ref=f1e313]: España
+                  - time [ref=f1e315]: 28/09/26
+                  - generic [ref=f1e316]:
+                    - generic [ref=f1e317]: Fullstack
+                    - generic [ref=f1e318]: Años sin especificar
+                    - generic [ref=f1e319]: Remoto
+            - listitem [ref=f1e320]:
+              - button "Software Engineer 3 - Enterprise Architecture MongoDB Remote 28/09/26 Fullstack 5 años detectados Remoto" [ref=f1e321] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e322]: "18"
+                - generic [ref=f1e323]:
+                  - generic [ref=f1e324]: Software Engineer 3 - Enterprise Architecture
+                  - generic [ref=f1e325]: MongoDB
+                  - generic [ref=f1e326]: Remote
+                  - time [ref=f1e328]: 28/09/26
+                  - generic [ref=f1e329]:
+                    - generic [ref=f1e330]: Fullstack
+                    - generic [ref=f1e331]: 5 años detectados
+                    - generic [ref=f1e332]: Remoto
+            - listitem [ref=f1e333]:
+              - button "Product Engineer (Full Stack, IC) Springboard International Inc. Remote 27/09/26 Fullstack Años sin especificar Remoto" [ref=f1e334] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e335]: "19"
+                - generic [ref=f1e336]:
+                  - generic [ref=f1e337]: Product Engineer (Full Stack, IC)
+                  - generic [ref=f1e338]: Springboard International Inc.
+                  - generic [ref=f1e339]: Remote
+                  - time [ref=f1e341]: 27/09/26
+                  - generic [ref=f1e342]:
+                    - generic [ref=f1e343]: Fullstack
+                    - generic [ref=f1e344]: Años sin especificar
+                    - generic [ref=f1e345]: Remoto
+            - listitem [ref=f1e346]:
+              - button "Software Engineer Prenosis Remote 23/09/26 Software generalista Años sin especificar Remoto" [ref=f1e347] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e348]: "20"
+                - generic [ref=f1e349]:
+                  - generic [ref=f1e350]: Software Engineer
+                  - generic [ref=f1e351]: Prenosis
+                  - generic [ref=f1e352]: Remote
+                  - time [ref=f1e354]: 23/09/26
+                  - generic [ref=f1e355]:
+                    - generic [ref=f1e356]: Software generalista
+                    - generic [ref=f1e357]: Años sin especificar
+                    - generic [ref=f1e358]: Remoto
+            - listitem [ref=f1e359]:
+              - button "Software Engineer - Crypto Alpaca Remote 23/09/26 Backend Años sin especificar Remoto" [ref=f1e360] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e361]: "21"
+                - generic [ref=f1e362]:
+                  - generic [ref=f1e363]: Software Engineer - Crypto
+                  - generic [ref=f1e364]: Alpaca
+                  - generic [ref=f1e365]: Remote
+                  - time [ref=f1e367]: 23/09/26
+                  - generic [ref=f1e368]:
+                    - generic [ref=f1e369]: Backend
+                    - generic [ref=f1e370]: Años sin especificar
+                    - generic [ref=f1e371]: Remoto
+            - listitem [ref=f1e372]:
+              - button "Software Developer Security Analytics RedMimicry Remote 22/09/26 Software generalista Años sin especificar Remoto" [ref=f1e373] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e374]: "22"
+                - generic [ref=f1e375]:
+                  - generic [ref=f1e376]: Software Developer Security Analytics
+                  - generic [ref=f1e377]: RedMimicry
+                  - generic [ref=f1e378]: Remote
+                  - time [ref=f1e380]: 22/09/26
+                  - generic [ref=f1e381]:
+                    - generic [ref=f1e382]: Software generalista
+                    - generic [ref=f1e383]: Años sin especificar
+                    - generic [ref=f1e384]: Remoto
+            - listitem [ref=f1e385]:
+              - button "Back End Software Engineer - (Golang) Upfluence Remote 19/09/26 Backend Años sin especificar Remoto" [ref=f1e386] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e387]: "23"
+                - generic [ref=f1e388]:
+                  - generic [ref=f1e389]: Back End Software Engineer - (Golang)
+                  - generic [ref=f1e390]: Upfluence
+                  - generic [ref=f1e391]: Remote
+                  - time [ref=f1e393]: 19/09/26
+                  - generic [ref=f1e394]:
+                    - generic [ref=f1e395]: Backend
+                    - generic [ref=f1e396]: Años sin especificar
+                    - generic [ref=f1e397]: Remoto
+            - listitem [ref=f1e398]:
+              - button "Devices Software Engineer - Türkiye JumpCloud Remote 18/09/26 Fullstack 5 años detectados Remoto" [ref=f1e399] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e400]: "24"
+                - generic [ref=f1e401]:
+                  - generic [ref=f1e402]: Devices Software Engineer - Türkiye
+                  - generic [ref=f1e403]: JumpCloud
+                  - generic [ref=f1e404]: Remote
+                  - time [ref=f1e406]: 18/09/26
+                  - generic [ref=f1e407]:
+                    - generic [ref=f1e408]: Fullstack
+                    - generic [ref=f1e409]: 5 años detectados
+                    - generic [ref=f1e410]: Remoto
+            - listitem [ref=f1e411]:
+              - button "Platform Engineer Multiverse Computing SL Barcelona 18/09/26 Backend Años sin especificar Ingeniería" [ref=f1e412] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e413]: "25"
+                - generic [ref=f1e414]:
+                  - generic [ref=f1e415]: Platform Engineer
+                  - generic [ref=f1e416]: Multiverse Computing SL
+                  - generic [ref=f1e417]: Barcelona
+                  - time [ref=f1e419]: 18/09/26
+                  - generic [ref=f1e420]:
+                    - generic [ref=f1e421]: Backend
+                    - generic [ref=f1e422]: Años sin especificar
+                    - generic [ref=f1e423]: Ingeniería
+            - listitem [ref=f1e424]:
+              - button "Software Engineer Mirantis Remote 12/09/26 Software generalista Años sin especificar Remoto" [ref=f1e425] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e426]: "26"
+                - generic [ref=f1e427]:
+                  - generic [ref=f1e428]: Software Engineer
+                  - generic [ref=f1e429]: Mirantis
+                  - generic [ref=f1e430]: Remote
+                  - time [ref=f1e432]: 12/09/26
+                  - generic [ref=f1e433]:
+                    - generic [ref=f1e434]: Software generalista
+                    - generic [ref=f1e435]: Años sin especificar
+                    - generic [ref=f1e436]: Remoto
+            - listitem [ref=f1e437]:
+              - button "Backend Engineer N26 Barcelona 02/09/26 Backend Años sin especificar Ingeniería" [ref=f1e438] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e439]: "27"
+                - generic [ref=f1e440]:
+                  - generic [ref=f1e441]: Backend Engineer
+                  - generic [ref=f1e442]: N26
+                  - generic [ref=f1e443]: Barcelona
+                  - time [ref=f1e445]: 02/09/26
+                  - generic [ref=f1e446]:
+                    - generic [ref=f1e447]: Backend
+                    - generic [ref=f1e448]: Años sin especificar
+                    - generic [ref=f1e449]: Ingeniería
+            - listitem [ref=f1e450]:
+              - button "Backend Engineer - Memberships N26 Barcelona 02/09/26 Backend Años sin especificar Ingeniería" [ref=f1e451] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e452]: "28"
+                - generic [ref=f1e453]:
+                  - generic [ref=f1e454]: Backend Engineer - Memberships
+                  - generic [ref=f1e455]: N26
+                  - generic [ref=f1e456]: Barcelona
+                  - time [ref=f1e458]: 02/09/26
+                  - generic [ref=f1e459]:
+                    - generic [ref=f1e460]: Backend
+                    - generic [ref=f1e461]: Años sin especificar
+                    - generic [ref=f1e462]: Ingeniería
+            - listitem [ref=f1e463]:
+              - button "Software Engineer, Database Reliability & Performance InfluxData Remote 29/08/26 Backend 5 años detectados Remoto" [ref=f1e464] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e465]: "29"
+                - generic [ref=f1e466]:
+                  - generic [ref=f1e467]: Software Engineer, Database Reliability & Performance
+                  - generic [ref=f1e468]: InfluxData
+                  - generic [ref=f1e469]: Remote
+                  - time [ref=f1e471]: 29/08/26
+                  - generic [ref=f1e472]:
+                    - generic [ref=f1e473]: Backend
+                    - generic [ref=f1e474]: 5 años detectados
+                    - generic [ref=f1e475]: Remoto
+            - listitem [ref=f1e476]:
+              - button "Backend Engineer N26 Berlin, Barcelona 17/08/26 Backend Años sin especificar Ingeniería" [ref=f1e477] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e478]: "30"
+                - generic [ref=f1e479]:
+                  - generic [ref=f1e480]: Backend Engineer
+                  - generic [ref=f1e481]: N26
+                  - generic [ref=f1e482]: Berlin, Barcelona
+                  - time [ref=f1e484]: 17/08/26
+                  - generic [ref=f1e485]:
+                    - generic [ref=f1e486]: Backend
+                    - generic [ref=f1e487]: Años sin especificar
+                    - generic [ref=f1e488]: Ingeniería
+            - listitem [ref=f1e489]:
+              - button "Software Engineer II Golang Stone Remoto 12/08/26 Software generalista Años sin especificar Remoto" [ref=f1e490] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e491]: "31"
+                - generic [ref=f1e492]:
+                  - generic [ref=f1e493]: Software Engineer II Golang
+                  - generic [ref=f1e494]: Stone
+                  - generic [ref=f1e495]: Remoto
+                  - time [ref=f1e497]: 12/08/26
+                  - generic [ref=f1e498]:
+                    - generic [ref=f1e499]: Software generalista
+                    - generic [ref=f1e500]: Años sin especificar
+                    - generic [ref=f1e501]: Remoto
+            - listitem [ref=f1e502]:
+              - button "Senior Backend Engineer - Ops Engineering Bsport Barcelona 05/08/26 Backend 5 años detectados Ingeniería" [ref=f1e503] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e504]: "32"
+                - generic [ref=f1e505]:
+                  - generic [ref=f1e506]: Senior Backend Engineer - Ops Engineering
+                  - generic [ref=f1e507]: Bsport
+                  - generic [ref=f1e508]: Barcelona
+                  - time [ref=f1e510]: 05/08/26
+                  - generic [ref=f1e511]:
+                    - generic [ref=f1e512]: Backend
+                    - generic [ref=f1e513]: 5 años detectados
+                    - generic [ref=f1e514]: Ingeniería
+            - listitem [ref=f1e515]:
+              - button "FullStack Developer Ucademy Madrid 21/07/26 Fullstack Años sin especificar Ingeniería" [ref=f1e516] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e517]: "33"
+                - generic [ref=f1e518]:
+                  - generic [ref=f1e519]: FullStack Developer
+                  - generic [ref=f1e520]: Ucademy
+                  - generic [ref=f1e521]: Madrid
+                  - time [ref=f1e523]: 21/07/26
+                  - generic [ref=f1e524]:
+                    - generic [ref=f1e525]: Fullstack
+                    - generic [ref=f1e526]: Años sin especificar
+                    - generic [ref=f1e527]: Ingeniería
+            - listitem [ref=f1e528]:
+              - button "Backend Engineer - Customer Risk Lifecycle N26 Berlin, Barcelona 10/07/26 Backend Años sin especificar Ingeniería" [ref=f1e529] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e530]: "34"
+                - generic [ref=f1e531]:
+                  - generic [ref=f1e532]: Backend Engineer - Customer Risk Lifecycle
+                  - generic [ref=f1e533]: N26
+                  - generic [ref=f1e534]: Berlin, Barcelona
+                  - time [ref=f1e536]: 10/07/26
+                  - generic [ref=f1e537]:
+                    - generic [ref=f1e538]: Backend
+                    - generic [ref=f1e539]: Años sin especificar
+                    - generic [ref=f1e540]: Ingeniería
+            - listitem [ref=f1e541]:
+              - button "Backend Developer (Python) Amphora Logistics Barcelona 22/06/26 Backend Años sin especificar Ingeniería" [ref=f1e542] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e543]: "35"
+                - generic [ref=f1e544]:
+                  - generic [ref=f1e545]: Backend Developer (Python)
+                  - generic [ref=f1e546]: Amphora Logistics
+                  - generic [ref=f1e547]: Barcelona
+                  - time [ref=f1e549]: 22/06/26
+                  - generic [ref=f1e550]:
+                    - generic [ref=f1e551]: Backend
+                    - generic [ref=f1e552]: Años sin especificar
+                    - generic [ref=f1e553]: Ingeniería
+            - listitem [ref=f1e554]:
+              - button "Backend Software Engineer Flanks Barcelona 04/06/26 Backend Años sin especificar Ingeniería" [ref=f1e555] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e556]: "36"
+                - generic [ref=f1e557]:
+                  - generic [ref=f1e558]: Backend Software Engineer
+                  - generic [ref=f1e559]: Flanks
+                  - generic [ref=f1e560]: Barcelona
+                  - time [ref=f1e562]: 04/06/26
+                  - generic [ref=f1e563]:
+                    - generic [ref=f1e564]: Backend
+                    - generic [ref=f1e565]: Años sin especificar
+                    - generic [ref=f1e566]: Ingeniería
+            - listitem [ref=f1e567]:
+              - button "Backend Engineer - Subscriptions N26 Barcelona 27/05/26 Backend Años sin especificar Ingeniería" [ref=f1e568] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e569]: "37"
+                - generic [ref=f1e570]:
+                  - generic [ref=f1e571]: Backend Engineer - Subscriptions
+                  - generic [ref=f1e572]: N26
+                  - generic [ref=f1e573]: Barcelona
+                  - time [ref=f1e575]: 27/05/26
+                  - generic [ref=f1e576]:
+                    - generic [ref=f1e577]: Backend
+                    - generic [ref=f1e578]: Años sin especificar
+                    - generic [ref=f1e579]: Ingeniería
+            - listitem [ref=f1e580]:
+              - button "Backend Developer (Projects / CRM) Holded ERP Barcelona, Catalunya [Cataluña], Spain 19/05/26 Backend Años sin especificar Ingeniería" [ref=f1e581] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e582]: "38"
+                - generic [ref=f1e583]:
+                  - generic [ref=f1e584]: Backend Developer (Projects / CRM)
+                  - generic [ref=f1e585]: Holded ERP
+                  - generic [ref=f1e586]: Barcelona, Catalunya [Cataluña], Spain
+                  - time [ref=f1e588]: 19/05/26
+                  - generic [ref=f1e589]:
+                    - generic [ref=f1e590]: Backend
+                    - generic [ref=f1e591]: Años sin especificar
+                    - generic [ref=f1e592]: Ingeniería
+            - listitem [ref=f1e593]:
+              - button "Full Stack Developer Typeform Germany (Remote) ; Ireland (Remote); Netherlands (Remote) ; Portugal (Remote) ; Spain (Remote) ; United Kingdom (Remote) 19/05/26 Fullstack Años sin especificar Remoto" [ref=f1e594] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e595]: "39"
+                - generic [ref=f1e596]:
+                  - generic [ref=f1e597]: Full Stack Developer
+                  - generic [ref=f1e598]: Typeform
+                  - generic [ref=f1e599]: Germany (Remote) ; Ireland (Remote); Netherlands (Remote) ; Portugal (Remote) ; Spain (Remote) ; United Kingdom (Remote)
+                  - time [ref=f1e601]: 19/05/26
+                  - generic [ref=f1e602]:
+                    - generic [ref=f1e603]: Fullstack
+                    - generic [ref=f1e604]: Años sin especificar
+                    - generic [ref=f1e605]: Remoto
+            - listitem [ref=f1e606]:
+              - button "Backend Engineer - Engagement N26 Berlin, Barcelona 06/05/26 Backend Años sin especificar Ingeniería" [ref=f1e607] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f1e608]: "40"
+                - generic [ref=f1e609]:
+                  - generic [ref=f1e610]: Backend Engineer - Engagement
+                  - generic [ref=f1e611]: N26
+                  - generic [ref=f1e612]: Berlin, Barcelona
+                  - time [ref=f1e614]: 06/05/26
+                  - generic [ref=f1e615]:
+                    - generic [ref=f1e616]: Backend
+                    - generic [ref=f1e617]: Años sin especificar
+                    - generic [ref=f1e618]: Ingeniería
+            - listitem [ref=f1e619]:
+              - button "Ver más (14)" [ref=f1e620] [cursor=pointer]
+          - dialog [ref=f1e625]:
+            - button "← Resultados" [active] [ref=f1e626] [cursor=pointer]
+            - generic [ref=f1e627]:
+              - generic [aria-hidden] [ref=f1e628]: R
+              - generic [ref=f1e629]:
+                - heading "Founding Engineer, Commercial Systems" [level=2] [ref=f1e630]
+                - paragraph [ref=f1e631]: Rightway · Remote · publicada hoy
+            - generic [ref=f1e632]:
+              - link "Ver la oferta ↗" [ref=f1e633] [cursor=pointer]:
+                - /url: https://remotefirstjobs.com/companies/rightway/jobs/founding-engineer-commercial-systems-867620
+              - button "Guardar" [ref=f1e634] [cursor=pointer]
+            - generic [ref=f1e635]:
+              - generic [ref=f1e636]:
+                - term [ref=f1e637]: Área
+                - definition [ref=f1e638]: Ingeniería
+              - generic [ref=f1e639]:
+                - term [ref=f1e640]: Nivel (por título)
+                - definition [ref=f1e641]: Sin nivel indicado
+              - generic [ref=f1e642]:
+                - term [ref=f1e643]: Modalidad
+                - definition [ref=f1e644]: Remoto
+              - generic [ref=f1e645]:
+                - term [ref=f1e646]: Especialidad
+                - definition [ref=f1e647]: Frontend
+              - generic [ref=f1e648]:
+                - term [ref=f1e649]: Años de experiencia
+                - definition [ref=f1e650]: No detectados en el texto recopilado
+              - generic [ref=f1e651]:
+                - term [ref=f1e652]: Fuente
+                - definition [ref=f1e653]: RemoteFirstJobs
+              - generic [ref=f1e654]:
+                - term [ref=f1e655]: Última actualización
+                - definition [ref=f1e656]: enlace abierto · 3 de octubre de 2026
+            - generic [ref=f1e657]:
+              - heading "Descripción" [level=3] [ref=f1e658]
+              - paragraph [ref=f1e659]: "ABOUT THE ROLE: The Founding Commercial Systems Engineer is the first dedicated engineer for Rightway’s commercial organization. We’ve synthesized a strong commercial stack including Salesforce, Highspot, Gong, Tribble, and other tools — but we’ve never had a technical role to build on top of it, connect it, and push it further. That’s this role. You’ll architect and build the tooling, automation, and AI that our commercial teams run on, turning the systems we already have into a connected engine that helps the business sell, retain, and grow. It’s a rare first-engineer opportunity: the foundation is in place, and you get to build the layer that makes it exceptional. WHAT YOU’LL DO: Own and build our commercial systems. Be the technical owner of Salesforce and our commercial stack — architecting it, wiring the tools together, and writing the code that configuration can’t handle (Apex, Lightning/LWC, APIs) to build custom tooling and integrations. This end-to-end ownership is what gives you the vantage point to fix what’s underneath. Make our data trustworthy. Use that ownership to get our commercial data clean, consistent, and reliable — building whatever it takes (automations, controls, standards, pipelines) to fix it at the source and keep it that way — then feed it into the company’s central warehouse, partnering with Data & Insights on what’s captured and how it’s used. Trustworthy data is the bedrock everything else is built on. Build the tools that give reps and client success teams an edge. Ship the automation and AI that make the team sharper and faster — deal briefs that assemble everything known about an opportunity, finalist prep, renewal-risk alerts for Client Success, and AI agents that surface at-risk deals and next steps on their own. Grow the function. Potential to mentor and manage a team member over time, and help shape how the commercial engineering function grows as the business scales. WHO YOU ARE: A hands-on builder who can independently own systems, data, and tooling end to end Deeply experienced in Salesforce (5+ years), with at least 3 writing Apex in production Salesforce certifications (Platform Developer I/II, Administrator) Owned a production integration between Salesforce and an external system Shipped Lightning Web Components used daily by a sales or client success team AI-forward and curious — you actively explore and build with new tools, including AI and automation. You have shipped an AI powered tool a business team actua"
+              - button "Leer todo" [ref=f1e660] [cursor=pointer]
+    - generic [ref=f1e621]:
+      - paragraph [ref=f1e622]: Las ofertas proceden de ATS de empresas y feeds públicos que se actualizan cada día. Cada ficha muestra la fecha de la última consulta a su fuente; confirma en el anuncio original que sigue abierta antes de solicitarla.
+      - paragraph [ref=f1e623]:
+        - text: Startups de
+        - link "Barcelona & Catalonia Startup Hub" [ref=f1e624] [cursor=pointer]:
+          - /url: https://startupshub.catalonia.com/list-of-startups
+        - text: ", © European Union, CORDIS (CC BY 4.0), Red.es, Wikidata y las carteras públicas de cada fondo y aceleradora."

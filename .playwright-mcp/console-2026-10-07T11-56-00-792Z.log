@@ -1,0 +1,26 @@
+[     796ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:5173/node_modules/.vite/deps/react-dom_client.js?v=a566befe:14333
+[   26416ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:5173/node_modules/.vite/deps/react-dom_client.js?v=fae1da0b:14333
+[  321754ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://127.0.0.1:5173/src/app/components/Image.tsx:0
+[  321754ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://127.0.0.1:5173/src/app/components/PlayerIcon.tsx:0
+[  321754ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://127.0.0.1:5173/src/app/components/PlayerTimelineTrack.tsx:0
+[  321754ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:5173/src/app/components/robotWardrobe.css:0
+[  321754ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://127.0.0.1:5173/src/app/components/FooterRobotMark.tsx:0
+[  321754ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:5173/src/app/components/robotSkin.ts:0
+[  321755ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:5173/src/app/components/PixelSprite.tsx:0
+[  321755ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:5173/src/app/components/RobotVisuals.tsx:0
+[  321755ms] [ERROR] WebSocket connection to 'ws://127.0.0.1:5173/?token=r1wUtW4hNTqT' failed: Error in connection establishment: net::ERR_CONNECTION_RESET @ http://127.0.0.1:5173/@vite/client:867
+[  321761ms] [ERROR] WebSocket connection to 'ws://127.0.0.1:5173/?token=r1wUtW4hNTqT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:5173/@vite/client:877
+[  321761ms] [ERROR] [vite] failed to connect to websocket.
+your current setup:
+  (browser) 127.0.0.1:5173/ <--[HTTP]--> 127.0.0.1:5173/ (server)
+  (browser) 127.0.0.1:5173/ <--[WebSocket (failing)]--> 127.0.0.1:5173/ (server)
+Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr . @ http://127.0.0.1:5173/@vite/client:528
+[  321761ms] [ERROR] Failed to send error to Vite server: TypeError: Cannot read properties of undefined (reading 'send')
+    at Object.send (http://127.0.0.1:5173/@vite/client:448:7)
+    at Object.send (http://127.0.0.1:5173/@vite/client:903:16)
+    at Object.send (http://127.0.0.1:5173/@vite/client:311:21)
+    at Object.send (http://127.0.0.1:5173/@vite/client:389:30)
+    at sendError (http://127.0.0.1:5173/@vite/client:490:19)
+    at sendLog (http://127.0.0.1:5173/@vite/client:518:11) @ http://127.0.0.1:5173/@vite/client:519
+[  321762ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:5173/src/app/projects.ts:0
+[  324852ms] [WARNING] The resource http://127.0.0.1:5173/fonts/GeistVF-latin.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://127.0.0.1:5173/carrete:0

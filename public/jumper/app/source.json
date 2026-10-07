@@ -1,0 +1,220 @@
+{
+  "commit": "61d065219fca767f3142c8f10aff59eae5a5a004",
+  "files": [
+    {
+      "file": "app/README.md",
+      "bytes": 23959,
+      "sha256": "a2998c343cea54811e209711093985a98ded9509b1fa46b544375733fdcde323"
+    },
+    {
+      "file": "app/bow.motion.trajectory.json",
+      "bytes": 143332,
+      "sha256": "5fc7933935519eebc491ce3265d898fbd702c217f4ed9252d0472feef086fdc0"
+    },
+    {
+      "file": "app/brazilian.motion.trajectory.json",
+      "bytes": 1184406,
+      "sha256": "dd87589419a2928232cecb6f4378f3280285ace18886cea8079e91d448dedef9"
+    },
+    {
+      "file": "app/claw_left.json",
+      "bytes": 13627,
+      "sha256": "c51e495e1511c2ec0ce6f016b42aaaf65b532434e79fb24bc78b0f036e06ceb8"
+    },
+    {
+      "file": "app/claw_right.json",
+      "bytes": 13627,
+      "sha256": "c51e495e1511c2ec0ce6f016b42aaaf65b532434e79fb24bc78b0f036e06ceb8"
+    },
+    {
+      "file": "app/controller.toml",
+      "bytes": 13780,
+      "sha256": "fb8c7e7734f19e918d9fe67cc36b170ffe6ba9cc7c97d93693f874781ac1ce16"
+    },
+    {
+      "file": "app/dance_brazilian.json",
+      "bytes": 7107,
+      "sha256": "5458685d56d7feb2bfe9f245e6be37c836771805736250f4aab213133163c97c"
+    },
+    {
+      "file": "app/dance_crab.json",
+      "bytes": 7084,
+      "sha256": "de7df810b8bc11e42f215c086c4a031cb0a659a2882f8998d70933fcbf8c3eb6"
+    },
+    {
+      "file": "app/dance_dream_wings.json",
+      "bytes": 7112,
+      "sha256": "ed4a5ae9d0def106dc7d8d061946e37ddcbcccd9d048e59b15a6ceba7dc6b18b"
+    },
+    {
+      "file": "app/dance_maze.json",
+      "bytes": 7090,
+      "sha256": "d1bd05037b5c0dff4c78732bce49cbd3331e82d612ab987bb85aeacaefad007f"
+    },
+    {
+      "file": "app/demo.motion.trajectory.json",
+      "bytes": 4806304,
+      "sha256": "130ef0c903699527f0e5f294d09097d30ea973c602fa402dcb8f6fa54639b466"
+    },
+    {
+      "file": "app/dream_wings.motion.trajectory.json",
+      "bytes": 1067250,
+      "sha256": "eeaa5d4bc6b6f05dad22a53eb20af6b8b8e894cd8486d71e11bd3d014c281b3c"
+    },
+    {
+      "file": "app/gesture_bow.json",
+      "bytes": 7089,
+      "sha256": "b3b9d82ad20512d8bdcb95c2f4a066ba8c7756aaef03a200fe4e9d743e56c618"
+    },
+    {
+      "file": "app/gesture_hello.json",
+      "bytes": 7095,
+      "sha256": "9aaf7f5f47eba2e0a92f7ed902287f65d9d5bad84ac75165d1380fe8b173bef9"
+    },
+    {
+      "file": "app/gesture_paw.json",
+      "bytes": 7089,
+      "sha256": "ab52e1a7e694c151aa8d0e56cbaa31fd90de436633f85a3a8e3015c88313d849"
+    },
+    {
+      "file": "app/gesture_salute.json",
+      "bytes": 7098,
+      "sha256": "d07380eae647de5ab41418ed4400a8562dd6286b52ed771770f1a777a0347012"
+    },
+    {
+      "file": "app/hello.motion.trajectory.json",
+      "bytes": 118828,
+      "sha256": "dcea71db6ccdad875f5d7c778555a5203fd49e510cb6bcaccfcfc46ee848d971"
+    },
+    {
+      "file": "app/high_jump_flat.trajectory.json",
+      "bytes": 120179,
+      "sha256": "c05e862dc91028798270137413fcc1bb252d707347fb34a6830873ad7c7c341d"
+    },
+    {
+      "file": "app/jump.json",
+      "bytes": 6696,
+      "sha256": "0e257faaac9a30f269d8944db1bae494e816724b86f0a82dd0f746e5f4e63811"
+    },
+    {
+      "file": "app/locomotion.json",
+      "bytes": 14584,
+      "sha256": "6204effa319eba88e16b3d23bc1a8d005c59c3e0d074cac80f2ba233aab0e5d2"
+    },
+    {
+      "file": "app/manual.en.json",
+      "bytes": 30940,
+      "sha256": "a8638168b4cd4666be8d05b59d5818b956d6f9fca719dc5911e9aec23bd941c6"
+    },
+    {
+      "file": "app/maze.motion.trajectory.json",
+      "bytes": 165743,
+      "sha256": "61322a41f5556dd5e6b18351ece09bf3c8b3bbe982997f9845c08406065bd470"
+    },
+    {
+      "file": "app/models/claw_left.onnx",
+      "bytes": 1534640,
+      "sha256": "69e4b98a6e25b5f86d17d4ffdf9996df806b901217cecba96e43993ce61020b0"
+    },
+    {
+      "file": "app/models/dance_brazilian.onnx",
+      "bytes": 1129112,
+      "sha256": "a8d0c471560cf3aabffab38e5750b20c99d569717d2b46df08e91bbc16553398"
+    },
+    {
+      "file": "app/models/dance_crab.onnx",
+      "bytes": 1129112,
+      "sha256": "2723a684d471cd377e781aff5d777a4e65ea48317bc39951ac2e5bf5fb56b011"
+    },
+    {
+      "file": "app/models/dance_dream_wings.onnx",
+      "bytes": 1129112,
+      "sha256": "11fdca3c4ae57aa8638608f3b70dd3a51d4d6435d68602b8a298562befb03690"
+    },
+    {
+      "file": "app/models/dance_maze.onnx",
+      "bytes": 1129112,
+      "sha256": "c5cd38038ee7ccf408cd9a76e55f624d393666fb743db35609e6ea114aaeae4a"
+    },
+    {
+      "file": "app/models/gesture_bow.onnx",
+      "bytes": 1129112,
+      "sha256": "14e5168ff39179f8539b600721375bcc2d3c049d60a38060044144ef871b55dd"
+    },
+    {
+      "file": "app/models/gesture_hello.onnx",
+      "bytes": 1129112,
+      "sha256": "64d17cd88f86063692a2276dbbf977c399f2ea018558b7b4d34b8f0bb1cecda8"
+    },
+    {
+      "file": "app/models/gesture_paw.onnx",
+      "bytes": 1129112,
+      "sha256": "bde0871a418ac2735fd320390be50a2a97b1cb4df5929ef46176d0763b1dae21"
+    },
+    {
+      "file": "app/models/gesture_salute.onnx",
+      "bytes": 1129112,
+      "sha256": "20fac8e4ee9d51fb8daa7d44e90fbed6c4e88aff907a13e7bfbae51fa7423f16"
+    },
+    {
+      "file": "app/models/jump.onnx",
+      "bytes": 1014038,
+      "sha256": "1822601bd4c3696633d1bd7faf59c21988906ad75cc2c41f595375611313d79d"
+    },
+    {
+      "file": "app/models/locomotion.onnx",
+      "bytes": 1552128,
+      "sha256": "a6e0864c425d0604dfa6f11a82ac9e17d5396858dbed3b7dfe70188dba1b02ef"
+    },
+    {
+      "file": "app/paw.motion.trajectory.json",
+      "bytes": 102094,
+      "sha256": "4e4ac350a6b6ff33749c385d3a963552e1565ef8ecfd3ad0405c3aacfca66295"
+    },
+    {
+      "file": "app/reference.json",
+      "bytes": 183530,
+      "sha256": "3715ef8bd98e702954fda2492d93091a7600fb1ecae6d45ddf5ab8044597fd36"
+    },
+    {
+      "file": "app/runtime/web/controller.js",
+      "bytes": 29783,
+      "sha256": "dde2baa0c7ed5fa5de30e6d53128721959853929c29fa131f64de8100380e59e"
+    },
+    {
+      "file": "app/runtime/web/controller.wasm",
+      "bytes": 1357577,
+      "sha256": "5ca0cf7a917cecbe95f5e2ff0b4392ae7564c3c758958a7742c06c5214d73982"
+    },
+    {
+      "file": "app/salute.motion.trajectory.json",
+      "bytes": 98320,
+      "sha256": "f880c52b9a8250ab84031cf12305631ace17afe0b3ae40d07adb4f684e386985"
+    },
+    {
+      "file": "source/motor_config.yaml",
+      "bytes": 15912,
+      "sha256": "78de083959c5a2aecc3dc1eae259ab34d090cfb91321b4c079ac49acd0ae29b3"
+    },
+    {
+      "file": "source/constants.py",
+      "bytes": 37551,
+      "sha256": "821cdcf509594030d3e514e17a2ccd363de21ca216432133dc5c71ba09a74fd2"
+    },
+    {
+      "file": "source/actuator.py",
+      "bytes": 24340,
+      "sha256": "3513a2f6c26488c354e4f6f0252594161ff740a6a659d393db088723a4ece155"
+    },
+    {
+      "file": "source/sim.py",
+      "bytes": 20847,
+      "sha256": "2f7e3e1672b75fa3863c677dbbd3e6a62e49b97953db64f0d8a261a0d45e52bc"
+    },
+    {
+      "file": "source/velocity_env_cfg.py",
+      "bytes": 12423,
+      "sha256": "8a272a8b3c81c4a0321027e404645c99a4143076522ed3521636bf293dd3137b"
+    }
+  ]
+}
