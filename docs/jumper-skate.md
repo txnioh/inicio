@@ -141,9 +141,9 @@ camera itself would swing it round onto the hillside. It never goes through
 the scenery: it stays 0.8 m above the ground and rises over any rise that
 would hide Jumper (`course.ground`), quickly, then settles back slowly.
 
-Dragging orbits the camera and the wheel zooms. The new angle and distance
-stay, relative to the road, for the rest of the session (restarts included).
-Double-click returns to the run's own view. The
+The camera does not orbit: the run frames itself. The wheel (or a pinch)
+zooms between 0.6× and 1.6× the chase distance, and the zoom stays as set,
+restarts included. The
 road furniture casts no shadows, because with the sun this low its long
 shadows would sweep in and out of the shadow map around the rider.
 
@@ -205,7 +205,11 @@ The pilot stays on, so it rides the run again.
   squares, rocks, pines) is merged into one mesh per material. As separate
   meshes they cost about 800 draw calls in each of the view, the sea's
   reflection and the depth-of-field pass, and frames swung between 8 and 33 ms.
-  The sea reflection renders at 512². A frame now takes about 8 ms.
+  The sea reflection renders at 512².
+- Depth of field reads the depth buffer the scene was just rendered with
+  (`DepthBokeh`), instead of `BokehPass`'s second render of the whole scene,
+  and the bloom works at half its usual resolution (`HalfBloom`). On a Retina
+  screen a coast frame went from about 27 ms to 14.5 ms (8 ms at 1×).
 - The physics advances in 5 ms steps and the screen every 8 ms or more, so a
   frame's pose is up to one step old by a varying amount. The camera and
   everything that moves are drawn ahead by that leftover time at the board's
@@ -238,7 +242,7 @@ stays in the HUD during the run.
 A panel in the middle of the screen picks the board and starts the run (Enter)
 or the pilot (P). At the finish it shows the time with *Otra vez*.
 
-Enter: release. ←/→ or A/D: turn. W/S: toes/heels. P: pilot. R: reset. Drag: orbit, wheel: zoom, double-click: default view. The HUD
+Enter: release. ←/→ or A/D: turn. W/S: toes/heels. P: pilot. R: reset. Wheel or pinch: zoom. The HUD
 shows speed, top speed, time and cones down. It also draws the deck from above:
 where the feet were asked to be (ring), where they are (dot) and the body lean
 (bar).

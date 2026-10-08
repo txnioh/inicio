@@ -8,7 +8,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { BokehShader } from 'three/addons/shaders/BokehShader.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { dressEva } from './eva';
 import { courses, Skate, skateXml, type BoardKind } from './skate';
@@ -38,6 +39,23 @@ async function read<T>(path: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(`/jumper/${path}`, { signal });
   if (!response.ok) throw new Error(`No se pudo cargar ${path} (${response.status}).`);
   return response.json() as Promise<T>;
+}
+
+/** Depth of field from the depth buffer the scene was just rendered with. */
+class DepthBokeh extends ShaderPass {
+  constructor(private camera: THREE.PerspectiveCamera, aperture: number, maxblur: number) {
+    super({ ...BokehShader, defines: { DEPTH_PACKING: 0, PERSPECTIVE_CAMERA: 1 } }, 'tColor');
+    this.uniforms.aperture.value = aperture; this.uniforms.maxblur.value = maxblur;
+  }
+  render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget, delta: number, maskActive: boolean) {
+    Object.assign(this.uniforms.tDepth, { value: readBuffer.depthTexture });
+    this.uniforms.nearClip.value = this.camera.near; this.uniforms.farClip.value = this.camera.far; this.uniforms.aspect.value = this.camera.aspect;
+    super.render(renderer, writeBuffer, readBuffer, delta, maskActive);
+  }
+}
+/** Bloom computed at half the usual resolution: it is a soft glow anyway, and full size cost ~8 ms a frame on Retina. */
+class HalfBloom extends UnrealBloomPass {
+  setSize(width: number, height: number) { super.setSize(Math.round(width / 2), Math.round(height / 2)); }
 }
 
 export class Playground {
@@ -89,7 +107,7 @@ export class Playground {
   private onStats: (stats: Stats) => void;
 
   private skate?: Skate;
-  private bokeh?: BokehPass;
+  private bokeh?: DepthBokeh;
   private focusPoint = new THREE.Vector3();
 
   constructor(private host: HTMLElement, onStats: (stats: Stats) => void, private onError: (message: string) => void, private skateMode: false | BoardKind = false) {
@@ -104,20 +122,22 @@ export class Playground {
     this.renderer.toneMappingExposure = 0.9;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.setClearColor('#fdfdfc');
-    const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Math.min(4, this.renderer.capabilities.maxSamples) });
+    const view = skateMode ? courses[skateMode].view : undefined;
+    // With depth of field the scene's own depth buffer feeds it (no second render of the scene).
+    const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Math.min(4, this.renderer.capabilities.maxSamples), depthTexture: view?.post?.dof ? new THREE.DepthTexture(1, 1) : null });
     this.composer = new EffectComposer(this.renderer, target);
+    if (view?.post?.dof && !this.composer.renderTarget2.depthTexture) this.composer.renderTarget2.depthTexture = new THREE.DepthTexture(1, 1);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.composer.addPass(new SMAAPass());
     this.composer.addPass(new OutputPass());
-    const view = skateMode ? courses[skateMode].view : undefined;
     this.scene.fog = view ? new THREE.Fog(view.sky, ...view.fog) : new THREE.Fog('#fdfdfc', 3, 7);
     if (view) { this.camera.far = view.far; this.camera.near = view.near ?? this.camera.near; this.camera.updateProjectionMatrix(); this.renderer.setClearColor(view.sky); }
     // Depth of field (focused on the rider every frame) and bloom, before SMAA.
     if (view?.post?.dof) {
-      this.bokeh = new BokehPass(this.scene, this.camera, { focus: 3, aperture: view.post.dof.aperture, maxblur: view.post.dof.maxblur });
+      this.bokeh = new DepthBokeh(this.camera, view.post.dof.aperture, view.post.dof.maxblur);
       this.composer.insertPass(this.bokeh, 1);
     }
-    if (view?.post?.bloom) this.composer.insertPass(new UnrealBloomPass(new THREE.Vector2(256, 256), ...view.post.bloom), this.bokeh ? 2 : 1);
+    if (view?.post?.bloom) this.composer.insertPass(new HalfBloom(new THREE.Vector2(256, 256), ...view.post.bloom), this.bokeh ? 2 : 1);
     // A soft studio environment, only on the skate run, so the trucks' aluminium
     // and steel read as metal and the urethane and clear coat catch highlights.
     if (skateMode) {
@@ -136,9 +156,22 @@ export class Playground {
     this.controls.maxPolarAngle = Math.PI * 0.49;
     // Orbiting or zooming during a ride moves the chase camera for good: the new
     // angle and distance are kept relative to the road. Double-click restores it.
-    this.controls.addEventListener('start', () => { this.adjusting = Infinity; });
-    this.controls.addEventListener('end', () => { this.adjusting = performance.now() + 600; });
-    this.renderer.domElement.addEventListener('dblclick', () => { this.custom = undefined; this.adjusting = 0; });
+    // On the downhill the chase camera frames the run: no orbiting, only a
+    // limited zoom (wheel or pinch) that stays as set.
+    if (skateMode) {
+      this.controls.enableRotate = this.controls.enablePan = this.controls.enableZoom = false;
+      this.renderer.domElement.addEventListener('wheel', event => { event.preventDefault(); this.setZoom(this.zoom * Math.exp(event.deltaY * 0.0015)); }, { passive: false });
+      const touches = new Map<number, [number, number]>();
+      let spread = 0;
+      const gap = () => { const [a, b] = [...touches.values()]; return Math.hypot(a[0] - b[0], a[1] - b[1]); };
+      this.renderer.domElement.addEventListener('pointerdown', event => { touches.set(event.pointerId, [event.clientX, event.clientY]); if (touches.size === 2) spread = gap(); });
+      this.renderer.domElement.addEventListener('pointermove', event => {
+        if (!touches.has(event.pointerId)) return;
+        touches.set(event.pointerId, [event.clientX, event.clientY]);
+        if (touches.size === 2 && spread) { const now = gap(); this.setZoom(this.zoom * spread / Math.max(now, 1)); spread = now; }
+      });
+      for (const type of ['pointerup', 'pointercancel', 'pointerleave'] as const) this.renderer.domElement.addEventListener(type, event => { touches.delete(event.pointerId); spread = 0; });
+    }
     this.cameraView('iso');
     const ambient = new THREE.HemisphereLight('#ffffff', '#9ca3a0', 2.6);
     ambient.position.set(0, 0, 1);
@@ -460,18 +493,15 @@ export class Playground {
         const board = this.skate.boardPose(this.data), lead = this.playing ? Math.min(this.accumulator, 0.005) : 0;
         this.lead.set(board.v[0] * lead, board.v[1] * lead, board.v[2] * lead);
         this.steer(board.heading, elapsed);
-        const heading = this.viewHeading(), { behind, side, ahead: far, aim: off = 0 } = this.skate.course.view.chase;
+        const heading = this.viewHeading(), { ahead, aim = 0 } = this.skate.course.view.chase;
         // Turned round, the camera looks back at Jumper rather than down the road.
-        const reach = this.custom ? Math.max(0, Math.cos(this.custom.yaw - Math.atan2(side, -behind))) : 1, ahead = far * reach, aim = off * reach;
+
         this.follow.set(board.x + Math.cos(heading) * ahead - Math.sin(heading) * aim, board.y + Math.sin(heading) * ahead + Math.cos(heading) * aim, board.z + 0.1).add(this.lead);
       } else this.follow.set(this.data.qpos[0], this.data.qpos[1], Math.max(0.09, this.data.qpos[2] * 0.7));
       this.follow.sub(this.controls.target).multiplyScalar(1 - Math.exp(-elapsed * 5));
       this.controls.target.add(this.follow);
-      if (this.skate && now > this.adjusting) this.chase(elapsed);
-      else {
-        this.camera.position.add(this.follow);
-        if (this.skate) this.keep();
-      }
+      if (this.skate) this.chase(elapsed);
+      else this.camera.position.add(this.follow);
       this.skate?.course.animate?.(now / 1000);
       // Keep Jumper itself in focus.
       if (this.bokeh) (this.bokeh.uniforms as Record<string, { value: number }>).focus.value = this.camera.position.distanceTo(this.focusPoint.set(this.data.qpos[0], this.data.qpos[1], this.data.qpos[2]));
@@ -553,15 +583,11 @@ export class Playground {
   canAction(name: string) { return !!this.data && (name === 'locomotion' || !!modeBinding(this.robot.fsm, name)); }
   releaseBoard() { if (this.data) this.skate?.release(this.data.time); }
   // Chase camera for the downhill: behind and above the board, framed per run
-  // (course view.chase). Dragging the view pauses it for 4 s.
-  private adjusting = 0;
-  /** The rider's own camera, if they moved it: heading relative to the road, distance across the ground, height. */
-  private custom?: { yaw: number; horiz: number; z: number };
-  private keep() {
-    const board = this.skate!.boardPose(this.data), v = this.camera.position.clone().sub(this.focusPoint.set(board.x, board.y, board.z + 0.15).add(this.lead));
-    this.custom = { yaw: Math.atan2(v.y, v.x) - this.roadHeading, horiz: Math.hypot(v.x, v.y), z: v.z - this.lift };
-  }
+  // (course view.chase), scaled by the zoom.
   private chaseOffset = new THREE.Vector3();
+  /** Chase distance factor, set by the wheel or a pinch: 0.6 (closer) to 1.6 (further). */
+  private zoom = 1;
+  private setZoom(zoom: number) { this.zoom = Math.min(1.6, Math.max(0.6, zoom)); }
   // The road's heading, smoothed: the board's own heading shivers with every
   // correction, and a camera 5 m back and looking 7 m ahead would swing with it.
   private roadHeading = NaN;
@@ -599,8 +625,7 @@ export class Playground {
     // Behind the board along the road and out to its side (left positive). Only
     // the look-at point turns towards the scenery, so the camera never swings
     // round onto the hillside.
-    if (this.custom) { const { yaw, horiz, z } = this.custom; this.chaseOffset.set(Math.cos(heading + yaw) * horiz, Math.sin(heading + yaw) * horiz, z); }
-    else this.chaseOffset.set(-Math.cos(heading) * behind - Math.sin(heading) * side, -Math.sin(heading) * behind + Math.cos(heading) * side, height);
+    this.chaseOffset.set(-Math.cos(heading) * behind - Math.sin(heading) * side, -Math.sin(heading) * behind + Math.cos(heading) * side, height).multiplyScalar(this.zoom);
     const rider = this.focusPoint.set(board.x, board.y, board.z + 0.15).add(this.lead);
     const need = this.clearance(this.desired.copy(rider).add(this.chaseOffset), rider);
     // Rise promptly, settle back slowly.
