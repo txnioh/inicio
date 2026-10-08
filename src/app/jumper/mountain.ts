@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { Water } from 'three/addons/objects/Water.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { bannerTexture, tree } from './course.ts';
+import { bannerTexture } from './course.ts';
+import { hillside } from './hillside.ts';
+import { terrainMaterial } from './terrainMaterial.ts';
 import { frameQuat, resample, stopperBoom, type Course, type Frame, type Point } from './track.ts';
 
 // A coast road for the longboard, after the classic downhill runs: a road cut
@@ -68,8 +70,11 @@ function centreLine() {
   const lift = coast.top - samples[Math.round(coast.lead / step)].z;
   for (const sample of samples) sample.z += lift;
   const lengths = pieces.map(piece => piece.length);
+  // Arc lengths of the bends and which way each turns (+1 left).
+  const bends: [number, number, number][] = [];
+  pieces.reduce((start, piece) => { if (piece.curvature) bends.push([start, start + piece.length, Math.sign(piece.curvature)]); return start + piece.length; }, 0);
   const finish = lengths.slice(0, 12).reduce((a, b) => a + b, 0) - 1.2; // near the end of the finish straight
-  return { samples, step, finish, total };
+  return { samples, step, finish, total, bends };
 }
 const line = centreLine();
 const at = (s: number) => {
@@ -164,67 +169,20 @@ function hill(x: number, y: number) {
   return near + (Math.max(d > 0 ? z + 1 : -50, farField(x, y)) - near) * w;
 }
 
-const palette = {
-  wet: new THREE.Color('#57534c'), wetSand: new THREE.Color('#a8956f'), sand: new THREE.Color('#cdb88c'), shoreRock: new THREE.Color('#6e675e'),
-  grass: new THREE.Color('#5b7a3a'), meadow: new THREE.Color('#7d9147'), dry: new THREE.Color('#a39256'), scrub: new THREE.Color('#3d5a2b'),
-  rock: new THREE.Color('#8a7f72'), cliff: new THREE.Color('#6a625a'), scree: new THREE.Color('#a59d92'), peak: new THREE.Color('#bdb7ad'),
-};
-/**
- * Colour by height above the sea, steepness (1 - normal z) and noise: wet rock
- * and sand at the waterline, grass on the lower slopes, scrub then bare rock and
- * scree higher up (the road sits ~7–8 m up; 1 m here is ~10 m at Jumper's scale).
- */
-function groundColour(c: THREE.Color, x: number, y: number, h: number, steep: number) {
-  const n = noise(x * 0.09, y * 0.09) * 0.6 + noise(x * 0.35, y * 0.35) * 0.4, m = noise(x * 0.8 + 9, y * 0.8), patch = noise(x * 0.12 + 5, y * 0.12);
-  if (h < coast.seaLevel + 0.08) return c.copy(palette.wet).offsetHSL(0, 0, (m - 0.5) * 0.06);
-  if (h < coast.seaLevel + 0.5) return c.copy(steep > 0.3 ? palette.shoreRock : palette.wetSand).lerp(palette.sand, smooth(0.15, 0.5, h) * (steep > 0.3 ? 0 : 1)).offsetHSL(0, 0, (m - 0.5) * 0.06);
-  c.copy(palette.grass).lerp(palette.meadow, n * 0.8).lerp(palette.dry, smooth(7, 11, h) * 0.6);
-  if (patch > 0.6) c.lerp(palette.scrub, 0.65);
-  // Above the grass: rock showing through in patches, then bare rock and scree.
-  const bare = smooth(9.5, 15, h + (patch - 0.5) * 4);
-  c.lerp(palette.rock, bare * 0.85).lerp(palette.scree, smooth(30, 60, h) * 0.7);
-  c.lerp(steep > 0.5 ? palette.cliff : palette.rock, smooth(0.18, 0.42, steep));
-  if (h > 90) c.lerp(palette.peak, smooth(90, 150, h));
-  return c.offsetHSL((m - 0.5) * 0.02, 0, (m - 0.5) * 0.1);
-}
-
-let grain: THREE.CanvasTexture | null | undefined;
-/** Grass and soil grain: tufts and specks around mid-grey, multiplied over the colours. */
-function groundGrain() {
-  if (grain !== undefined) return grain;
-  if (typeof document === 'undefined') return (grain = null);
-  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
-  const c = canvas.getContext('2d')!;
-  c.fillStyle = '#d8d8d8'; c.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 9000; i++) {
-    const x = Math.random() * 256, y = Math.random() * 256, g = 150 + Math.random() * 105;
-    c.strokeStyle = `rgba(${g},${g},${g},0.55)`; c.lineWidth = 1;
-    c.beginPath(); c.moveTo(x, y); c.lineTo(x + (Math.random() - 0.5) * 3, y - 2 - Math.random() * 4); c.stroke();
-  }
-  for (let i = 0; i < 2500; i++) { const g = 90 + Math.random() * 60; c.fillStyle = `rgba(${g},${g - 6},${g - 14},0.5)`; c.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
-  grain = new THREE.CanvasTexture(canvas);
-  grain.wrapS = grain.wrapT = THREE.RepeatWrapping; grain.colorSpace = THREE.SRGBColorSpace; grain.anisotropy = 8;
-  return grain;
-}
-
-/** A height grid as an indexed, smooth-shaded mesh with colours by slope and height. */
+/** A height grid as an indexed, smooth-shaded mesh, shaded by the terrain material. */
+let ground: THREE.MeshStandardMaterial | undefined;
 function gridMesh(x0: number, y0: number, nx: number, ny: number, cell: number, heights: Float32Array) {
   const positions = new Float32Array((nx + 1) * (ny + 1) * 3), index: number[] = [];
   for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) { const k = j * (nx + 1) + i; positions.set([x0 + i * cell, y0 + j * cell, heights[k]], k * 3); }
   for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1; index.push(a, b, d, a, d, c); }
   const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setIndex(index); geometry.computeVertexNormals();
-  const normals = geometry.getAttribute('normal'), colours = new Float32Array(positions.length), c = new THREE.Color();
-  for (let k = 0; k < normals.count; k++) {
-    groundColour(c, positions[k * 3], positions[k * 3 + 1], positions[k * 3 + 2], 1 - normals.getZ(k));
-    colours.set([c.r, c.g, c.b], k * 3);
-  }
-  geometry.setAttribute('color', new THREE.BufferAttribute(colours, 3));
-  // World-space UVs for the ground's grain, tiled every 2.5 m.
-  const uvs = new Float32Array((nx + 1) * (ny + 1) * 2);
-  for (let k = 0; k < uvs.length / 2; k++) { uvs[k * 2] = positions[k * 3] / 2.5; uvs[k * 2 + 1] = positions[k * 3 + 1] / 2.5; }
-  geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, map: groundGrain(), roughness: 1, envMapIntensity: 0.3 }));
+  // Hollows and ridges for the material: scrub in the gullies, bare rock on the crests, shade in the folds.
+  const bend = curvature(heights, nx, ny, cell);
+  for (let k = 0; k < bend.length; k++) bend[k] = Math.max(-1, Math.min(1, bend[k] * cell * 3));
+  geometry.setAttribute('curvature', new THREE.BufferAttribute(bend, 1));
+  ground ??= terrainMaterial(coast.seaLevel);
+  const mesh = new THREE.Mesh(geometry, ground);
   mesh.receiveShadow = true;
   return mesh;
 }
@@ -240,17 +198,14 @@ function shoulders(material: THREE.Material) {
   const group = new THREE.Group();
   for (const [d0, d1] of [[coast.half + 0.11, shoulder.uphill + 0.35], [-(shoulder.downhill + 0.35), -(coast.half + 0.02)]]) {
     const across = Math.ceil(Math.abs(d1 - d0) / 0.25), step = 0.2, rows = Math.floor(line.total / step);
-    const positions: number[] = [], uvs: number[] = [], index: number[] = [];
+    const positions: number[] = [], index: number[] = [];
     for (let r = 0; r <= rows; r++) for (let c = 0; c <= across; c++) {
       const [x, y] = offset(r * step, d0 + (d1 - d0) * c / across);
-      positions.push(x, y, hill(x, y) + 0.004); uvs.push(x / 2.5, y / 2.5);
+      positions.push(x, y, hill(x, y) + 0.004);
       if (r && c) { const a = (r - 1) * (across + 1) + c - 1, b = a + 1, e = a + across + 1, g = e + 1; index.push(a, e, b, b, e, g); }
     }
-    const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)).setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setIndex(index); geometry.computeVertexNormals();
-    const normals = geometry.getAttribute('normal'), colours: number[] = [], c = new THREE.Color();
-    for (let k = 0; k < normals.count; k++) { groundColour(c, positions[k * 3], positions[k * 3 + 1], positions[k * 3 + 2], 1 - Math.abs(normals.getZ(k))); colours.push(c.r, c.g, c.b); }
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
     const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow = true;
     group.add(mesh);
@@ -281,11 +236,91 @@ function foam(segments: [number, number, number, number][]) {
   return mesh;
 }
 
+/**
+ * Hydraulic erosion by droplets (after Hans Beyer's and Sebastian Lague's):
+ * rain falls at random, runs downhill with a little inertia, picks up
+ * sediment while it speeds up and drops it where it slows. Tens of thousands
+ * of drops cut branching gullies down the slopes and leave fans and spurs
+ * between them, which is what reads as real ground. The road and its cut stay
+ * as designed (locked).
+ */
+function erode(heights: Float32Array, locked: Uint8Array, nx: number, ny: number, cell: number) {
+  let seed = 3; const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const row = nx + 1, at = (x: number, y: number) => {
+    const i = Math.floor(x), j = Math.floor(y), u = x - i, v = y - j, k = j * row + i;
+    const a = heights[k], b = heights[k + 1], c = heights[k + row], d = heights[k + row + 1];
+    return { h: a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v, gx: (b - a) * (1 - v) + (d - c) * v, gy: (c - a) * (1 - u) + (d - b) * u };
+  };
+  // Spread a change over a small brush, so the drops carve smooth channels, not pits.
+  const brush: [number, number, number][] = [];
+  for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) { const w = Math.max(0, 1 - Math.hypot(di, dj) / 3.5); if (w) brush.push([di, dj, w]); }
+  const total = brush.reduce((sum, [, , w]) => sum + w, 0);
+  const change = (x: number, y: number, amount: number, spread: boolean) => {
+    const i = Math.floor(x), j = Math.floor(y);
+    if (!spread) {
+      const u = x - i, v = y - j;
+      for (const [di, dj, w] of [[0, 0, (1 - u) * (1 - v)], [1, 0, u * (1 - v)], [0, 1, (1 - u) * v], [1, 1, u * v]] as const) { const k = (j + dj) * row + i + di; if (!locked[k]) heights[k] += amount * w; }
+      return;
+    }
+    for (const [di, dj, w] of brush) {
+      const ii = i + di, jj = j + dj;
+      if (ii < 0 || jj < 0 || ii > nx || jj > ny) continue;
+      const k = jj * row + ii; if (!locked[k]) heights[k] += amount * w / total;
+    }
+  };
+  const original = heights.slice(), drops = Math.round(nx * ny * 0.35);
+  for (let n = 0; n < drops; n++) {
+    let x = 2 + random() * (nx - 4), y = 2 + random() * (ny - 4), dx = 0, dy = 0, speed = 1, water = 1, sediment = 0;
+    for (let life = 0; life < 60; life++) {
+      const here = at(x, y);
+      if (here.h < coast.seaLevel - 0.3) break; // into the sea
+      dx = dx * 0.1 - here.gx * 0.9; dy = dy * 0.1 - here.gy * 0.9;
+      const length = Math.hypot(dx, dy); if (length < 1e-6) break;
+      dx /= length; dy /= length;
+      const px = x, py = y; x += dx; y += dy;
+      if (x < 1 || y < 1 || x > nx - 2 || y > ny - 2) break;
+      const dh = at(x, y).h - here.h;
+      const capacity = Math.max(-dh * speed * water * 2.5, 0.002);
+      if (sediment > capacity || dh > 0) {
+        const drop = dh > 0 ? Math.min(dh, sediment) : (sediment - capacity) * 0.25;
+        sediment -= drop; change(px, py, drop, false);
+      } else {
+        const take = Math.min((capacity - sediment) * 0.12, -dh);
+        sediment += take; change(px, py, -take, true);
+      }
+      speed = Math.sqrt(Math.max(0, speed * speed - dh / cell * 4)); water *= 0.985;
+    }
+  }
+  // Gullies at most ~70 cm deep and fans ~30 cm high (7 and 3 m at full scale),
+  // then one gentle smoothing pass so the channels have soft banks.
+  for (let k = 0; k < heights.length; k++) heights[k] = Math.min(original[k] + 0.3, Math.max(original[k] - 0.7, heights[k]));
+  const smoothed = heights.slice();
+  for (let j = 1; j < ny; j++) for (let i = 1; i < nx; i++) {
+    const k = j * row + i;
+    if (!locked[k]) smoothed[k] = heights[k] * 0.5 + (heights[k - 1] + heights[k + 1] + heights[k - row] + heights[k + row]) * 0.125;
+  }
+  heights.set(smoothed);
+}
+
+/** Curvature of a height grid (positive in hollows and gullies, negative on ridges), smoothed. */
+function curvature(heights: Float32Array, nx: number, ny: number, cell: number) {
+  const row = nx + 1, raw = new Float32Array(heights.length), out = new Float32Array(heights.length);
+  for (let j = 1; j < ny; j++) for (let i = 1; i < nx; i++) {
+    const k = j * row + i;
+    raw[k] = (heights[k - 1] + heights[k + 1] + heights[k - row] + heights[k + row] - 4 * heights[k]) / (cell * cell);
+  }
+  for (let j = 1; j < ny; j++) for (let i = 1; i < nx; i++) {
+    const k = j * row + i;
+    out[k] = (raw[k] * 4 + raw[k - 1] + raw[k + 1] + raw[k - row] + raw[k + row]) / 8;
+  }
+  return out;
+}
+
 function terrain() {
   const xs = line.samples.map(c => c.x), ys = line.samples.map(c => c.y);
   const x0 = Math.min(...xs) - 60, x1 = Math.max(...xs) + 60, y0 = Math.min(...ys) - 45, y1 = Math.max(...ys) + 90;
   const cell = 0.6, nx = Math.ceil((x1 - x0) / cell), ny = Math.ceil((y1 - y0) / cell);
-  const heights = new Float32Array((nx + 1) * (ny + 1)), locked = new Uint8Array(heights.length);
+  const heights = new Float32Array((nx + 1) * (ny + 1)), locked = new Uint8Array(heights.length), fade = new Float32Array(heights.length);
   for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
     const x = x0 + i * cell, y = y0 + j * cell, k = j * (nx + 1) + i;
     heights[k] = hill(x, y);
@@ -293,11 +328,16 @@ function terrain() {
     // bands (drawn finely along the road) the grid sits a little lower.
     const { d } = roadNear(x, y);
     if (Math.abs(d) < coast.half + 3) locked[k] = 1;
+    fade[k] = smooth(coast.half + 3, coast.half + 10, Math.abs(d));
     if (d > 0 ? d < shoulder.uphill + 0.3 : -d < shoulder.downhill + 0.3) heights[k] -= 0.25;
   }
+  // Erosion eases in away from the road, so its cut and fill meet the carved slopes without a step.
+  const shaped = heights.slice();
+  erode(shaped, locked, nx, ny, cell);
+  for (let k = 0; k < heights.length; k++) heights[k] += (shaped[k] - heights[k]) * fade[k];
   // Thermal erosion: material slides down wherever a slope exceeds the talus angle.
   const talus = cell * 1.1;
-  for (let pass = 0; pass < 4; pass++) for (let j = 1; j < ny; j++) for (let i = 1; i < nx; i++) {
+  for (let pass = 0; pass < 3; pass++) for (let j = 1; j < ny; j++) for (let i = 1; i < nx; i++) {
     const k = j * (nx + 1) + i;
     if (locked[k]) continue;
     for (const o of [1, -1, nx + 1, -(nx + 1)]) {
@@ -331,7 +371,16 @@ function terrain() {
   }
   const group = new THREE.Group();
   group.add(near, gridMesh(fx0, fy0, fnx, fny, fcell, far), foam(segments), shoulders(near.material));
-  return { group, shore: segments };
+  // The drawn ground: the fine shoulder bands beside the road, the near grid elsewhere.
+  const surface = (x: number, y: number) => {
+    const { d } = roadNear(x, y);
+    if ((d > coast.half && d < shoulder.uphill + 0.35) || (d < -coast.half && d > -(shoulder.downhill + 0.35))) return hill(x, y) + 0.004;
+    const fx = (x - x0) / cell, fy = (y - y0) / cell, i = Math.floor(fx), j = Math.floor(fy);
+    if (i < 0 || j < 0 || i >= nx || j >= ny) return hill(x, y);
+    const u = fx - i, v = fy - j, k = j * (nx + 1) + i;
+    return (heights[k] * (1 - u) + heights[k + 1] * u) * (1 - v) + (heights[k + nx + 1] * (1 - u) + heights[k + nx + 2] * u) * v;
+  };
+  return { group, surface };
 }
 
 /** A strip following the road between lateral offsets d0..d1, lifted by h. */
@@ -349,18 +398,40 @@ function band(d0: number, d1: number, h: number, s0 = 0, s1 = line.total, step =
 
 // Golden hour: the sun low over the sea, ahead and to the right of the run.
 const sun = new THREE.Vector3(1, -0.62, 0.2).normalize();
+let skyTime: { value: number } | undefined;
+/**
+ * The sky: a gradient from a warm horizon to a blue zenith, glowing round the
+ * sun, with soft clouds drawn in the shader (fbm on the dome, thinning towards
+ * the zenith and the horizon, lit warm on the sun's side) drifting slowly.
+ */
 function skyDome(horizon: string, zenith: string) {
-  const geometry = new THREE.SphereGeometry(800, 48, 24);
-  const colours: number[] = [], low = new THREE.Color(horizon), high = new THREE.Color(zenith), glow = new THREE.Color('#ffc98a'), c = new THREE.Color(), v = new THREE.Vector3();
-  const p = geometry.getAttribute('position');
-  for (let i = 0; i < p.count; i++) {
-    v.set(p.getX(i), p.getY(i), p.getZ(i)).normalize();
-    c.copy(low).lerp(high, Math.pow(Math.max(0, v.z), 0.5));
-    c.lerp(glow, Math.pow(Math.max(0, v.dot(sun)), 6) * 0.85);
-    colours.push(c.r, c.g, c.b);
-  }
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }));
+  const material = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { low: { value: new THREE.Color(horizon) }, high: { value: new THREE.Color(zenith) }, glow: { value: new THREE.Color('#ffc98a') }, sun: { value: sun.clone() }, time: { value: 0 } },
+    vertexShader: 'varying vec3 vDirection; void main() { vDirection = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `
+      uniform vec3 low, high, glow, sun; uniform float time; varying vec3 vDirection;
+      float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+      float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
+      float fbm(vec2 p) { float v = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { v += a * noise(p); p = p * 2.07 + 13.7; a *= 0.5; } return v; }
+      void main() {
+        vec3 d = normalize(vDirection);
+        float up = max(d.z, 0.0), toSun = max(dot(d, normalize(sun)), 0.0);
+        vec3 colour = mix(low, high, pow(up, 0.5));
+        colour = mix(colour, glow, pow(toSun, 6.0) * 0.85);
+        // Clouds on a flat layer overhead, seen in perspective: stretched towards the horizon.
+        vec2 q = d.xy / (d.z + 0.12) * 1.6 + vec2(time * 0.004, time * 0.0015);
+        float c = fbm(q + fbm(q * 0.5) * 0.8);
+        float cover = smoothstep(0.52, 0.78, c) * smoothstep(0.02, 0.14, d.z) * (1.0 - smoothstep(0.55, 0.9, d.z));
+        vec3 cloud = mix(vec3(0.98, 0.9, 0.82), vec3(1.0, 0.86, 0.66), pow(toSun, 3.0)) * (0.82 + 0.25 * smoothstep(0.6, 0.85, c));
+        // Thicker cores shade a little grey-violet underneath.
+        cloud = mix(cloud, vec3(0.78, 0.74, 0.78), smoothstep(0.72, 0.95, c) * 0.35);
+        gl_FragColor = vec4(mix(colour, cloud, cover * 0.85), 1.0);
+        #include <colorspace_fragment>
+      }`,
+  });
+  skyTime = material.uniforms.time;
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(800, 48, 24), material);
   mesh.renderOrder = -1;
   return mesh;
 }
@@ -402,18 +473,6 @@ function seaNormals() {
 }
 
 /** Puffy low-poly clouds: a few squashed blobs per cloud. */
-function cloud(seed: number) {
-  const group = new THREE.Group();
-  const material = new THREE.MeshStandardMaterial({ color: '#fff7ee', emissive: '#f2c79c', emissiveIntensity: 0.18, roughness: 1, flatShading: true });
-  for (let i = 0; i < 6; i++) {
-    const r = 9 + noise(seed, i) * 9, blob = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), material);
-    blob.position.set((i - 2.5) * 11 + noise(i, seed) * 6, noise(seed * 3, i) * 8, (noise(i * 2, seed) - 0.3) * 5);
-    blob.scale.set(1.3, 1, 0.5);
-    group.add(blob);
-  }
-  return group;
-}
-
 /** A small sailing boat: hull and two sails. */
 function boat() {
   const group = new THREE.Group();
@@ -442,23 +501,12 @@ function lighthouse() {
   const gallery = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.12, 32).rotateX(Math.PI / 2), dark); gallery.position.z = height + 0.1;
   const lantern = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.55, 20).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#ffe8b0', emissive: '#ffcf70', emissiveIntensity: 0.9 })); lantern.position.z = height + 0.46;
   const cap = new THREE.Mesh(new THREE.ConeGeometry(0.44, 0.5, 20).rotateX(Math.PI / 2), dark); cap.position.z = height + 0.99;
-  const rock = new THREE.Mesh(rockGeometry(1.6, 3), new THREE.MeshStandardMaterial({ color: '#7d756d', roughness: 1, flatShading: true }));
-  rock.scale.set(1.3, 1.1, 0.7); rock.position.z = -0.35;
-  group.add(gallery, lantern, cap, rock);
+  // A whitewashed stone plinth, stepped, set down into the point.
+  const stone = new THREE.MeshStandardMaterial({ color: '#d9d2c4', roughness: 0.95 });
+  const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.05, 1.2, 40).rotateX(Math.PI / 2), stone); plinth.position.z = -0.45;
+  const step = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.8, 0.2, 40).rotateX(Math.PI / 2), stone); step.position.z = 0.2;
+  group.add(gallery, lantern, cap, plinth, step);
   return group;
-}
-
-/** A weathered rock: an icosahedron pushed in and out by noise, flatter on top. */
-function rockGeometry(radius: number, seed: number) {
-  const geometry = new THREE.IcosahedronGeometry(radius, 1), p = geometry.getAttribute('position'), v = new THREE.Vector3();
-  for (let i = 0; i < p.count; i++) {
-    v.fromBufferAttribute(p, i);
-    const k = 0.75 + noise(v.x * 1.7 + seed, v.y * 1.7 - seed) * 0.45 + noise(v.z * 3 + seed, v.x * 3) * 0.12;
-    v.multiplyScalar(k); if (v.z > radius * 0.35) v.z = radius * 0.35 + (v.z - radius * 0.35) * 0.4;
-    p.setXYZ(i, v.x, v.y, v.z);
-  }
-  geometry.computeVertexNormals();
-  return geometry;
 }
 
 /** A gull: two thin wings that flap. */
@@ -541,16 +589,8 @@ function build(scene: THREE.Scene, stopper: Frame) {
       'vec3 albedo = mix( ( sunColor * diffuseLight * 0.12 + scatter + waterColor * 0.35 ) * getShadowMask(), reflectionSample * 0.5 + specularLight, reflectance * 0.75 );');
   shader.uniforms.size.value = 22;
   sea.position.z = coast.seaLevel; scene.add(sea);
-  motion.push(t => { shader.uniforms.time.value = t * 0.6; });
-  // Clouds drifting along the coast, boats on the bay, a lighthouse on a point.
-  for (let i = 0; i < 9; i++) {
-    const c = cloud(i), angle = -2.2 + i * 0.55, distance = 260 + noise(i, 3) * 260;
-    c.position.set(Math.cos(angle) * distance + 60, Math.sin(angle) * distance, 28 + noise(i, 9) * 30);
-    c.rotation.z = angle + Math.PI / 2;
-    scene.add(c);
-    const x0 = c.position.x;
-    motion.push(t => { c.position.x = x0 + ((t * 0.6 + i * 40) % 160) - 80; });
-  }
+  motion.push(t => { shader.uniforms.time.value = t * 0.6; if (skyTime) skyTime.value = t; });
+  // Boats on the bay, a lighthouse on a point. The clouds are painted in the sky.
   for (const [x, y, speed] of [[40, -55, 0.25], [-10, -120, 0.15], [110, -90, 0.2], [70, -200, 0.1]]) {
     const b = boat(); b.position.set(x, y, coast.seaLevel); b.rotation.z = 0.3; b.scale.setScalar(x > 100 ? 1.2 : 1);
     scene.add(b);
@@ -573,17 +613,6 @@ function build(scene: THREE.Scene, stopper: Frame) {
   const land = terrain();
   add(land.group, false);
   if (foamMaterial?.alphaMap) { const surf = foamMaterial, map = surf.alphaMap!; motion.push(t => { surf.opacity = 0.6 + Math.sin(t * 0.9) * 0.25; map.offset.set(t * 0.03, Math.sin(t * 0.5) * 0.05); }); }
-  // Rocks along the waterline, half sunk, in small clusters.
-  let seed = 11; const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const rockMaterials = ['#6f685f', '#7d756d', '#8a8176'].map(color => new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true }));
-  for (let k = 0; k < 26 && land.shore.length; k++) {
-    const [ax, ay] = land.shore[Math.floor(random() * land.shore.length)];
-    for (let r = 0; r < 1 + Math.floor(random() * 3); r++) {
-      const size = 0.15 + random() * 0.5, rock = new THREE.Mesh(rockGeometry(size, k * 7 + r), rockMaterials[Math.floor(random() * 3)]);
-      rock.position.set(ax + (random() - 0.5) * 1.2, ay + (random() - 0.5) * 1.2, coast.seaLevel - size * 0.25);
-      rock.rotation.z = random() * 6; still(rock);
-    }
-  }
   const asphaltMap = asphaltTexture();
   add(new THREE.Mesh(band(-coast.half - 0.02, coast.half + 0.02, 0.002), layer(new THREE.MeshStandardMaterial({ color: asphaltMap ? '#ffffff' : '#55585c', map: asphaltMap, roughness: 0.9 }), 1)), false);
   const paint = layer(new THREE.MeshStandardMaterial({ color: '#f1ede4', roughness: 0.7 }), 2);
@@ -620,12 +649,8 @@ function build(scene: THREE.Scene, stopper: Frame) {
   for (let i = 0; i < p.count; i++) p.setZ(i, p.getZ(i) + (i % 2 ? 0.07 : 0.15));
   beam.computeVertexNormals();
   still(new THREE.Mesh(beam, new THREE.MeshStandardMaterial({ color: '#b9bec3', roughness: 0.55, metalness: 0.35, side: THREE.DoubleSide })));
-  // A few pines above the cut and along the shoulder on the sea side.
-  for (let s = 3; s < line.total - 3; s += 3.7) {
-    const k = Math.sin(s * 12.9898) * 43758.5453, r = k - Math.floor(k);
-    const [x, y] = offset(s, coast.half + 8 + r * 7);
-    still(tree(x, y, hill(x, y), 0.9 + r * 0.6));
-  }
+  // Telephone poles along the road and chevrons in the bends.
+  scene.add(hillside({ surface: land.surface, offset, heading: s => frame(s).heading, half: coast.half, total: line.total, bends: line.bends }));
   scene.add(merge(statics));
   return stopperBoom(scene, stopper);
 }

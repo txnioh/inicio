@@ -226,8 +226,10 @@ export class Playground {
     }
     this.resize = new ResizeObserver(() => {
       const { width, height } = this.host.getBoundingClientRect();
-      // Keep Retina detail without allocating oversized post-processing buffers.
-      const ratio = Math.min(devicePixelRatio, 2, Math.max(1, Math.sqrt(3_000_000 / Math.max(width * height, 1))));
+      // Keep Retina detail without allocating oversized post-processing buffers. A run with
+      // post-processing (the coast) draws a little under, to hold 60 fps on a Retina laptop.
+      const budget = this.bokeh ? 2_200_000 : 3_000_000;
+      const ratio = Math.min(devicePixelRatio, 2, Math.max(1, Math.sqrt(budget / Math.max(width * height, 1))));
       this.renderer.setPixelRatio(ratio);
       this.renderer.setSize(width, height);
       this.composer.setPixelRatio(ratio);

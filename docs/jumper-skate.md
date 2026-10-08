@@ -106,28 +106,51 @@ bends by weight alone.
   The ground right beside the road (behind the curb and before the guardrail)
   is drawn on the road's own frame at 20–25 cm detail. The 60 cm terrain grid
   is too coarse to meet an 8 cm curb cleanly.
-- Drawing only: a flat-shaded hillside carved around the road (rock cut above,
-  scrub and grass, a slope falling to a beach with surf), the sea out to the
-  haze, far ranges and headlands, pines, guardrail posts and the finish arch.
+- Drawing only: a hillside carved around the road (rock cut above, grass and
+  scrub, a slope falling to a beach with surf), the sea out to the haze, far
+  ranges and headlands, telephone poles with sagging wires along the uphill
+  verge, chevron signs on the outside of each bend, the guardrail and the
+  finish arch. No low-poly props: the life of the hillside is in the ground
+  itself (see below).
 - Golden hour: a low sun over the sea ahead (disc and halo), a warm gradient
   sky that glows on the sun's side, warm haze, the run's own sun and fill
   light (`view.light`). The sea has drifting ripples that catch the sun.
   Clouds drift, sailing boats rock on the bay, gulls circle the cliff and a
-  lighthouse stands on a point among shore rocks (`animate`).
+  lighthouse stands on a point on a stone plinth (`animate`).
 
 The landscape follows the usual recipe for believable mountains (see the
 three.js TerrainGenerator and Musgrave's ridged multifractal). The heights are
 a ridged multifractal, with each octave damped where the ones before it are
 low, sampled through a low-frequency domain warp so the crests meander. Near
-the road it is blended with the road's cut and fill, then run through four
-passes of thermal erosion. The coast rises from the water as a low rock lip
-before the slope. The ground is coloured by slope and height: wet rock and
-sand at the waterline, grass on the lower slopes, then scrub, bare rock and
-scree from 2–3 m above the road (20–30 m at Jumper's scale). It carries a
-grass grain texture. A band of surf follows the exact waterline, traced by
-marching squares over the height grid and breathing with the swell, with
-weathered rocks half sunk along it. A far mesh carries the ranges inland and the headlands across the
-bay out to the horizon. The sea is three.js's `Water` (mirror reflection,
+the road it is blended with the road's cut and fill. Then rain shapes it:
+droplet hydraulic erosion (after Beyer and Lague) runs tens of thousands of
+drops downhill, which cut branching gullies and leave spurs and fans between
+them, capped at about 70 cm deep, then softened by one smoothing pass and
+three passes of thermal erosion. The erosion eases in from 4 m to 11 m off the
+road, so the designed cut meets the carved slope without a step.
+
+The ground is shaded per pixel by `terrainMaterial.ts`, an extension of
+three's standard material, so lights, shadows and fog are unchanged. It
+follows the usual terrain splat (as in Frostbite's terrain notes): grass,
+scrub, rock and sand blended by slope and height, with every threshold
+broken up by noise so none reads as a contour line. Low-frequency variation
+fights repetition, and fine detail fades out with distance before it can
+shimmer. The grass is olive in the hollows and dries to gold on the slopes
+facing the low sun and higher up. Dark chaparral grows thickest in the gullies
+the erosion carved (the mesh carries its curvature), and rock breaks through
+on the steep ground and the crests. The rock is sandstone in tilted layers of
+uneven thickness, with a triplanar grain so the vertical cuts don't smear.
+Folds are shaded and crests lit, the occlusion one shadow map can't give, and
+a bump from the same noise lets the low sun pick out rock and scrub. The
+broad noise is computed per vertex and the rock grain only where there is
+rock. The sky is a shader too: a warm-to-blue gradient glowing round the sun,
+with soft clouds drifting overhead and thinning towards the horizon.
+
+The coast rises from the water as a low rock lip before the slope, wet and
+dark at the waterline, then sand. A band of surf follows the exact waterline, traced by
+marching squares over the height grid and breathing with the swell. A far
+mesh carries the ranges inland and the headlands across the bay out to the
+horizon. The sea is three.js's `Water` (mirror reflection,
 Fresnel, scrolling ripples and sun glitter), with its Y-up shader turned to
 this Z-up world and tuned to keep its own deep blue. A soft bloom and a very
 light depth of field, focused on Jumper, finish the frame (`view.post`).
@@ -148,6 +171,8 @@ road furniture casts no shadows, because with the sun this low its long
 shadows would sweep in and out of the shadow map around the rider.
 
 Sources: [three.js TerrainGenerator](https://threejs.org/docs/pages/TerrainGenerator.html),
+[Frostbite terrain rendering (SIGGRAPH 2007)](https://www.advances.realtimerendering.com/s2007/Andersson-TerrainRendering(Siggraph07)-CourseNotes.pdf),
+[Procedural terrain texturing (GameDev.net)](https://gamedev.net/blogs/entry/2249480-procedural-terrain-texturing-with-screenshots),
 [Procedural eroded terrain in three.js](https://getbutterfly.com/procedural-eroded-terrain-in-three-js-theory-techniques-field-notes/),
 [Classic ocean shader with Gerstner waves (three.js forum)](https://discourse.threejs.org/t/classic-ocean-shader-example-with-gestner-waves/29227).
 
@@ -205,7 +230,9 @@ The pilot stays on, so it rides the run again.
   squares, rocks, pines) is merged into one mesh per material. As separate
   meshes they cost about 800 draw calls in each of the view, the sea's
   reflection and the depth-of-field pass, and frames swung between 8 and 33 ms.
-  The sea reflection renders at 512².
+  The sea reflection renders at 512². With post-processing, the page draws
+  at up to 2.2 million pixels (3 million otherwise), about 1.3× on a Retina
+  laptop.
 - Depth of field reads the depth buffer the scene was just rendered with
   (`DepthBokeh`), instead of `BokehPass`'s second render of the whole scene,
   and the bloom works at half its usual resolution (`HalfBloom`). On a Retina
