@@ -98,7 +98,7 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
     engine.current?.pad(0, 0);
   }
 
-  return <main className="minimal-portfolio-page jumper-page" tabIndex={-1}>
+  return <main className={`minimal-portfolio-page jumper-page${variant === 'skate' ? ' jumper-skate' : ''}`} tabIndex={-1}>
     <div className="jumper-canvas" ref={host} tabIndex={0} aria-label={`Playground de ${modelName}. WASD: caminar. J/L: girar. Espacio: salto. R: reiniciar.`} onPointerDown={() => host.current?.focus({ preventScroll: true })} />
     <header className="jumper-header"><div><a className="minimal-basic-link" href="/">Index</a><nav className="jumper-models" aria-label="Modelo">{variant === 'jumper' ? <h1>Jumper</h1> : <a href="/jumper">Jumper</a>}<span aria-hidden="true">/</span>{variant === 'eva' ? <h1>EVA-01</h1> : <a href="/jumper/eva">EVA-01</a>}<span aria-hidden="true">/</span>{variant === 'skate' ? <h1>Skate</h1> : <a href="/jumper/skate">Skate</a>}</nav></div><button aria-expanded={settings} aria-controls="jumper-settings" onClick={() => setSettings(value => !value)}>Ajustes</button></header>
     {!ready ? <div className="jumper-loading" role="status">{error ? <><p>{error}</p><button onClick={() => location.reload()}>Reintentar</button></> : <span>{progress}%</span>}</div> : null}
@@ -117,7 +117,7 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
       <span className="jumper-hint">{variant === 'skate' ? 'Enter soltar · ←/→ o A/D girar · W/S puntas/talones · P piloto · R reiniciar' : 'WASD · J/L · Espacio'}</span>
       <span className="jumper-mode">{ready && !stats.policyRunning ? stats.controllerMode === 'safe' ? 'Detenido' : 'Preparando' : stats.controllerMode === 'locomotion' ? '' : motions.find(item => item.id === stats.controllerMode)?.name}</span>
     </footer>
-    {variant === 'skate' && ready && stats.skate ? <SkateHud stats={stats.skate} /> : null}
+    {variant === 'skate' && ready && stats.skate ? <SkateHud stats={stats.skate} onRestart={() => { setError(''); engine.current?.reset(); }} /> : null}
     {variant === 'skate' && ready && stats.skate && !stats.skate.released ? <SkateStart stats={stats.skate} board={board} onBoard={setBoard} onStart={() => engine.current?.releaseBoard()} onPilot={() => engine.current?.togglePilot()} /> : null}
     {variant === 'skate' && ready && stats.skate?.finished ? <SkateFinish stats={stats.skate} onAgain={() => engine.current?.reset()} /> : null}
     {ready ? <div className="jumper-touch"><div className="jumper-joystick" aria-label={`Mover a ${modelName}`} onPointerDown={joystick} onPointerMove={joystick} onPointerUp={releaseJoystick} onPointerCancel={releaseJoystick} onLostPointerCapture={releaseJoystick}><span /></div>{variant === 'skate' ? null : <button aria-label="Saltar" title="Saltar" onPointerDown={event => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); engine.current?.padButton('A', true); }} onPointerUp={() => engine.current?.padButton('A', false)} onPointerCancel={() => engine.current?.padButton('A', false)} onLostPointerCapture={() => engine.current?.padButton('A', false)} onClick={event => { if (event.detail === 0) engine.current?.action('jump'); }}><Icon name="jump" /></button>}</div> : null}

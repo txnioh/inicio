@@ -2,7 +2,7 @@ import type { MainModule, MjData, MjModel } from '@mujoco/mujoco';
 import * as THREE from 'three';
 import { coneMesh, obstacleCourse } from './course.ts';
 import { mountainCourse } from './mountain.ts';
-import { frameQuat, nearest, type Course } from './track.ts';
+import { frameQuat, nearest, nearestAll, type Course } from './track.ts';
 import { safeTurn, skateboardParts } from './skateboard.ts';
 
 // Jumper riding a skateboard down a hill (see course.ts). The board is a free
@@ -205,11 +205,11 @@ export class Skate {
     this.correcting = [false, false, false]; this.axes = [0, 0, 0, 0]; this.travel = 1; this.lean = 0;
     for (const cone of this.cones) cone.down = false;
     this.setStopper(true);
-    this.pathIndex = 0;
     const start = startOf(this.board, this.course), q = mul(start.q, [Math.SQRT1_2, 0, 0, -Math.SQRT1_2]);
     // Robot frame in deck coordinates: its x across the deck, its y along it.
     const r = rotate(start.q, [0, comAhead, this.board.half[2] + 0.1075]);
     for (let i = 0; i < 3; i++) data.qpos[i] = start.p[i] + r[i];
+    this.pathIndex = nearestAll(this.course.path.points, start.p[0], start.p[1]);
     for (let i = 0; i < 4; i++) data.qpos[3 + i] = q[i];
   }
 

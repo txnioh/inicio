@@ -91,3 +91,10 @@ export function stopperBoom(scene: THREE.Scene, frame: Frame) {
   scene.add(base);
   return boom;
 }
+
+/** Index of the path point nearest (x, y), searching the whole path. */
+export function nearestAll(path: Point[], x: number, y: number) {
+  let best = 0, distance = Infinity;
+  path.forEach(([px, py], i) => { const d = (px - x) ** 2 + (py - y) ** 2; if (d < distance) { distance = d; best = i; } });
+  return best;
+}

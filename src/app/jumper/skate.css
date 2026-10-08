@@ -1,14 +1,15 @@
-.skate-hud { position: fixed; z-index: 2; left: 32px; top: 76px; display: flex; flex-direction: column; gap: 14px; pointer-events: none; font-size: 11px; color: #a3a29d; }
-.skate-speed { color: #77766f; font-variant-numeric: tabular-nums; }
+.skate-hud { position: fixed; z-index: 2; left: 24px; top: 68px; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border-radius: 12px; background: #fdfdfcd9; backdrop-filter: blur(12px); box-shadow: 0 4px 24px #1111110d; pointer-events: none; font-size: 11px; color: #111; }
+.skate-speed { color: #111; font-variant-numeric: tabular-nums; }
 .skate-speed span { font-size: 22px; color: #111; letter-spacing: -0.02em; }
-.skate-speed small { display: block; margin-top: 2px; font-size: 10px; color: #a3a29d; }
+.skate-speed small { display: block; margin-top: 2px; font-size: 11px; color: #4a4945; }
 .skate-weight rect { fill: none; stroke: #d1d0ca; }
 .skate-weight line { stroke: #e6e5e0; }
 .skate-weight-target { fill: none; stroke: #77766f; }
 .skate-weight-feet { fill: #111; }
 .skate-weight .skate-weight-lean { stroke: #d4583a; stroke-width: 3; stroke-linecap: round; }
-.skate-feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; min-height: 64px; }
-.skate-feed li { animation: skate-in .35s ease-out; color: #a3a29d; }
+.skate-feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.skate-feed:empty { display: none; }
+.skate-feed li { animation: skate-in .35s ease-out; color: #5e5d58; }
 .skate-feed li:last-child { color: #111; }
 @keyframes skate-in { from { opacity: 0; transform: translateY(4px); } }
 @media (prefers-reduced-motion: reduce) { .skate-feed li { animation: none; } }
@@ -39,3 +40,14 @@
   .skate-start .skate-keys, .skate-start kbd { display: none; }
   .skate-start .skate-touch { display: block; margin-top: 14px; font-size: 12px; }
 }
+/* Skate page: black, contrasted chrome over the scenery. */
+.jumper-skate .jumper-header .minimal-basic-link, .jumper-skate .jumper-models a, .jumper-skate .jumper-header > button { color: #111; }
+.jumper-skate .jumper-header > div, .jumper-skate .jumper-header > button { padding: 6px 12px; border-radius: 999px; background: #fdfdfcd9; backdrop-filter: blur(12px); }
+.jumper-skate .jumper-models > span { color: #77766f; }
+.jumper-skate .jumper-hint { color: #111; padding: 6px 12px; border-radius: 999px; background: #fdfdfcd9; backdrop-filter: blur(12px); }
+.jumper-skate .jumper-actions button { color: #111; background: #fdfdfcd9; border-radius: 999px; backdrop-filter: blur(12px); }
+.jumper-skate .jumper-mode { color: #111; }
+.jumper-page .skate-restart { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 7px 12px; border-radius: 999px; background: #111; color: #fdfdfc; font-size: 12px; font-weight: 500; }
+.jumper-page .skate-restart:hover { background: #2b2b2b; color: #fdfdfc; }
+.skate-restart kbd { padding: 0 5px; border: 1px solid currentColor; border-radius: 4px; font: inherit; font-size: 10px; opacity: .55; }
+@media (pointer: coarse) { .skate-restart kbd { display: none; } }

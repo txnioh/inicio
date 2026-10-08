@@ -14,13 +14,14 @@ import { frameQuat, resample, stopperBoom, type Course, type Frame, type Point }
 // side. The hillside, sea, sky and far mountains are drawing only.
 
 const rad = Math.PI / 180;
-export const coast = { half: 1.2, rail: 0.08, seaLevel: 0, top: 8.5, chord: 0.4 };
+export const coast = { half: 1.2, rail: 0.08, seaLevel: 0, top: 8.5, chord: 0.4, lead: 40, tail: 35 };
 
 interface Sample { x: number; y: number; z: number; heading: number; slope: number; s: number }
 /** Centre line: straights and arcs in plan, each with a grade; grades blend over 1 m. */
 function centreLine() {
   // [length or arc angle (deg), radius (0 = straight; + left, - right), grade (deg)]
   const plan: [number, number, number][] = [
+    [coast.lead, 0, -4], // the road coming down to the start, so it doesn't begin from nowhere
     [1.2, 0, -5],     // start ramp with the stopper
     [2.0, 0, -6],     // drop in: about 2 m/s
     [5, 0, -1.3],
@@ -33,6 +34,7 @@ function centreLine() {
     [40, -11, -1.0],  // right, opening onto the bay
     [6, 0, -0.8],     // finish straight
     [5, 0, 4],        // uphill run-out
+    [coast.tail, 0, 3], // and the road carrying on uphill, where the board rolls to a stop
   ];
   const step = 0.05, samples: Sample[] = [];
   let x = 0, y = 0, heading = 0, s = 0;
@@ -61,10 +63,11 @@ function centreLine() {
     heading += curvatureAt(s) * step;
     x += Math.cos(heading) * Math.cos(slope) * step; y += Math.sin(heading) * Math.cos(slope) * step; z += Math.sin(slope) * step;
   }
-  const lift = coast.top - samples[0].z;
+  // The start (end of the lead-in) sits at coast.top.
+  const lift = coast.top - samples[Math.round(coast.lead / step)].z;
   for (const sample of samples) sample.z += lift;
   const lengths = pieces.map(piece => piece.length);
-  const finish = lengths.slice(0, 11).reduce((a, b) => a + b, 0) - 1.2; // near the end of the finish straight
+  const finish = lengths.slice(0, 12).reduce((a, b) => a + b, 0) - 1.2; // near the end of the finish straight
   return { samples, step, finish, total };
 }
 const line = centreLine();
@@ -92,8 +95,6 @@ function xml() {
       out.push(`<geom name="skate_${side > 0 ? 'curb' : 'rail'}_${i}" type="box" pos="${f(x)} ${f(y)} ${f(z)}" quat="${q.map(f).join(' ')}" size="${f(coast.chord / 2 + 0.02)} 0.04 ${coast.rail / 2}" contype="1" conaffinity="129" friction="0.6 .01 .01"/>`);
     }
   }
-  const end = frame(line.total - 0.2), q = frameQuat(end);
-  out.push(`<geom name="skate_end_wall" type="box" pos="${end.p.map((v, k) => f(v + (k === 2 ? 0.15 : 0))).join(' ')}" quat="${q.map(f).join(' ')}" size="0.1 ${coast.half + 0.1} 0.15" contype="1" conaffinity="129"/>`);
   return { asset: '', world: out.join('\n') };
 }
 
@@ -150,11 +151,13 @@ function hill(x: number, y: number) {
   // there is no step where the uphill and downhill sides meet. Past the finish
   // the coast just carries on.
   const beyond = s < 1 && along < -1 ? -along - 1 : 0, z = road + beyond * 0.35;
-  const edge = Math.abs(d) - coast.half - 0.25;
-  if (edge < 0) return beyond ? z - 0.08 + beyond * 0.02 : z - 0.08;
+  // Uphill, the cut rises straight from the back of the curb (no gap under it);
+  // downhill the shoulder runs on 25 cm before the fall.
+  const edge = d > 0 ? Math.abs(d) - coast.half - 0.12 : Math.abs(d) - coast.half - 0.25;
+  if (edge < 0) return d > 0 && Math.abs(d) > coast.half + 0.04 ? z + 0.07 : Math.abs(d) > coast.half ? z - 0.01 : beyond ? z - 0.08 + beyond * 0.02 : z - 0.08;
   const rough = (fbm(x * 0.18, y * 0.18) - 0.5);
   const near = d > 0
-    ? z + Math.min(edge * 0.9, 1.6 + edge * 0.35) + edge * edge * 0.012 + rough * Math.min(1, edge / 3) * 2.2 // rock cut, mountainside
+    ? z + 0.07 + Math.min(edge * 0.9, 1.6 + edge * 0.35) + edge * edge * 0.012 + rough * Math.min(1, edge / 3) * 2.2 // rock cut, mountainside
     : Math.max(coast.seaLevel - 1.5, z - edge * 0.55 - edge * edge * 0.02 + rough * Math.min(1, edge / 4) * 1.4); // falling to the sea
   const w = smooth(6, 26, edge) * (beyond ? 0.4 : 1);
   return near + (Math.max(d > 0 ? z + 1 : -50, farField(x, y)) - near) * w;
@@ -225,6 +228,35 @@ function gridMesh(x0: number, y0: number, nx: number, ny: number, cell: number, 
   return mesh;
 }
 
+/** How far from the centre line the fine shoulder bands reach on each side. */
+const shoulder = { uphill: coast.half + 1.8, downhill: coast.half + 0.7 };
+/**
+ * The ground right beside the road, drawn on the road's own frame (20 cm along,
+ * 25 cm across), from the back of the curb or the guardrail outwards: the
+ * 60 cm terrain grid is too coarse to meet an 8 cm curb cleanly.
+ */
+function shoulders(material: THREE.Material) {
+  const group = new THREE.Group();
+  for (const [d0, d1] of [[coast.half + 0.11, shoulder.uphill + 0.35], [-(shoulder.downhill + 0.35), -(coast.half + 0.02)]]) {
+    const across = Math.ceil(Math.abs(d1 - d0) / 0.25), step = 0.2, rows = Math.floor(line.total / step);
+    const positions: number[] = [], uvs: number[] = [], index: number[] = [];
+    for (let r = 0; r <= rows; r++) for (let c = 0; c <= across; c++) {
+      const [x, y] = offset(r * step, d0 + (d1 - d0) * c / across);
+      positions.push(x, y, hill(x, y) + 0.004); uvs.push(x / 2.5, y / 2.5);
+      if (r && c) { const a = (r - 1) * (across + 1) + c - 1, b = a + 1, e = a + across + 1, g = e + 1; index.push(a, e, b, b, e, g); }
+    }
+    const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)).setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(index); geometry.computeVertexNormals();
+    const normals = geometry.getAttribute('normal'), colours: number[] = [], c = new THREE.Color();
+    for (let k = 0; k < normals.count; k++) { groundColour(c, positions[k * 3], positions[k * 3 + 1], positions[k * 3 + 2], 1 - Math.abs(normals.getZ(k))); colours.push(c.r, c.g, c.b); }
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  }
+  return group;
+}
+
 let foamMaterial: THREE.MeshBasicMaterial | undefined;
 /** A band of surf along the waterline segments, lying on the water and breathing. */
 function foam(segments: [number, number, number, number][]) {
@@ -256,8 +288,11 @@ function terrain() {
   for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
     const x = x0 + i * cell, y = y0 + j * cell, k = j * (nx + 1) + i;
     heights[k] = hill(x, y);
-    // The road, its shoulders and the cut stay as designed.
-    if (Math.abs(roadNear(x, y).d) < coast.half + 3) locked[k] = 1;
+    // The road, its shoulders and the cut stay as designed; under the shoulder
+    // bands (drawn finely along the road) the grid sits a little lower.
+    const { d } = roadNear(x, y);
+    if (Math.abs(d) < coast.half + 3) locked[k] = 1;
+    if (d > 0 ? d < shoulder.uphill + 0.3 : -d < shoulder.downhill + 0.3) heights[k] -= 0.25;
   }
   // Thermal erosion: material slides down wherever a slope exceeds the talus angle.
   const talus = cell * 1.1;
@@ -291,7 +326,7 @@ function terrain() {
     far[j * (fnx + 1) + i] = farField(x, y) - (inside ? 3 : 0.35);
   }
   const group = new THREE.Group();
-  group.add(near, gridMesh(fx0, fy0, fnx, fny, fcell, far), foam(segments));
+  group.add(near, gridMesh(fx0, fy0, fnx, fny, fcell, far), foam(segments), shoulders(near.material));
   return { group, shore: segments };
 }
 
@@ -485,7 +520,7 @@ function build(scene: THREE.Scene, stopper: Frame) {
     scene.add(b);
     motion.push(t => { b.position.x = x + Math.sin(t * speed * 0.2) * 12; b.position.z = coast.seaLevel + Math.sin(t * 1.3 + x) * 0.06; b.rotation.x = Math.sin(t * 1.1 + y) * 0.04; });
   }
-  const pointS = 52, [lx, ly] = offset(pointS, -16);
+  const pointS = coast.lead + 52, [lx, ly] = offset(pointS, -16);
   const light = lighthouse(); light.position.set(lx, ly, Math.max(coast.seaLevel, hill(lx, ly)) + 0.2); add(light);
   // Gulls circling over the cliff.
   for (let i = 0; i < 7; i++) {
@@ -518,7 +553,7 @@ function build(scene: THREE.Scene, stopper: Frame) {
   const paint = layer(new THREE.MeshStandardMaterial({ color: '#f1ede4', roughness: 0.7 }), 2);
   for (const d of [coast.half - 0.09, -coast.half + 0.06]) add(new THREE.Mesh(band(d, d + 0.03, 0.004), paint), false);
   const yellow = layer(new THREE.MeshStandardMaterial({ color: '#e9b44c', roughness: 0.7 }), 2);
-  for (let s = 4; s < line.finish - 1; s += 1.2) add(new THREE.Mesh(band(-0.015, 0.015, 0.004, s, s + 0.6, 0.1), yellow), false);
+  for (let s = 0.6; s < line.total; s += 1.2) if (Math.abs(s - line.finish) > 1.2) add(new THREE.Mesh(band(-0.015, 0.015, 0.004, s, s + 0.6, 0.1), yellow), false);
   // Finish: chequered band and arch.
   const white = layer(new THREE.MeshStandardMaterial({ color: '#f3efe6', roughness: 0.8 }), 3), black = layer(new THREE.MeshStandardMaterial({ color: '#1d1d1f', roughness: 0.8 }), 3);
   for (let i = 0; i < 16; i++) for (let j = 0; j < 2; j++) {
@@ -561,7 +596,7 @@ function build(scene: THREE.Scene, stopper: Frame) {
 const motion: ((time: number) => void)[] = [];
 const path = resample(line.samples.filter((_, i) => i % 4 === 0).map(c => [c.x, c.y] as Point));
 export const mountainCourse: Course = {
-  rampStart: 0,
+  rampStart: coast.lead,
   frame,
   path,
   get finish() { return line.finish; },

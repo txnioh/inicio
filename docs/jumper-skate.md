@@ -96,11 +96,16 @@ mountain on the other), the cliffside bends of the Pacific Coast Highway, and
 Maryhill Loops' linked curves. It has no obstacles: the ride is carving the
 bends by weight alone.
 
-- About 75 m of 2.4 m road. Start ramp and stopper, a drop in, then four linked
+- The road comes 40 m down to the start and carries on 35 m uphill past the
+  run-out, where the board rolls to a stop, so it never begins or ends in mid
+  air. The run itself is about 75 m of 2.4 m road. Start ramp and stopper, a drop in, then four linked
   bends (left 40°, right 80°, left 80°, right 40°, radii 9–11 m) at 0.8–1.3°,
   a finish straight and an uphill run-out. Grades blend over 1 m.
 - Physics: one convex box per 0.4 m of centre line, overlapping through the
   bends, plus a curb on the mountain side and a guardrail on the sea side.
+  The ground right beside the road (behind the curb and before the guardrail)
+  is drawn on the road's own frame at 20–25 cm detail. The 60 cm terrain grid
+  is too coarse to meet an 8 cm curb cleanly.
 - Drawing only: a flat-shaded hillside carved around the road (rock cut above,
   scrub and grass, a slope falling to a beach with surf), the sea out to the
   haze, far ranges and headlands, pines, guardrail posts and the finish arch.
@@ -205,6 +210,10 @@ long in the direction of travel and stays above a 10 cm bar for about 0.2 s. It
 would have to pass at more than 3 m/s, so the run asks for steering instead.
 
 ## Controls
+
+On the skate page the header, HUD and hints sit on light translucent panels
+with black text, so they read over the scenery. A *Reiniciar* button (R)
+stays in the HUD during the run.
 
 A panel in the middle of the screen picks the board and starts the run (Enter)
 or the pilot (P). At the finish it shows the time with *Otra vez*.

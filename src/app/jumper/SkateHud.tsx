@@ -3,8 +3,12 @@ import './skate.css';
 
 const kmh = (speed: number) => (speed * 3.6).toFixed(1).replace('.', ',');
 
-export default function SkateHud({ stats }: { stats: SkateStats }) {
+export default function SkateHud({ stats, onRestart }: { stats: SkateStats; onRestart: () => void }) {
   return <section className="skate-hud" aria-label="Skate">
+    <button className="skate-restart" onClick={onRestart} title="R">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg>
+      Reiniciar <kbd>R</kbd>
+    </button>
     <div className="skate-speed" aria-live="off"><span>{kmh(stats.speed)}</span> km/h<small>máx {kmh(stats.top)} · {stats.time.toFixed(1).replace('.', ',')} s{stats.cones ? ` · ${stats.cones} ${stats.cones === 1 ? 'cono' : 'conos'}` : ''}{stats.pilot ? ' · piloto' : ''}</small></div>
     <Weight stats={stats} />
     <ol className="skate-feed" aria-live="polite">{stats.feed.map(item => <li key={item.id}>{item.text}</li>)}</ol>
