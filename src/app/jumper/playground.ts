@@ -9,7 +9,7 @@ import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { dressEva } from './eva';
-import { Skate, skateXml, type BoardKind } from './skate';
+import { courses, Skate, skateXml, type BoardKind } from './skate';
 import { flushInputs, modeBinding, queueMode, type InputEdge } from './inputs';
 import { type Joint, type SkinId, type Stats, boxes, skins } from './settings';
 
@@ -105,8 +105,9 @@ export class Playground {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.composer.addPass(new SMAAPass());
     this.composer.addPass(new OutputPass());
-    this.scene.fog = skateMode ? new THREE.Fog('#fdfdfc', 8, 26) : new THREE.Fog('#fdfdfc', 3, 7);
-    if (skateMode) { this.camera.far = 45; this.camera.updateProjectionMatrix(); }
+    const view = skateMode ? courses[skateMode].view : undefined;
+    this.scene.fog = view ? new THREE.Fog(view.sky, ...view.fog) : new THREE.Fog('#fdfdfc', 3, 7);
+    if (view) { this.camera.far = view.far; this.camera.updateProjectionMatrix(); this.renderer.setClearColor(view.sky); }
     // A soft studio environment, only on the skate run, so the trucks' aluminium
     // and steel read as metal and the urethane and clear coat catch highlights.
     if (skateMode) {
@@ -121,7 +122,7 @@ export class Playground {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.minDistance = 0.25;
-    this.controls.maxDistance = skateMode ? 7 : 3;
+    this.controls.maxDistance = skateMode ? 12 : 3;
     this.controls.maxPolarAngle = Math.PI * 0.49;
     this.controls.addEventListener('start', () => { this.chasePaused = performance.now() + 4000; });
     this.cameraView('iso');
@@ -149,6 +150,7 @@ export class Playground {
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: '#fdfdfc', roughness: 1 }));
     floor.position.z = -0.001;
     floor.receiveShadow = true;
+    floor.visible = view?.ground !== false;
     this.scene.add(floor);
     this.grid = new THREE.GridHelper(12, 120, '#e9e9e4', '#efefeb');
     this.grid.rotation.x = Math.PI / 2;
@@ -425,7 +427,11 @@ export class Playground {
         this.accumulator = Math.min(this.accumulator + elapsed, 0.04);
         void this.advance();
       }
-      this.follow.set(this.data.qpos[0], this.data.qpos[1], this.skate ? this.data.qpos[2] - 0.07 : Math.max(0.09, this.data.qpos[2] * 0.7));
+      if (this.skate) {
+        // Look a little ahead of the board, down the road.
+        const pose = this.skate.boardPose(this.data), ahead = this.skate.course.view.chase.ahead;
+        this.follow.set(this.data.qpos[0] + Math.cos(pose.heading) * ahead, this.data.qpos[1] + Math.sin(pose.heading) * ahead, this.data.qpos[2] - 0.07);
+      } else this.follow.set(this.data.qpos[0], this.data.qpos[1], Math.max(0.09, this.data.qpos[2] * 0.7));
       this.follow.sub(this.controls.target).multiplyScalar(1 - Math.exp(-elapsed * 5));
       this.controls.target.add(this.follow);
       this.camera.position.add(this.follow);
@@ -504,14 +510,15 @@ export class Playground {
   }
   canAction(name: string) { return !!this.data && (name === 'locomotion' || !!modeBinding(this.robot.fsm, name)); }
   releaseBoard() { if (this.data) this.skate?.release(this.data.time); }
-  // Chase camera for the downhill: behind the board and a little to the toe
-  // side, so Jumper's face shows. Dragging the view pauses it for 4 s.
+  // Chase camera for the downhill: behind and above the board, framed per run
+  // (course view.chase). Dragging the view pauses it for 4 s.
   private chasePaused = 0;
   private chaseOffset = new THREE.Vector3();
   private chase(elapsed: number) {
     const { heading } = this.skate!.boardPose(this.data);
-    const behind = 1.7, side = 0.55, height = 0.75;
-    this.chaseOffset.set(-Math.cos(heading) * behind + Math.sin(heading) * side, -Math.sin(heading) * behind - Math.cos(heading) * side, height);
+    const { behind, side, height, ahead } = this.skate!.course.view.chase;
+    // Offset from the look-at point (ahead of the board); side is to the board's left.
+    this.chaseOffset.set(-Math.cos(heading) * (behind + ahead) - Math.sin(heading) * side, -Math.sin(heading) * (behind + ahead) + Math.cos(heading) * side, height);
     const current = this.camera.position.clone().sub(this.controls.target);
     current.lerp(this.chaseOffset, 1 - Math.exp(-elapsed * 2.2));
     this.camera.position.copy(this.controls.target).add(current);

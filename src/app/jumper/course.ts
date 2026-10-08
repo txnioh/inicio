@@ -14,7 +14,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 const rad = Math.PI / 180;
 export const road = { half: 1.5, verge: 3, curb: [0.05, 0.035] as [number, number], start: -1.2, rollIn: 5 };
 
-type Point = [number, number];
+import { resample, stopperBoom, type Course, type Frame, type Point } from './track.ts';
 function profile() {
   let x = road.start, z = 0, heading = -road.rollIn * rad;
   const points: Point[] = [[x, z]], marks: Record<string, number> = {};
@@ -152,7 +152,7 @@ function strip(y0: number, y1: number, lift: number, x0 = -Infinity, x1 = Infini
 }
 
 /** Build the course. Returns the stopper boom (the ride animates it) and cone parts. */
-export function buildCourse(scene: THREE.Scene, stopper: { x: number; z: number; angle: number }) {
+export function buildCourse(scene: THREE.Scene, stopper: Frame) {
   const add = <T extends THREE.Object3D>(object: T) => { object.traverse(o => { if (o instanceof THREE.Mesh) o.castShadow = o.receiveShadow = true; }); scene.add(object); return object; };
   const asphaltMap = noiseTexture('#5d6064', [['#6f7276', 9000], ['#4b4e52', 9000], ['#85878a', 1500]]);
   asphaltMap?.repeat.set(1.5, 1.5);
@@ -232,16 +232,7 @@ export function buildCourse(scene: THREE.Scene, stopper: { x: number; z: number;
   banner.position.z = 0.86; arch.add(banner);
   arch.traverse(o => { if (o instanceof THREE.Mesh) o.castShadow = o.receiveShadow = true; });
 
-  // Stopper at the start: a low boom on a side post that swings aside on release.
-  const base = add(new THREE.Group());
-  base.position.set(stopper.x, -0.32, stopper.z);
-  base.rotation.y = stopper.angle;
-  const post = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.05), steel); post.position.z = 0.025;
-  const boom = new THREE.Group(); boom.position.z = 0.009;
-  const bar = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.56, 0.016), new THREE.MeshStandardMaterial({ color: '#d4583a', roughness: 0.6 }));
-  bar.position.y = 0.3; bar.castShadow = post.castShadow = true;
-  boom.add(bar); base.add(post, boom);
-  return boom;
+  return stopperBoom(scene, stopper);
 }
 
 /** Cone meshes, built in the cone body's frame. */
@@ -263,7 +254,7 @@ export function coneMesh() {
   return group;
 }
 
-function tree(x: number, y: number, z: number, height: number) {
+export function tree(x: number, y: number, z: number, height: number) {
   const group = new THREE.Group(); group.position.set(x, y, z);
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, height, 8).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#8a7058', roughness: 0.9 }));
   trunk.position.z = height / 2;
@@ -276,7 +267,7 @@ function tree(x: number, y: number, z: number, height: number) {
 }
 
 let banner: THREE.CanvasTexture | null | undefined;
-function bannerTexture() {
+export function bannerTexture() {
   if (banner !== undefined) return banner;
   if (typeof document === 'undefined') return (banner = null);
   const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 128;
@@ -287,3 +278,16 @@ function bannerTexture() {
   banner = new THREE.CanvasTexture(canvas); banner.colorSpace = THREE.SRGBColorSpace;
   return banner;
 }
+
+/** The obstacle run as a Course: arc length is x along the straight road. */
+export const obstacleCourse: Course = {
+  rampStart: road.start,
+  frame: s => ({ p: [s, 0, surfaceAt(s)], heading: 0, slope: slopeAt(s) }),
+  path: resample(raceLine),
+  get finish() { const p = this.path; return p.s[p.points.findIndex(([x]) => x >= obstacles.finish)]; },
+  cones: obstacles.cones.map(([x, y]) => ({ x, y, slope: slopeAt(x), heading: 0 })),
+  xml: courseXml,
+  build: buildCourse,
+  route(x, y) { const { x0, x1 } = obstacles.island; return x > (x0 + x1) / 2 && x < x1 ? (y > 0 ? 'izquierda' : 'derecha') : undefined; },
+  view: { far: 60, fog: [12, 40], sky: '#fdfdfc', chase: { behind: 2.6, side: -0.6, height: 1.15, ahead: 1.2 } },
+};

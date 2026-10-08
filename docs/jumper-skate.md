@@ -5,7 +5,14 @@ robot runs its original policies, unchanged. Nothing pushes the robot or the
 board: speed comes from the slope, steering from the trucks, and the only
 control is where Jumper puts its weight on the deck. There is no jumping.
 
-## The run
+## The runs
+
+Each board has its own run. The skate weaves through the obstacle road below,
+and the longboard carves a coast road (see *The coast road*). Both share the
+`Course` interface in `track.ts`: a road centre line, a pilot line, a finish,
+physics and drawing.
+
+## The obstacle road (skate)
 
 About 50 m of road, scaled to Jumper (it stands ~18 cm tall). It runs over a
 6 m embankment with grass verges, curbs and trees:
@@ -40,12 +47,23 @@ wheelbase, wheel cut-outs, 50° reverse-kingpin trucks and 70 mm wheels.
 
 | | Skate | Longboard |
 |---|---|---|
-| Deck | 72 cm + two 8 cm kicks (14°) × 44 cm, popsicle with near half-circle ends | 116 × 46 cm, round ends lifting 1 cm, wheel cut-outs |
+| Deck | 66 cm + two 13 cm kicks (19°) × 44 cm, popsicle with half-circle ends | 116 × 46 cm, round ends lifting 1 cm, wheel wells |
 | Wheelbase | 50 cm | 80 cm (about 70 % of the length) |
-| Trucks | traditional, 45° pivot, bushings 4 N·m/rad, top-mounted on risers | reverse kingpin, 50° pivot, bushings 2.5 N·m/rad, drop-through |
-| Wheels | 48 mm, cream, orange cores | 68 mm, amber, wider, white cores |
-| Deck height | 6.0 cm | 5.0 cm (lower despite the bigger wheels) |
-| Pilot run | 18.1 s, up to 11.4 km/h | 16.3 s, up to 13.9 km/h |
+| Trucks | traditional high trucks, 50° pivot, bushings 4 N·m/rad, 6 mm risers, raw aluminium | reverse kingpin, 50° pivot, bushings 2.5 N·m/rad, drop-through, black anodised |
+| Wheels | 64 mm, cream, orange cores | 88 mm, amber, wider, white cores |
+| Free truck turn (wheelbite) | 11.5° | 14.9° |
+| Deck height | 9.6 cm | 6.0 cm (lower despite the bigger wheels) |
+| Pilot run | obstacle road, 17.5 s, up to 12.2 km/h | coast road, 38.6 s, up to 11.5 km/h |
+
+A real deck is half as wide as these, so wheels and trucks are scaled up with
+the deck: at real-world sizes they looked like toys under it.
+
+**Wheels never pass through the deck.** The wheels and the deck do not collide
+in the physics, as on a real board where only wheelbite stops a truck. So each
+truck's turn is limited to the largest angle at which every point of every
+wheel stays 3 mm clear of the deck (`safeTurn` in `skateboard.ts`), computed
+from the same geometry the drawing uses. Risers (skate) and deeper wheel wells
+(longboard) give the bigger wheels room to turn further than a ride needs.
 
 The longboard rolls faster and turns less per degree of lean; softer bushings,
 as on real longboards, give it back enough turn for the course.
@@ -65,6 +83,31 @@ turn and wheels spin.
 Sources for the proportions: [Skate Warehouse deck guide](https://blog.skatewarehouse.com/news/articles/Skateboard_Deck_Buying_Guide.html),
 [Longboard (Wikipedia)](https://en.wikipedia.org/wiki/Longboard_(skateboard)),
 [SkatePro drop-through listing](https://www.skatepro.com/en-us/83-17829.htm).
+
+## The coast road (longboard)
+
+Inspired by the classic downhill roads: Haleakalā Highway (sea on one side,
+mountain on the other), the cliffside bends of the Pacific Coast Highway, and
+Maryhill Loops' linked curves. It has no obstacles: the ride is carving the
+bends by weight alone.
+
+- About 75 m of 2.4 m road. Start ramp and stopper, a drop in, then four linked
+  bends (left 40°, right 80°, left 80°, right 40°, radii 9–11 m) at 0.8–1.3°,
+  a finish straight and an uphill run-out. Grades blend over 1 m.
+- Physics: one convex box per 0.4 m of centre line, overlapping through the
+  bends, plus a curb on the mountain side and a guardrail on the sea side.
+- Drawing only: a flat-shaded hillside carved around the road (rock cut above,
+  scrub and grass, a slope falling to a beach), the sea out to the haze, far
+  ranges and headlands, a gradient sky, pines, guardrail posts and the finish
+  arch.
+
+The chase camera is set per run (`view.chase`). On the coast road it sits
+3.6 m back and 1.6 m up on the mountain side, looking 2.2 m ahead, so the sea
+and the horizon stay in frame.
+
+Sources: [10 best longboarding roads in the US (Solgaard)](https://solgaard.co/blogs/stories/10-best-longboarding-roads-in-the-us),
+[Pacific Coast Highway road trip (Enterprise)](https://www.enterpriserentacar.it/en/inspiration/road-trip/california-pacific-coast-highway.html),
+[three.js forum: stylised scenes](https://discourse.threejs.org/t/how-can-i-make-this-world-more-fancy/32275).
 
 ## Weight, not walking
 
