@@ -28,7 +28,11 @@ export interface Course {
     far: number; fog: [number, number]; sky: string; ground?: boolean;
     /** Chase camera: metres behind the board, to its left, above it, and how far ahead it looks. */
     chase: { behind: number; side: number; height: number; ahead: number };
+    /** Optional lighting: sun colour and intensity, sun direction (scaled to ~1.5 m), sky and ground fill, rim light, exposure. */
+    light?: { sun: string; intensity: number; direction: [number, number, number]; sky: string; ground: string; fill: number; rim: string; rimIntensity: number; exposure: number };
   };
+  /** Per-frame animation of the scenery (waves, clouds, boats), seconds. */
+  animate?(time: number): void;
 }
 
 /** Resample a polyline every `step` metres. */

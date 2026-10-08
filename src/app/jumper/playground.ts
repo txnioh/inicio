@@ -147,6 +147,15 @@ export class Playground {
     const rim = new THREE.DirectionalLight('#e2edff', 1.7);
     rim.position.set(-0.4, -0.5, 0.6);
     this.scene.add(rim);
+    if (view?.light) {
+      // The run's own light (the coast road's golden hour).
+      const l = view.light;
+      light.color.set(l.sun); light.intensity = l.intensity;
+      this.lightOffset.set(...l.direction); light.position.copy(this.lightOffset);
+      ambient.color.set(l.sky); ambient.groundColor.set(l.ground); ambient.intensity = l.fill;
+      rim.color.set(l.rim); rim.intensity = l.rimIntensity;
+      this.renderer.toneMappingExposure = l.exposure;
+    }
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: '#fdfdfc', roughness: 1 }));
     floor.position.z = -0.001;
     floor.receiveShadow = true;
@@ -436,6 +445,7 @@ export class Playground {
       this.controls.target.add(this.follow);
       this.camera.position.add(this.follow);
       if (this.skate && now > this.chasePaused) this.chase(elapsed);
+      this.skate?.course.animate?.(now / 1000);
       this.light.target.position.set(this.data.qpos[0], this.data.qpos[1], this.skate ? this.data.qpos[2] - 0.17 : 0);
       this.light.position.copy(this.light.target.position).add(this.lightOffset);
       this.controls.update();

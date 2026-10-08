@@ -14,6 +14,11 @@ physics and drawing.
 
 ## The obstacle road (skate)
 
+Drawn minimal, in Inicio's palette: off-white volumes with fine edges, like the
+Jumper playground's boxes, a pale road, faint paint and a single black finish
+line under a thin black gate. The only colour is the cones, the board and
+Jumper.
+
 About 50 m of road, scaled to Jumper (it stands ~18 cm tall). It runs over a
 6 m embankment with grass verges, curbs and trees:
 
@@ -97,9 +102,13 @@ bends by weight alone.
 - Physics: one convex box per 0.4 m of centre line, overlapping through the
   bends, plus a curb on the mountain side and a guardrail on the sea side.
 - Drawing only: a flat-shaded hillside carved around the road (rock cut above,
-  scrub and grass, a slope falling to a beach), the sea out to the haze, far
-  ranges and headlands, a gradient sky, pines, guardrail posts and the finish
-  arch.
+  scrub and grass, a slope falling to a beach with surf), the sea out to the
+  haze, far ranges and headlands, pines, guardrail posts and the finish arch.
+- Golden hour: a low sun over the sea ahead (disc and halo), a warm gradient
+  sky that glows on the sun's side, warm haze, the run's own sun and fill
+  light (`view.light`). The sea has drifting ripples that catch the sun.
+  Clouds drift, sailing boats rock on the bay, gulls circle the cliff and a
+  lighthouse stands on a point among shore rocks (`animate`).
 
 The chase camera is set per run (`view.chase`). On the coast road it sits
 3.6 m back and 1.6 m up on the mountain side, looking 2.2 m ahead, so the sea

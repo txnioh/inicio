@@ -153,19 +153,24 @@ function strip(y0: number, y1: number, lift: number, x0 = -Infinity, x1 = Infini
 
 /** Build the course. Returns the stopper boom (the ride animates it) and cone parts. */
 export function buildCourse(scene: THREE.Scene, stopper: Frame) {
+  // Minimal, in Inicio's palette: off-white volumes with fine edges (as the
+  // Jumper playground's boxes), a pale road and faint paint. The only colour is
+  // the cones (and the board and robot).
   const add = <T extends THREE.Object3D>(object: T) => { object.traverse(o => { if (o instanceof THREE.Mesh) o.castShadow = o.receiveShadow = true; }); scene.add(object); return object; };
-  const asphaltMap = noiseTexture('#5d6064', [['#6f7276', 9000], ['#4b4e52', 9000], ['#85878a', 1500]]);
-  asphaltMap?.repeat.set(1.5, 1.5);
-  const asphalt = new THREE.MeshStandardMaterial({ color: asphaltMap ? '#ffffff' : '#5d6064', map: asphaltMap, roughness: 0.95 });
-  const grassMap = noiseTexture('#a7b97e', [['#93a86b', 9000], ['#bccb94', 6000]]);
-  grassMap?.repeat.set(1, 1);
-  const grass = new THREE.MeshStandardMaterial({ color: grassMap ? '#ffffff' : '#a7b97e', map: grassMap, roughness: 1 });
-  const paint = new THREE.MeshStandardMaterial({ color: '#f3efe6', roughness: 0.8 });
-  const yellow = new THREE.MeshStandardMaterial({ color: '#e9b44c', roughness: 0.7 });
-  const concrete = new THREE.MeshStandardMaterial({ color: '#d9d5cc', roughness: 0.9 });
-  const steel = new THREE.MeshStandardMaterial({ color: '#a7aeb5', roughness: 0.35, metalness: 0.3 });
+  const edge = new THREE.LineBasicMaterial({ color: '#b9b8ad', transparent: true, opacity: 0.5 });
+  const outlined = (mesh: THREE.Mesh, threshold = 20) => { mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, threshold), edge)); return mesh; };
+  const block = new THREE.MeshStandardMaterial({ color: '#efeee9', roughness: 0.95 });
+  const ink = new THREE.MeshStandardMaterial({ color: '#111111', roughness: 0.6 });
+  // Ground layers are millimetres apart; far down the hill the depth buffer
+  // cannot separate them, so each layer also gets a polygon offset (stable at
+  // any distance) and the layers sit 2–3 mm apart.
+  const layer = (material: THREE.MeshStandardMaterial, level: number) => { material.polygonOffset = true; material.polygonOffsetFactor = -level; material.polygonOffsetUnits = -level * 2; return material; };
+  const verge = new THREE.MeshStandardMaterial({ color: '#f7f7f4', roughness: 1 });
+  const surface = layer(new THREE.MeshStandardMaterial({ color: '#ebeae5', roughness: 0.95 }), 1);
+  const paint = layer(new THREE.MeshStandardMaterial({ color: '#d5d4cd', roughness: 0.9 }), 2);
+  const finishLine = layer(new THREE.MeshStandardMaterial({ color: '#111111', roughness: 0.8 }), 3);
 
-  // Embankment under the road, so the downhill reads as a hillside.
+  // Embankment under the road, so the downhill reads as a slope.
   const shape = new THREE.Shape();
   // The base sinks 5 cm under the floor so no face is coplanar with it.
   shape.moveTo(points[0][0], -0.05);
@@ -175,61 +180,37 @@ export function buildCourse(scene: THREE.Scene, stopper: Frame) {
   // Shape y → up, extrusion → -y: a rotation, not a mirror, so faces stay outward.
   bank.applyMatrix4(new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, -1, road.verge, 0, 1, 0, 0, 0, 0, 0, 1));
   bank.computeVertexNormals();
-  add(new THREE.Mesh(bank, new THREE.MeshStandardMaterial({ color: '#b9a98e', roughness: 1 })));
-  // Ground layers are millimetres apart; far down the hill the depth buffer
-  // cannot separate them, so each layer also gets a polygon offset (stable at
-  // any distance) and the layers sit 2–3 mm apart.
-  const layer = (material: THREE.MeshStandardMaterial, level: number) => { material.polygonOffset = true; material.polygonOffsetFactor = -level; material.polygonOffsetUnits = -level * 2; return material; };
-  layer(asphalt, 1); layer(paint, 2); layer(yellow, 2);
+  add(outlined(new THREE.Mesh(bank, block), 8));
   // Ground layers receive shadows but cast none: a layer shadowing the one a
   // millimetre below it is shadow acne, which flickers as the light follows.
   const ground = (mesh: THREE.Mesh) => { scene.add(mesh); mesh.receiveShadow = true; return mesh; };
-  ground(new THREE.Mesh(strip(-road.verge, road.verge, -0.002), grass));
-  ground(new THREE.Mesh(strip(-road.half, road.half, 0.0008), asphalt));
-  for (const y of [-road.half + 0.05, road.half - 0.08]) ground(new THREE.Mesh(strip(y, y + 0.03, 0.0025), paint));
+  ground(new THREE.Mesh(strip(-road.verge, road.verge, -0.002), verge));
+  ground(new THREE.Mesh(strip(-road.half, road.half, 0.0008), surface));
+  for (const y of [-road.half + 0.05, road.half - 0.07]) ground(new THREE.Mesh(strip(y, y + 0.02, 0.0025), paint));
   // Dashed centre line, interrupted by the island.
   for (let x = marks.cones; x < obstacles.finish - 0.6; x += 1) {
     if (x > obstacles.island.x0 - 1 && x < obstacles.island.x1 + 0.5) continue;
-    ground(new THREE.Mesh(strip(-0.015, 0.015, 0.0025, x, x + 0.5), yellow));
+    ground(new THREE.Mesh(strip(-0.01, 0.01, 0.0025, x, x + 0.45), paint));
   }
-  // Finish: chequered band across the road.
-  const white = layer(new THREE.MeshStandardMaterial({ color: '#f3efe6', roughness: 0.8 }), 3), black = layer(new THREE.MeshStandardMaterial({ color: '#1d1d1f', roughness: 0.8 }), 3);
-  for (let i = 0; i < 20; i++) for (let j = 0; j < 2; j++) {
-    const y = -road.half + i * (road.half * 2 / 20), x = obstacles.finish + j * 0.1;
-    ground(new THREE.Mesh(strip(y, y + road.half * 2 / 20, 0.004, x, x + 0.1), (i + j) % 2 ? white : black));
-  }
+  // Finish: one fine black line across the road.
+  ground(new THREE.Mesh(strip(-road.half, road.half, 0.004, obstacles.finish, obstacles.finish + 0.03), finishLine));
   for (const b of blocks()) {
     if (b.kind === 'road') continue;
-    const mesh = add(new THREE.Mesh(new THREE.BoxGeometry(b.size[0] * 2, b.size[1] * 2, b.size[2] * 2), b.kind === 'island' ? concrete : b.kind === 'wall' ? concrete : concrete));
+    const mesh = add(outlined(new THREE.Mesh(new THREE.BoxGeometry(b.size[0] * 2, b.size[1] * 2, b.size[2] * 2), block)));
     mesh.position.set(b.pos[0], b.pos[1], b.pos[2]);
     mesh.quaternion.set(b.quat[1], b.quat[2], b.quat[3], b.quat[0]);
-    if (b.kind === 'island') {
-      const top = add(new THREE.Mesh(new THREE.BoxGeometry(b.size[0] * 2 - 0.06, b.size[1] * 2 - 0.06, 0.01), grass));
-      top.position.set(0, 0, b.size[2]); mesh.add(top);
-      for (const dx of [-0.35, 0, 0.35]) mesh.add(tree(dx * (b.size[0] * 2 - 0.6), 0, b.size[2], 0.5 + Math.abs(dx)));
-    }
   }
-  // Bollards: steel posts with a yellow band.
+  // Bollards: plain posts.
+  const post = new THREE.MeshStandardMaterial({ color: '#dddcd6', roughness: 0.8 });
   obstacles.bollards.forEach(([x, y]) => {
-    const post = add(new THREE.Group());
-    post.position.set(x, y, surfaceAt(x));
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.24, 16).rotateX(Math.PI / 2), steel); pole.position.z = 0.12;
-    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.0305, 0.0305, 0.03, 16).rotateX(Math.PI / 2), yellow); band.position.z = 0.19;
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI / 2), steel); cap.position.z = 0.24;
-    post.add(pole, band, cap);
-    post.traverse(o => { if (o instanceof THREE.Mesh) o.castShadow = o.receiveShadow = true; });
+    const pole = add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.24, 20).rotateX(Math.PI / 2), post));
+    pole.position.set(x, y, surfaceAt(x) + 0.12);
   });
-  // Roadside trees and the finish arch.
-  let seed = 7; const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (let x = road.start + 1; x < marks.end; x += 2.2 + random() * 1.4) for (const side of [-1, 1]) {
-    const y = side * (road.half + 0.6 + random() * 1.1);
-    add(tree(x + random(), y, surfaceAt(x), 0.7 + random() * 0.5));
-  }
+  // Finish gate: two thin black posts and a bar.
   const arch = add(new THREE.Group());
-  arch.position.set(obstacles.finish, 0, surfaceAt(obstacles.finish));
-  for (const side of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.9), steel); leg.position.set(0, side * (road.half + 0.12), 0.45); arch.add(leg); }
-  const banner = new THREE.Mesh(new THREE.BoxGeometry(0.03, road.half * 2 + 0.3, 0.14), [steel, new THREE.MeshStandardMaterial({ map: bannerTexture(), color: bannerTexture() ? '#ffffff' : '#d4583a' }), steel, steel, steel, steel]);
-  banner.position.z = 0.86; arch.add(banner);
+  arch.position.set(obstacles.finish + 0.015, 0, surfaceAt(obstacles.finish));
+  for (const side of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.9), ink); leg.position.set(0, side * (road.half + 0.1), 0.45); arch.add(leg); }
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(0.012, road.half * 2 + 0.212, 0.012), ink); bar.position.z = 0.9; arch.add(bar);
   arch.traverse(o => { if (o instanceof THREE.Mesh) o.castShadow = o.receiveShadow = true; });
 
   return stopperBoom(scene, stopper);
