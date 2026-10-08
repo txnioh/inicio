@@ -134,7 +134,11 @@ export class Playground {
     this.controls.minDistance = 0.25;
     this.controls.maxDistance = skateMode ? 20 : 3;
     this.controls.maxPolarAngle = Math.PI * 0.49;
-    this.controls.addEventListener('start', () => { this.chasePaused = performance.now() + 4000; });
+    // Orbiting or zooming during a ride moves the chase camera for good: the new
+    // angle and distance are kept relative to the road. Double-click restores it.
+    this.controls.addEventListener('start', () => { this.adjusting = Infinity; });
+    this.controls.addEventListener('end', () => { this.adjusting = performance.now() + 600; });
+    this.renderer.domElement.addEventListener('dblclick', () => { this.custom = undefined; this.adjusting = 0; });
     this.cameraView('iso');
     const ambient = new THREE.HemisphereLight('#ffffff', '#9ca3a0', 2.6);
     ambient.position.set(0, 0, 1);
@@ -348,6 +352,7 @@ export class Playground {
     this.data.qpos[3] = 1;
     this.joints.forEach((_, i) => { this.data.qpos[this.qAddresses[i]] = this.targets[i]; });
     this.skate?.reset(this.data);
+    this.roadHeading = NaN; this.lift = 0;
     this.mujoco.mj_forward(this.model, this.data);
     this.cameraView('iso');
     this.draw();
@@ -448,13 +453,25 @@ export class Playground {
       }
       if (this.skate) {
         // Look a little ahead of the board, down the road.
-        const heading = this.viewHeading(), { ahead, aim = 0 } = this.skate.course.view.chase;
-        this.follow.set(this.data.qpos[0] + Math.cos(heading) * ahead - Math.sin(heading) * aim, this.data.qpos[1] + Math.sin(heading) * ahead + Math.cos(heading) * aim, this.data.qpos[2] - 0.07);
+        // The physics runs in 5 ms steps and the screen every 8–17 ms, so each
+        // frame's pose is up to one step old by a varying amount: carry
+        // everything drawn on to the frame's time at the board's velocity, or
+        // the scenery judders past the camera.
+        const board = this.skate.boardPose(this.data), lead = this.playing ? Math.min(this.accumulator, 0.005) : 0;
+        this.lead.set(board.v[0] * lead, board.v[1] * lead, board.v[2] * lead);
+        this.steer(board.heading, elapsed);
+        const heading = this.viewHeading(), { behind, side, ahead: far, aim: off = 0 } = this.skate.course.view.chase;
+        // Turned round, the camera looks back at Jumper rather than down the road.
+        const reach = this.custom ? Math.max(0, Math.cos(this.custom.yaw - Math.atan2(side, -behind))) : 1, ahead = far * reach, aim = off * reach;
+        this.follow.set(board.x + Math.cos(heading) * ahead - Math.sin(heading) * aim, board.y + Math.sin(heading) * ahead + Math.cos(heading) * aim, board.z + 0.1).add(this.lead);
       } else this.follow.set(this.data.qpos[0], this.data.qpos[1], Math.max(0.09, this.data.qpos[2] * 0.7));
       this.follow.sub(this.controls.target).multiplyScalar(1 - Math.exp(-elapsed * 5));
       this.controls.target.add(this.follow);
-      this.camera.position.add(this.follow);
-      if (this.skate && now > this.chasePaused) this.chase(elapsed);
+      if (this.skate && now > this.adjusting) this.chase(elapsed);
+      else {
+        this.camera.position.add(this.follow);
+        if (this.skate) this.keep();
+      }
       this.skate?.course.animate?.(now / 1000);
       // Keep Jumper itself in focus.
       if (this.bokeh) (this.bokeh.uniforms as Record<string, { value: number }>).focus.value = this.camera.position.distanceTo(this.focusPoint.set(this.data.qpos[0], this.data.qpos[1], this.data.qpos[2]));
@@ -475,6 +492,7 @@ export class Playground {
   };
 
   private draw() {
+    const geomBody = this.model.geom_bodyid;
     for (const { id, mesh, body } of this.drawables) {
       if (body) {
         const p = body.id * 3, r = body.id * 4, q = this.data.xquat;
@@ -482,6 +500,7 @@ export class Playground {
         mesh.position.copy(body.position).applyQuaternion(this.bodyRotation);
         mesh.position.x += this.data.xpos[p]; mesh.position.y += this.data.xpos[p + 1]; mesh.position.z += this.data.xpos[p + 2];
         mesh.quaternion.copy(this.bodyRotation).multiply(body.quaternion);
+        mesh.position.add(this.lead);
         continue;
       }
       const p = id * 3, r = id * 9;
@@ -489,6 +508,7 @@ export class Playground {
       const m = this.data.geom_xmat;
       this.matrix.set(m[r], m[r + 1], m[r + 2], 0, m[r + 3], m[r + 4], m[r + 5], 0, m[r + 6], m[r + 7], m[r + 8], 0, 0, 0, 0, 1);
       mesh.quaternion.setFromRotationMatrix(this.matrix);
+      if (geomBody[id]) mesh.position.add(this.lead);
     }
     this.composer.render();
   }
@@ -534,38 +554,61 @@ export class Playground {
   releaseBoard() { if (this.data) this.skate?.release(this.data.time); }
   // Chase camera for the downhill: behind and above the board, framed per run
   // (course view.chase). Dragging the view pauses it for 4 s.
-  private chasePaused = 0;
+  private adjusting = 0;
+  /** The rider's own camera, if they moved it: heading relative to the road, distance across the ground, height. */
+  private custom?: { yaw: number; horiz: number; z: number };
+  private keep() {
+    const board = this.skate!.boardPose(this.data), v = this.camera.position.clone().sub(this.focusPoint.set(board.x, board.y, board.z + 0.15).add(this.lead));
+    this.custom = { yaw: Math.atan2(v.y, v.x) - this.roadHeading, horiz: Math.hypot(v.x, v.y), z: v.z - this.lift };
+  }
   private chaseOffset = new THREE.Vector3();
-  // Keep the camera above the ground and Jumper in sight: rise over any rise in
-  // the terrain between the camera and the rider (the scenery has no colliders).
-  private keepClear() {
+  // The road's heading, smoothed: the board's own heading shivers with every
+  // correction, and a camera 5 m back and looking 7 m ahead would swing with it.
+  private roadHeading = NaN;
+  private steer(heading: number, elapsed: number) {
+    if (Number.isNaN(this.roadHeading)) { this.roadHeading = heading; return; }
+    this.roadHeading += Math.atan2(Math.sin(heading - this.roadHeading), Math.cos(heading - this.roadHeading)) * (1 - Math.exp(-elapsed * 1.4));
+  }
+  // How far the camera must rise to stay above the ground and keep Jumper in
+  // sight over any rise between them (the scenery has no colliders).
+  private clearance(camera: THREE.Vector3, rider: THREE.Vector3) {
     const ground = this.skate?.course.ground;
-    if (!ground) return;
-    const camera = this.camera.position, rider = this.focusPoint.set(this.data.qpos[0], this.data.qpos[1], this.data.qpos[2]);
+    if (!ground) return 0;
     let lift = Math.max(0, ground(camera.x, camera.y) + 0.8 - camera.z);
-    for (let i = 1; i < 12; i++) {
+    // From a quarter of the way out: right by the rider the curb would always "block".
+    for (let i = 3; i < 12; i++) {
       const t = i / 12, x = rider.x + (camera.x - rider.x) * t, y = rider.y + (camera.y - rider.y) * t, z = rider.z + (camera.z + lift - rider.z) * t;
-      const blocked = ground(x, y) + 0.35 - z;
+      const blocked = ground(x, y) + 0.3 - z;
       if (blocked > 0) lift += blocked / t;
     }
-    camera.z += Math.min(lift, 6);
+    return Math.min(lift, 8);
   }
-  /** The camera's heading: the board's, turned part of the way towards the run's scenic view. */
+  private lift = 0;
+  private lead = new THREE.Vector3();
+  private desired = new THREE.Vector3();
+  /** The look-at heading: the road's, turned part of the way towards the run's scenic view. */
   private viewHeading() {
-    const { heading } = this.skate!.boardPose(this.data), scenic = this.skate!.course.view.chase.scenic;
+    const heading = this.roadHeading, scenic = this.skate!.course.view.chase.scenic;
     if (!scenic) return heading;
     const [toward, weight] = scenic;
     return Math.atan2(Math.sin(heading) * (1 - weight) + Math.sin(toward) * weight, Math.cos(heading) * (1 - weight) + Math.cos(toward) * weight);
   }
   private chase(elapsed: number) {
-    const heading = this.viewHeading();
-    const { behind, side, height, ahead } = this.skate!.course.view.chase;
-    // Offset from the look-at point (ahead of the board); side is to the board's left.
-    this.chaseOffset.set(-Math.cos(heading) * (behind + ahead) - Math.sin(heading) * side, -Math.sin(heading) * (behind + ahead) + Math.cos(heading) * side, height);
-    const current = this.camera.position.clone().sub(this.controls.target);
+    const heading = this.roadHeading, board = this.skate!.boardPose(this.data);
+    const { behind, side, height } = this.skate!.course.view.chase;
+    // Behind the board along the road and out to its side (left positive). Only
+    // the look-at point turns towards the scenery, so the camera never swings
+    // round onto the hillside.
+    if (this.custom) { const { yaw, horiz, z } = this.custom; this.chaseOffset.set(Math.cos(heading + yaw) * horiz, Math.sin(heading + yaw) * horiz, z); }
+    else this.chaseOffset.set(-Math.cos(heading) * behind - Math.sin(heading) * side, -Math.sin(heading) * behind + Math.cos(heading) * side, height);
+    const rider = this.focusPoint.set(board.x, board.y, board.z + 0.15).add(this.lead);
+    const need = this.clearance(this.desired.copy(rider).add(this.chaseOffset), rider);
+    // Rise promptly, settle back slowly.
+    this.lift += (need - this.lift) * (1 - Math.exp(-elapsed * (need > this.lift ? 4 : 0.8)));
+    this.chaseOffset.z += this.lift;
+    const current = this.camera.position.clone().sub(rider);
     current.lerp(this.chaseOffset, 1 - Math.exp(-elapsed * 2.2));
-    this.camera.position.copy(this.controls.target).add(current);
-    this.keepClear();
+    this.camera.position.copy(rider).add(current);
   }
   togglePilot() { const on = this.skate?.togglePilot() ?? false; this.report(0); return on; }
   setGrid(on: boolean) { this.grid.visible = on; }

@@ -369,7 +369,7 @@ export class Skate {
   /** Board position and heading, for the chase camera. */
   boardPose(data: MjData) {
     const q = data.qpos.subarray(this.boardQ + 3, this.boardQ + 7), nose = rotate(q, [1, 0, 0]);
-    const v = [data.qvel[this.boardV], data.qvel[this.boardV + 1]];
-    return { x: data.qpos[this.boardQ], y: data.qpos[this.boardQ + 1], z: data.qpos[this.boardQ + 2], heading: Math.hypot(v[0], v[1]) > 0.3 ? Math.atan2(v[1], v[0]) : Math.atan2(nose[1], nose[0]) };
+    const v = [data.qvel[this.boardV], data.qvel[this.boardV + 1], data.qvel[this.boardV + 2]];
+    return { x: data.qpos[this.boardQ], y: data.qpos[this.boardQ + 1], z: data.qpos[this.boardQ + 2], v, heading: Math.hypot(v[0], v[1]) > 0.3 ? Math.atan2(v[1], v[0]) : Math.atan2(nose[1], nose[0]) };
   }
 }

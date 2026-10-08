@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Water } from 'three/addons/objects/Water.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { bannerTexture, tree } from './course.ts';
 import { frameQuat, resample, stopperBoom, type Course, type Frame, type Point } from './track.ts';
 
@@ -318,12 +319,15 @@ function terrain() {
     if (crossings.length >= 2) segments.push([...crossings[0], ...crossings[1]]);
     if (crossings.length === 4) segments.push([...crossings[2], ...crossings[3]]);
   }
-  // The far landscape, out to the horizon, a little lower where the near grid covers it.
+  // The far landscape, out to the horizon. Where the near grid covers it, it
+  // sits a little lower along the near grid's edge and drops well out of sight
+  // further in: its 9 m cells would otherwise poke up through the road's cut.
   const fx0 = -1200, fy0 = -900, fcell = 9, fnx = Math.ceil(2400 / fcell), fny = Math.ceil(2200 / fcell);
   const far = new Float32Array((fnx + 1) * (fny + 1));
+  const within = (x: number, y: number, margin: number) => x > x0 + margin && x < x1 - margin && y > y0 + margin && y < y1 - margin;
   for (let j = 0; j <= fny; j++) for (let i = 0; i <= fnx; i++) {
-    const x = fx0 + i * fcell, y = fy0 + j * fcell, inside = x > x0 + fcell && x < x1 - fcell && y > y0 + fcell && y < y1 - fcell;
-    far[j * (fnx + 1) + i] = farField(x, y) - (inside ? 3 : 0.35);
+    const x = fx0 + i * fcell, y = fy0 + j * fcell;
+    far[j * (fnx + 1) + i] = within(x, y, 2 * fcell) ? -60 : farField(x, y) - (within(x, y, fcell) ? 3 : 0.35);
   }
   const group = new THREE.Group();
   group.add(near, gridMesh(fx0, fy0, fnx, fny, fcell, far), foam(segments), shoulders(near.material));
@@ -484,15 +488,47 @@ function asphaltTexture() {
   return texture;
 }
 
+/**
+ * Merge static meshes that look alike into one draw each. Hundreds of curbs,
+ * posts and dashes otherwise cost a draw call apiece in every pass (view, sea
+ * reflection, depth of field), and the frame rate stuttered. They receive
+ * shadows but cast none.
+ */
+function merge(root: THREE.Object3D) {
+  root.updateMatrixWorld(true);
+  const groups = new Map<string, { material: THREE.Material; geometries: THREE.BufferGeometry[] }>();
+  root.traverse(o => {
+    if (!(o instanceof THREE.Mesh) || Array.isArray(o.material)) return;
+    const m = o.material as THREE.MeshStandardMaterial;
+    const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld);
+    for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(name)) g.deleteAttribute(name);
+    g.clearGroups();
+    if (!g.getAttribute('normal')) g.computeVertexNormals();
+    if (!g.getAttribute('uv')) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.getAttribute('position').count * 2), 2));
+    const key = [m.type, m.color?.getHexString(), m.map?.uuid, m.flatShading, m.roughness, m.metalness, m.polygonOffsetFactor, m.side].join();
+    const group = groups.get(key) ?? { material: m, geometries: [] };
+    group.geometries.push(g); groups.set(key, group);
+  });
+  const out = new THREE.Group();
+  for (const { material, geometries } of groups.values()) {
+    const mesh = new THREE.Mesh(mergeGeometries(geometries), material);
+    mesh.receiveShadow = true;
+    out.add(mesh);
+  }
+  return out;
+}
+
 function build(scene: THREE.Scene, stopper: Frame) {
   const add = <T extends THREE.Object3D>(o: T, cast = true) => { o.traverse(m => { if (m instanceof THREE.Mesh) { m.castShadow = cast; m.receiveShadow = true; } }); scene.add(o); return o; };
   const layer = (m: THREE.MeshStandardMaterial, level: number) => { m.polygonOffset = true; m.polygonOffsetFactor = -level; m.polygonOffsetUnits = -level * 2; return m; };
+  // The static road furniture and scenery is gathered here and merged at the end.
+  const statics = new THREE.Group(), still = (o: THREE.Object3D) => { statics.add(o); };
   motion.length = 0;
   scene.add(skyDome('#ecd9c2', '#5b88c0'), sunDisc());
   // The sea: three.js's Water (a mirror reflection distorted by four scrolling
   // ripple layers, Fresnel, and the sun's glitter), turned to this Z-up world.
   const sea = new Water(new THREE.PlaneGeometry(4000, 4000), {
-    textureWidth: 1024, textureHeight: 1024, waterNormals: seaNormals() ?? undefined,
+    textureWidth: 512, textureHeight: 512, waterNormals: seaNormals() ?? undefined,
     sunDirection: sun.clone(), sunColor: 0xffdcae, waterColor: 0x1d5a78, distortionScale: 0.7, fog: true,
   });
   const shader = sea.material as THREE.ShaderMaterial;
@@ -545,20 +581,20 @@ function build(scene: THREE.Scene, stopper: Frame) {
     for (let r = 0; r < 1 + Math.floor(random() * 3); r++) {
       const size = 0.15 + random() * 0.5, rock = new THREE.Mesh(rockGeometry(size, k * 7 + r), rockMaterials[Math.floor(random() * 3)]);
       rock.position.set(ax + (random() - 0.5) * 1.2, ay + (random() - 0.5) * 1.2, coast.seaLevel - size * 0.25);
-      rock.rotation.z = random() * 6; add(rock, false);
+      rock.rotation.z = random() * 6; still(rock);
     }
   }
   const asphaltMap = asphaltTexture();
   add(new THREE.Mesh(band(-coast.half - 0.02, coast.half + 0.02, 0.002), layer(new THREE.MeshStandardMaterial({ color: asphaltMap ? '#ffffff' : '#55585c', map: asphaltMap, roughness: 0.9 }), 1)), false);
   const paint = layer(new THREE.MeshStandardMaterial({ color: '#f1ede4', roughness: 0.7 }), 2);
-  for (const d of [coast.half - 0.09, -coast.half + 0.06]) add(new THREE.Mesh(band(d, d + 0.03, 0.004), paint), false);
+  for (const d of [coast.half - 0.09, -coast.half + 0.06]) still(new THREE.Mesh(band(d, d + 0.03, 0.004), paint));
   const yellow = layer(new THREE.MeshStandardMaterial({ color: '#e9b44c', roughness: 0.7 }), 2);
-  for (let s = 0.6; s < line.total; s += 1.2) if (Math.abs(s - line.finish) > 1.2) add(new THREE.Mesh(band(-0.015, 0.015, 0.004, s, s + 0.6, 0.1), yellow), false);
+  for (let s = 0.6; s < line.total; s += 1.2) if (Math.abs(s - line.finish) > 1.2) still(new THREE.Mesh(band(-0.015, 0.015, 0.004, s, s + 0.6, 0.1), yellow));
   // Finish: chequered band and arch.
   const white = layer(new THREE.MeshStandardMaterial({ color: '#f3efe6', roughness: 0.8 }), 3), black = layer(new THREE.MeshStandardMaterial({ color: '#1d1d1f', roughness: 0.8 }), 3);
   for (let i = 0; i < 16; i++) for (let j = 0; j < 2; j++) {
     const d0 = -coast.half + i * coast.half * 2 / 16;
-    add(new THREE.Mesh(band(d0, d0 + coast.half * 2 / 16, 0.006, line.finish + j * 0.1, line.finish + (j + 1) * 0.1, 0.1), (i + j) % 2 ? white : black), false);
+    still(new THREE.Mesh(band(d0, d0 + coast.half * 2 / 16, 0.006, line.finish + j * 0.1, line.finish + (j + 1) * 0.1, 0.1), (i + j) % 2 ? white : black));
   }
   const steel = new THREE.MeshStandardMaterial({ color: '#a9b0b7', roughness: 0.55, metalness: 0.35 });
   const fin = frame(line.finish), arch = new THREE.Group(), q = frameQuat({ ...fin, slope: 0 });
@@ -576,20 +612,21 @@ function build(scene: THREE.Scene, stopper: Frame) {
     const s = (i + 0.5) * coast.chord, fr = frame(s), fq = frameQuat(fr), quat = new THREE.Quaternion(fq[1], fq[2], fq[3], fq[0]);
     // Road furniture receives shadows but casts none: with the sun this low, its long
     // shadows would sweep in and out of the shadow map around the rider.
-    const curb = new THREE.Mesh(curbGeometry, concrete); curb.position.set(...offset(s, coast.half + 0.08, coast.rail / 2)); curb.quaternion.copy(quat); add(curb, false);
-    if (i % 3 === 0) { const post = new THREE.Mesh(postGeometry, steel); post.position.set(...offset(s, -coast.half - 0.1, 0.08)); post.quaternion.copy(quat); add(post, false); }
+    const curb = new THREE.Mesh(curbGeometry, concrete); curb.position.set(...offset(s, coast.half + 0.08, coast.rail / 2)); curb.quaternion.copy(quat); still(curb);
+    if (i % 3 === 0) { const post = new THREE.Mesh(postGeometry, steel); post.position.set(...offset(s, -coast.half - 0.1, 0.08)); post.quaternion.copy(quat); still(post); }
   }
   const beam = band(-coast.half - 0.125, -coast.half - 0.125, 0, 0, line.total, 0.2);
   const p = beam.getAttribute('position');
   for (let i = 0; i < p.count; i++) p.setZ(i, p.getZ(i) + (i % 2 ? 0.07 : 0.15));
   beam.computeVertexNormals();
-  add(new THREE.Mesh(beam, new THREE.MeshStandardMaterial({ color: '#b9bec3', roughness: 0.55, metalness: 0.35, side: THREE.DoubleSide })), false);
+  still(new THREE.Mesh(beam, new THREE.MeshStandardMaterial({ color: '#b9bec3', roughness: 0.55, metalness: 0.35, side: THREE.DoubleSide })));
   // A few pines above the cut and along the shoulder on the sea side.
   for (let s = 3; s < line.total - 3; s += 3.7) {
     const k = Math.sin(s * 12.9898) * 43758.5453, r = k - Math.floor(k);
     const [x, y] = offset(s, coast.half + 8 + r * 7);
-    add(tree(x, y, hill(x, y), 0.9 + r * 0.6), false);
+    still(tree(x, y, hill(x, y), 0.9 + r * 0.6));
   }
+  scene.add(merge(statics));
   return stopperBoom(scene, stopper);
 }
 

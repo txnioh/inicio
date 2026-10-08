@@ -114,7 +114,7 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
       <div className="jumper-links"><a href="https://github.com/KingKongRobotics/jumper" target="_blank" rel="noreferrer">Repo ↗</a><a href="https://beunlimited.me/en/simulator" target="_blank" rel="noreferrer">Simulador ↗</a></div>
     </section> : null}
     <footer className="jumper-controls"><div className="jumper-actions"><button aria-label={stats.playing ? 'Pausar' : 'Reproducir'} title={stats.playing ? 'Pausar' : 'Reproducir'} disabled={!ready} onClick={() => engine.current?.setPlaying(!stats.playing)}><Icon name={stats.playing ? 'pause' : 'play'} /></button><button aria-label="Reiniciar" title="Reiniciar" disabled={!ready} onClick={() => { setError(''); engine.current?.reset(); }}><Icon name="reset" /></button></div>
-      <span className="jumper-hint">{variant === 'skate' ? 'Enter soltar · ←/→ o A/D girar · W/S puntas/talones · P piloto · R reiniciar' : 'WASD · J/L · Espacio'}</span>
+      <span className="jumper-hint">{variant === 'skate' ? 'Enter soltar · ←/→ o A/D girar · W/S puntas/talones · P piloto · R reiniciar · arrastra: cámara, doble clic: volver' : 'WASD · J/L · Espacio'}</span>
       <span className="jumper-mode">{ready && !stats.policyRunning ? stats.controllerMode === 'safe' ? 'Detenido' : 'Preparando' : stats.controllerMode === 'locomotion' ? '' : motions.find(item => item.id === stats.controllerMode)?.name}</span>
     </footer>
     {variant === 'skate' && ready && stats.skate ? <SkateHud stats={stats.skate} onRestart={() => { setError(''); engine.current?.reset(); }} /> : null}
