@@ -12,8 +12,10 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { BokehShader } from 'three/addons/shaders/BokehShader.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { dressEva } from './eva';
-import { buildPortals, type PortalId } from './portals';
+import { buildPortals, pad, type PortalId } from './portals';
 import type { Lang } from './i18n';
+/** Jumper's heading at the start of the playground: square to the signs, towards them. */
+const startYaw = pad.facing + Math.PI / 2;
 import { courseFor, Skate, skateXml, type BoardKind, type Look } from './skate';
 import { flushInputs, modeBinding, queueMode, type InputEdge } from './inputs';
 import { type Joint, type SkinId, type Stats, boxes, skins } from './settings';
@@ -395,7 +397,9 @@ export class Playground {
     this.targets = new Float32Array(this.joints.map(joint => joint.home));
     this.mujoco.mj_resetData(this.model, this.data);
     this.data.qpos[2] = this.physical.standHeight;
-    this.data.qpos[3] = 1;
+    // In the playground Jumper starts facing the signs; the runs set their own pose.
+    const yaw = this.skateMode ? 0 : startYaw;
+    this.data.qpos[3] = Math.cos(yaw / 2); this.data.qpos[6] = Math.sin(yaw / 2);
     this.joints.forEach((_, i) => { this.data.qpos[this.qAddresses[i]] = this.targets[i]; });
     this.skate?.reset(this.data);
     this.mujoco.mj_forward(this.model, this.data);
@@ -701,7 +705,13 @@ export class Playground {
     const y = this.data ? this.data.qpos[1] : 0;
     this.controls.target.set(x + 0.06, y, 0.065);
     if (this.skateMode && view === 'iso') this.camera.position.set(x + 0.35, y - 2.6, 0.75);
-    else if (view === 'iso') this.camera.position.set(x + 1.15, y - 1.35, 1.1);
+    else if (view === 'iso') {
+      // Low behind Jumper, looking where it faces: Jumper low in the frame, the signs beyond.
+      const q = this.data?.qpos, yaw = q ? Math.atan2(2 * (q[3] * q[6] + q[4] * q[5]), 1 - 2 * (q[5] ** 2 + q[6] ** 2)) : startYaw;
+      const fx = Math.cos(yaw), fy = Math.sin(yaw);
+      this.controls.target.set(x + fx * 1.0, y + fy * 1.0, 0.12);
+      this.camera.position.set(x - fx * 0.85, y - fy * 0.85, 0.55);
+    }
     if (view === 'front') this.camera.position.set(x + 1.8, y, 0.9);
     if (view === 'top') this.camera.position.set(x + 0.001, y, 2.5);
     this.controls.update();

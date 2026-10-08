@@ -30,7 +30,7 @@ Jumper is in English, with Chinese under *Settings → Language* (`i18n.ts`). Th
 choice is kept in the browser, follows Jumper into the runs and retitles the
 signs in place.
 
-The default camera shows the front and claws. The Z-up lighting and a 2048 px
+Jumper starts facing the signs, and the default camera sits low behind it, looking where it faces: Jumper low in the frame, the signs beyond (*Settings → Camera → 3D* returns to it from wherever Jumper is, behind its current heading). While it loads, the page shows Jumper from behind as a small SVG (`LoadingJumper.tsx`) that fills with the chosen skin's colour from the feet up. The Z-up lighting and a 2048 px
 shadow map, with depth bias -0.0003 and normal bias 0.002 m, remove the
 self-shadow striping visible on the shell in close-up. Robot self-shadowing and
 shadows on the floor remain enabled; no source geometry was removed or altered.

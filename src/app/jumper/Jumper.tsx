@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { Playground } from './playground';
 import { initialStats, motions, skins, type SkinId } from './settings';
 import { langs, storeLang, storedLang, strings, type Lang } from './i18n';
+import LoadingJumper from './LoadingJumper';
 import SkateHud, { SkateFinish, skateMaps } from './SkateHud';
 import './jumper.css';
 
@@ -123,8 +124,8 @@ export default function Jumper({ variant = 'jumper', initialSkin }: { variant?: 
     <div className="jumper-canvas" ref={host} tabIndex={0} aria-label={t.canvas} onPointerDown={() => host.current?.focus({ preventScroll: true })} />
     <header className="jumper-header"><div><a className="minimal-basic-link" href="/">Index</a><nav className="jumper-models" aria-label={t.section}>{variant === 'jumper' ? <h1>Jumper</h1> : <><a href="/jumper">Jumper</a><span aria-hidden="true">/</span><h1>{runName}</h1></>}</nav></div><button aria-expanded={settings} aria-controls="jumper-settings" onClick={() => setSettings(value => !value)}>{t.settings}</button></header>
     {!ready ? <div className="jumper-loading" role="status">{error ? <><p>{error}</p><button onClick={() => location.reload()}>{t.retry}</button></> : <>
+      <LoadingJumper progress={progress} shell={skins.find(item => item.id === skin)!.shell}/>
       <span className="jumper-loading-label">{stage === 'robot' ? t.loadingRobot : stage === 'run' ? t.loadingRun : t.loading}</span>
-      <span className="jumper-loading-bar" aria-hidden="true"><i style={{ transform: `scaleX(${progress / 100})` }} /></span>
       <span className="jumper-loading-value">{progress}%</span>
     </>}</div> : null}
     {ready && error ? <p className="jumper-error jumper-runtime-error" role="alert">{error}</p> : null}

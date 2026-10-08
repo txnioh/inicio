@@ -31,11 +31,13 @@
 .jumper-views { display: flex; gap: 13px; font-size: 11px; }
 .jumper-views button[aria-pressed="true"] { color: #111; }
 .jumper-loading { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fdfdfc; font-size: 12px; color: #a3a29d; padding: 24px; text-align: center; }
+.jumper-loading-figure { display: block; margin-bottom: 18px; overflow: visible; }
+.jumper-loading-fill { transition: y .25s ease-out; }
+.jumper-loading-bob { animation: jumper-loading-bob 1.4s ease-in-out infinite; }
+@keyframes jumper-loading-bob { 50% { transform: translateY(-1.5px); } }
 .jumper-loading-label { color: #111; font-size: 13px; }
-.jumper-loading-bar { width: 180px; height: 2px; margin: 14px 0 10px; background: #e6e5e0; overflow: hidden; border-radius: 2px; }
-.jumper-loading-bar i { display: block; height: 100%; background: #111; transform-origin: left; transition: transform .15s ease-out; }
-.jumper-loading-value { font-variant-numeric: tabular-nums; font-size: 11px; }
-@media (prefers-reduced-motion: reduce) { .jumper-loading-bar i { transition: none; } }
+.jumper-loading-value { margin-top: 8px; font-variant-numeric: tabular-nums; font-size: 11px; }
+@media (prefers-reduced-motion: reduce) { .jumper-loading-fill { transition: none; } .jumper-loading-bob { animation: none; } }
 .jumper-error { color: #a95137; font-size: 11px; line-height: 1.5; }
 .jumper-runtime-error { position: fixed; left: 32px; bottom: 70px; z-index: 3; max-width: 350px; }
 .jumper-measurements { display: flex; justify-content: space-between; margin-top: 20px; font-size: 10px; color: #a3a29d; font-variant-numeric: tabular-nums; }
