@@ -111,7 +111,7 @@ export class Playground {
     this.composer.addPass(new OutputPass());
     const view = skateMode ? courses[skateMode].view : undefined;
     this.scene.fog = view ? new THREE.Fog(view.sky, ...view.fog) : new THREE.Fog('#fdfdfc', 3, 7);
-    if (view) { this.camera.far = view.far; this.camera.updateProjectionMatrix(); this.renderer.setClearColor(view.sky); }
+    if (view) { this.camera.far = view.far; this.camera.near = view.near ?? this.camera.near; this.camera.updateProjectionMatrix(); this.renderer.setClearColor(view.sky); }
     // Depth of field (focused on the rider every frame) and bloom, before SMAA.
     if (view?.post?.dof) {
       this.bokeh = new BokehPass(this.scene, this.camera, { focus: 3, aperture: view.post.dof.aperture, maxblur: view.post.dof.maxblur });

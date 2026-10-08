@@ -26,6 +26,8 @@ export interface Course {
   /** Camera and atmosphere. */
   view: {
     far: number; fog: [number, number]; sky: string; ground?: boolean;
+    /** Camera near plane (m); default 0.04. Raise it with a far `far` to keep depth precision. */
+    near?: number;
     /** Chase camera: metres behind the board, to its left, above it, how far ahead it looks, and how far to the left of the road it aims (negative: right),
      *  and optionally a scenic heading (rad) and how much the camera turns towards it (0–1). */
     chase: { behind: number; side: number; height: number; ahead: number; aim?: number; scenic?: [number, number] };

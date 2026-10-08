@@ -138,7 +138,7 @@ const farCoast = (x: number) => -240 + 35 * Math.sin(x * 0.012 + 2);
 function farField(x: number, y: number) {
   const inland = y - coastline(x);
   let h = inland < 0 ? coast.seaLevel - 0.6 + inland * 0.5
-    : 0.6 + inland * 0.42 - Math.max(0, inland - 25) * 0.25 + ridged(x, y) * (2 + smooth(15, 160, inland) * 95);
+    : 0.2 + Math.min(inland, 2.5) * 0.95 + Math.max(0, inland - 2.5) * 0.4 - Math.max(0, inland - 25) * 0.24 + ridged(x, y) * (2 + smooth(15, 160, inland) * 95); // a low rock lip, then the slope
   const across = farCoast(x) - y;
   if (across > 0) h = Math.max(h, 0.6 + across * 0.3 + ridged(x + 500, y) * (2 + smooth(10, 120, across) * 70));
   return h;
@@ -161,18 +161,26 @@ function hill(x: number, y: number) {
 }
 
 const palette = {
-  surf: new THREE.Color('#ece8de'), sand: new THREE.Color('#cdb88c'), grass: new THREE.Color('#5b7a3a'), meadow: new THREE.Color('#7d9147'),
-  dry: new THREE.Color('#a39256'), scrub: new THREE.Color('#3d5a2b'), rock: new THREE.Color('#8a7f72'), cliff: new THREE.Color('#6a625a'), peak: new THREE.Color('#b4aea4'),
+  wet: new THREE.Color('#57534c'), wetSand: new THREE.Color('#a8956f'), sand: new THREE.Color('#cdb88c'), shoreRock: new THREE.Color('#6e675e'),
+  grass: new THREE.Color('#5b7a3a'), meadow: new THREE.Color('#7d9147'), dry: new THREE.Color('#a39256'), scrub: new THREE.Color('#3d5a2b'),
+  rock: new THREE.Color('#8a7f72'), cliff: new THREE.Color('#6a625a'), scree: new THREE.Color('#a59d92'), peak: new THREE.Color('#bdb7ad'),
 };
-/** Colour by height above the sea, steepness (1 - normal z) and a little noise. */
+/**
+ * Colour by height above the sea, steepness (1 - normal z) and noise: wet rock
+ * and sand at the waterline, grass on the lower slopes, scrub then bare rock and
+ * scree higher up (the road sits ~7–8 m up; 1 m here is ~10 m at Jumper's scale).
+ */
 function groundColour(c: THREE.Color, x: number, y: number, h: number, steep: number) {
-  if (h < coast.seaLevel + 0.12) return c.copy(palette.surf);
-  if (h < coast.seaLevel + 0.6 && steep < 0.35) return c.copy(palette.sand);
-  const n = noise(x * 0.09, y * 0.09) * 0.6 + noise(x * 0.35, y * 0.35) * 0.4, m = noise(x * 0.8 + 9, y * 0.8);
-  c.copy(palette.grass).lerp(palette.meadow, n * 0.8).lerp(palette.dry, smooth(18, 70, h) * 0.8);
-  if (noise(x * 0.12 + 5, y * 0.12) > 0.6) c.lerp(palette.scrub, 0.65);
-  c.lerp(steep > 0.5 ? palette.cliff : palette.rock, smooth(0.22, 0.5, steep));
-  if (h > 110) c.lerp(palette.peak, smooth(110, 160, h));
+  const n = noise(x * 0.09, y * 0.09) * 0.6 + noise(x * 0.35, y * 0.35) * 0.4, m = noise(x * 0.8 + 9, y * 0.8), patch = noise(x * 0.12 + 5, y * 0.12);
+  if (h < coast.seaLevel + 0.08) return c.copy(palette.wet).offsetHSL(0, 0, (m - 0.5) * 0.06);
+  if (h < coast.seaLevel + 0.5) return c.copy(steep > 0.3 ? palette.shoreRock : palette.wetSand).lerp(palette.sand, smooth(0.15, 0.5, h) * (steep > 0.3 ? 0 : 1)).offsetHSL(0, 0, (m - 0.5) * 0.06);
+  c.copy(palette.grass).lerp(palette.meadow, n * 0.8).lerp(palette.dry, smooth(7, 11, h) * 0.6);
+  if (patch > 0.6) c.lerp(palette.scrub, 0.65);
+  // Above the grass: rock showing through in patches, then bare rock and scree.
+  const bare = smooth(9.5, 15, h + (patch - 0.5) * 4);
+  c.lerp(palette.rock, bare * 0.85).lerp(palette.scree, smooth(30, 60, h) * 0.7);
+  c.lerp(steep > 0.5 ? palette.cliff : palette.rock, smooth(0.18, 0.42, steep));
+  if (h > 90) c.lerp(palette.peak, smooth(90, 150, h));
   return c.offsetHSL((m - 0.5) * 0.02, 0, (m - 0.5) * 0.1);
 }
 
@@ -217,6 +225,29 @@ function gridMesh(x0: number, y0: number, nx: number, ny: number, cell: number, 
   return mesh;
 }
 
+let foamMaterial: THREE.MeshBasicMaterial | undefined;
+/** A band of surf along the waterline segments, lying on the water and breathing. */
+function foam(segments: [number, number, number, number][]) {
+  const positions: number[] = [], uvs: number[] = [], width = 0.32;
+  for (const [ax, ay, bx, by] of segments) {
+    const l = Math.hypot(bx - ax, by - ay) || 1, nx = -(by - ay) / l * width, ny = (bx - ax) / l * width, z = coast.seaLevel + 0.03;
+    const quad = [[ax - nx, ay - ny], [bx - nx, by - ny], [bx + nx, by + ny], [ax - nx, ay - ny], [bx + nx, by + ny], [ax + nx, ay + ny]];
+    for (const [x, y] of quad) { positions.push(x, y, z); uvs.push(x * 0.35, y * 0.35); }
+  }
+  const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)).setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  let map: THREE.CanvasTexture | null = null;
+  if (typeof document !== 'undefined') {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 128;
+    const c = canvas.getContext('2d')!;
+    for (let i = 0; i < 900; i++) { const a = Math.random(); c.fillStyle = `rgba(255,255,255,${0.2 + a * 0.8})`; c.beginPath(); c.arc(Math.random() * 128, Math.random() * 128, 1 + a * 3, 0, Math.PI * 2); c.fill(); }
+    map = new THREE.CanvasTexture(canvas); map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  }
+  foamMaterial = new THREE.MeshBasicMaterial({ color: '#fffaf1', alphaMap: map, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+  const mesh = new THREE.Mesh(geometry, foamMaterial);
+  mesh.renderOrder = 1;
+  return mesh;
+}
+
 function terrain() {
   const xs = line.samples.map(c => c.x), ys = line.samples.map(c => c.y);
   const x0 = Math.min(...xs) - 60, x1 = Math.max(...xs) + 60, y0 = Math.min(...ys) - 45, y1 = Math.max(...ys) + 90;
@@ -239,6 +270,19 @@ function terrain() {
     }
   }
   const near = gridMesh(x0, y0, nx, ny, cell, heights);
+  // The waterline, by marching squares over the near grid: where each cell's
+  // corners straddle sea level, the crossing points on its edges.
+  const level = coast.seaLevel + 0.02, segments: [number, number, number, number][] = [];
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const corners = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]].map(([a, b]) => ({ x: x0 + a * cell, y: y0 + b * cell, h: heights[b * (nx + 1) + a] - level }));
+    const crossings: [number, number][] = [];
+    for (let e = 0; e < 4; e++) {
+      const a = corners[e], b = corners[(e + 1) % 4];
+      if ((a.h < 0) !== (b.h < 0)) { const t = a.h / (a.h - b.h); crossings.push([a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t]); }
+    }
+    if (crossings.length >= 2) segments.push([...crossings[0], ...crossings[1]]);
+    if (crossings.length === 4) segments.push([...crossings[2], ...crossings[3]]);
+  }
   // The far landscape, out to the horizon, a little lower where the near grid covers it.
   const fx0 = -1200, fy0 = -900, fcell = 9, fnx = Math.ceil(2400 / fcell), fny = Math.ceil(2200 / fcell);
   const far = new Float32Array((fnx + 1) * (fny + 1));
@@ -247,8 +291,8 @@ function terrain() {
     far[j * (fnx + 1) + i] = farField(x, y) - (inside ? 3 : 0.35);
   }
   const group = new THREE.Group();
-  group.add(near, gridMesh(fx0, fy0, fnx, fny, fcell, far));
-  return group;
+  group.add(near, gridMesh(fx0, fy0, fnx, fny, fcell, far), foam(segments));
+  return { group, shore: segments };
 }
 
 /** A strip following the road between lateral offsets d0..d1, lifted by h. */
@@ -343,19 +387,39 @@ function boat() {
   return group;
 }
 
-/** A lighthouse: white tower with red bands, a lit lantern and a dark cap, on a rock. */
+/** A lighthouse: tapered white tower with red bands, a gallery, a lit lantern and a dark cap, on a rock. */
 function lighthouse() {
   const group = new THREE.Group();
   const white = new THREE.MeshStandardMaterial({ color: '#f3efe7', roughness: 0.7 }), red = new THREE.MeshStandardMaterial({ color: '#c8452e', roughness: 0.6 });
-  const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.62, 4.2, 20).rotateX(Math.PI / 2), white); tower.position.z = 2.1;
+  const dark = new THREE.MeshStandardMaterial({ color: '#2c2e33', roughness: 0.5 });
+  const height = 4.2, base = 0.62, top = 0.42, radius = (z: number) => base + (top - base) * z / height;
+  const tower = new THREE.Mesh(new THREE.CylinderGeometry(top, base, height, 32).rotateX(Math.PI / 2), white); tower.position.z = height / 2;
   group.add(tower);
-  for (const z of [1.1, 2.6]) { const band = new THREE.Mesh(new THREE.CylinderGeometry(0.55 - z * 0.032 + 0.01, 0.57 - z * 0.032 + 0.02, 0.5, 20).rotateX(Math.PI / 2), red); band.position.z = z; group.add(band); }
-  const gallery = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.12, 20).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#2c2e33', roughness: 0.5 })); gallery.position.z = 4.25;
-  const lantern = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.6, 16).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#ffe8b0', emissive: '#ffcf70', emissiveIntensity: 1.4 })); lantern.position.z = 4.6;
-  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.44, 0.5, 16).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#2c2e33', roughness: 0.5 })); cap.position.z = 5.15;
-  const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6, 0).scale(1.3, 1.1, 0.7), new THREE.MeshStandardMaterial({ color: '#7d756d', roughness: 1, flatShading: true }));
+  // Bands follow the taper, 2 cm proud of the tower so no face is shared.
+  for (const z of [1.1, 2.6]) {
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(radius(z + 0.25) + 0.02, radius(z - 0.25) + 0.02, 0.5, 32).rotateX(Math.PI / 2), red);
+    band.position.z = z; group.add(band);
+  }
+  const gallery = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.12, 32).rotateX(Math.PI / 2), dark); gallery.position.z = height + 0.1;
+  const lantern = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.55, 20).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#ffe8b0', emissive: '#ffcf70', emissiveIntensity: 0.9 })); lantern.position.z = height + 0.46;
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.44, 0.5, 20).rotateX(Math.PI / 2), dark); cap.position.z = height + 0.99;
+  const rock = new THREE.Mesh(rockGeometry(1.6, 3), new THREE.MeshStandardMaterial({ color: '#7d756d', roughness: 1, flatShading: true }));
+  rock.scale.set(1.3, 1.1, 0.7); rock.position.z = -0.35;
   group.add(gallery, lantern, cap, rock);
   return group;
+}
+
+/** A weathered rock: an icosahedron pushed in and out by noise, flatter on top. */
+function rockGeometry(radius: number, seed: number) {
+  const geometry = new THREE.IcosahedronGeometry(radius, 1), p = geometry.getAttribute('position'), v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    const k = 0.75 + noise(v.x * 1.7 + seed, v.y * 1.7 - seed) * 0.45 + noise(v.z * 3 + seed, v.x * 3) * 0.12;
+    v.multiplyScalar(k); if (v.z > radius * 0.35) v.z = radius * 0.35 + (v.z - radius * 0.35) * 0.4;
+    p.setXYZ(i, v.x, v.y, v.z);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 /** A gull: two thin wings that flap. */
@@ -423,14 +487,6 @@ function build(scene: THREE.Scene, stopper: Frame) {
   }
   const pointS = 52, [lx, ly] = offset(pointS, -16);
   const light = lighthouse(); light.position.set(lx, ly, Math.max(coast.seaLevel, hill(lx, ly)) + 0.2); add(light);
-  // Rocks along the shore.
-  let seed = 11; const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (let i = 0, placed = 0; i < 3000 && placed < 40; i++) {
-    const s0 = random() * line.total, d = -(coast.half + 6 + random() * 22), [x, y] = offset(s0, d), h = hill(x, y);
-    if (h < coast.seaLevel - 0.6 || h > coast.seaLevel + 0.5) continue;
-    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.3 + random() * 0.9, 0).scale(1.2, 1, 0.6 + random() * 0.4), new THREE.MeshStandardMaterial({ color: random() > 0.5 ? '#7d756d' : '#8f857a', roughness: 1, flatShading: true }));
-    rock.position.set(x, y, coast.seaLevel + 0.1); rock.rotation.z = random() * 6; add(rock); placed++;
-  }
   // Gulls circling over the cliff.
   for (let i = 0; i < 7; i++) {
     const g = gull(), [cx, cy, cz] = offset(10 + i * 9, -6 - (i % 3) * 3, 3 + (i % 4)), r = 3 + (i % 3) * 2, speed = 0.25 + (i % 4) * 0.06;
@@ -443,7 +499,20 @@ function build(scene: THREE.Scene, stopper: Frame) {
       for (const wing of g.children) if (wing.name) wing.rotation.x = (wing.name === 'left' ? 1 : -1) * flap;
     });
   }
-  add(terrain(), false);
+  const land = terrain();
+  add(land.group, false);
+  if (foamMaterial?.alphaMap) { const surf = foamMaterial, map = surf.alphaMap!; motion.push(t => { surf.opacity = 0.6 + Math.sin(t * 0.9) * 0.25; map.offset.set(t * 0.03, Math.sin(t * 0.5) * 0.05); }); }
+  // Rocks along the waterline, half sunk, in small clusters.
+  let seed = 11; const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const rockMaterials = ['#6f685f', '#7d756d', '#8a8176'].map(color => new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true }));
+  for (let k = 0; k < 26 && land.shore.length; k++) {
+    const [ax, ay] = land.shore[Math.floor(random() * land.shore.length)];
+    for (let r = 0; r < 1 + Math.floor(random() * 3); r++) {
+      const size = 0.15 + random() * 0.5, rock = new THREE.Mesh(rockGeometry(size, k * 7 + r), rockMaterials[Math.floor(random() * 3)]);
+      rock.position.set(ax + (random() - 0.5) * 1.2, ay + (random() - 0.5) * 1.2, coast.seaLevel - size * 0.25);
+      rock.rotation.z = random() * 6; add(rock, false);
+    }
+  }
   const asphaltMap = asphaltTexture();
   add(new THREE.Mesh(band(-coast.half - 0.02, coast.half + 0.02, 0.002), layer(new THREE.MeshStandardMaterial({ color: asphaltMap ? '#ffffff' : '#55585c', map: asphaltMap, roughness: 0.9 }), 1)), false);
   const paint = layer(new THREE.MeshStandardMaterial({ color: '#f1ede4', roughness: 0.7 }), 2);
@@ -505,7 +574,9 @@ export const mountainCourse: Course = {
     // looking far down the road: the horizon sits in the top third, the sea on
     // one side and the mountains on the other. The view leans halfway towards
     // the bay, so bends into the hill still open onto the sea.
-    far: 1200, fog: [35, 820], sky: '#f1d2ae', ground: false, chase: { behind: 5.2, side: -1.3, height: 2.3, ahead: 7, aim: -0.5, scenic: [-0.45, 0.5] },
+    // Near plane 20 cm: the camera never comes closer, and with a 1.2 km far
+    // plane this keeps enough depth precision that distant parts don't flicker.
+    far: 1200, near: 0.2, fog: [35, 820], sky: '#f1d2ae', ground: false, chase: { behind: 5.2, side: -1.3, height: 2.3, ahead: 7, aim: -0.5, scenic: [-0.45, 0.5] },
     environment: 0.12,
     // A soft bloom on the sun, its glitter and the lantern; a shallow depth of field on Jumper.
     post: { bloom: [0.35, 0.5, 0.93], dof: { aperture: 0.00008, maxblur: 0.0009 } },

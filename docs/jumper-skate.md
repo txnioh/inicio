@@ -115,9 +115,13 @@ three.js TerrainGenerator and Musgrave's ridged multifractal). The heights are
 a ridged multifractal, with each octave damped where the ones before it are
 low, sampled through a low-frequency domain warp so the crests meander. Near
 the road it is blended with the road's cut and fill, then run through four
-passes of thermal erosion. The ground is coloured by slope and height (surf,
-sand, grass, meadow, dry grass, scrub, rock, cliff) and carries a grass grain
-texture. A far mesh carries the ranges inland and the headlands across the
+passes of thermal erosion. The coast rises from the water as a low rock lip
+before the slope. The ground is coloured by slope and height: wet rock and
+sand at the waterline, grass on the lower slopes, then scrub, bare rock and
+scree from 2–3 m above the road (20–30 m at Jumper's scale). It carries a
+grass grain texture. A band of surf follows the exact waterline, traced by
+marching squares over the height grid and breathing with the swell, with
+weathered rocks half sunk along it. A far mesh carries the ranges inland and the headlands across the
 bay out to the horizon. The sea is three.js's `Water` (mirror reflection,
 Fresnel, scrolling ripples and sun glitter), with its Y-up shader turned to
 this Z-up world and tuned to keep its own deep blue. A soft bloom and a very
