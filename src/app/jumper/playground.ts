@@ -15,6 +15,8 @@ import { dressEva } from './eva';
 import { buildPortals, pad, type PortalId } from './portals';
 import type { Lang } from './i18n';
 /** Jumper's heading at the start of the playground: square to the signs, towards them. */
+/** Vertical field of view (degrees) on a screen at least `wide` across; narrower screens widen it. */
+const fov = 37, wide = 1.6;
 const startYaw = pad.facing + Math.PI / 2;
 import { courseFor, Skate, skateXml, type BoardKind, type Look } from './skate';
 import { flushInputs, modeBinding, queueMode, type InputEdge } from './inputs';
@@ -69,7 +71,7 @@ export class Playground {
   private renderer: THREE.WebGLRenderer;
   private composer: EffectComposer;
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(37, 1, 0.04, 12);
+  private camera = new THREE.PerspectiveCamera(fov, 1, 0.04, 12);
   private controls: OrbitControls;
   private resize: ResizeObserver;
   private abort = new AbortController();
@@ -241,6 +243,9 @@ export class Playground {
       this.composer.setPixelRatio(ratio);
       this.composer.setSize(width, height);
       this.camera.aspect = width / Math.max(height, 1);
+      // Keep at least a landscape screen's width of view: on a phone held upright a fixed
+      // vertical angle leaves a sliver, and the chase camera loses the board off the side.
+      this.camera.fov = Math.min(62, 2 * THREE.MathUtils.radToDeg(Math.atan(Math.tan(THREE.MathUtils.degToRad(fov / 2)) * Math.max(1, wide / this.camera.aspect))));
       this.camera.updateProjectionMatrix();
     });
     this.resize.observe(host);
@@ -515,7 +520,7 @@ export class Playground {
         const lead = Math.min(0.03, Math.max(-0.01, this.clock - this.data.time));
         this.lead.set(board.v[0] * lead, board.v[1] * lead, board.v[2] * lead);
         this.steer(board.heading, elapsed);
-        const heading = this.viewHeading(), { ahead, aim = 0 } = this.skate.course.view.chase;
+        const heading = this.viewHeading(), { ahead } = this.skate.course.view.chase, aim = (this.skate.course.view.chase.aim ?? 0) * this.narrow();
         // Turned round, the camera looks back at Jumper rather than down the road.
 
         this.follow.set(board.x + Math.cos(heading) * ahead - Math.sin(heading) * aim, board.y + Math.sin(heading) * ahead + Math.cos(heading) * aim, board.z + 0.1).add(this.lead);
@@ -643,25 +648,28 @@ export class Playground {
   private lead = new THREE.Vector3();
   private clock = 0;
   private desired = new THREE.Vector3();
+  /** 1 on a landscape screen, less on a narrower one: the chase camera's sideways offsets
+   * shrink with it, so the board stays in a phone's upright frame. */
+  private narrow() { return Math.min(1, this.camera.aspect / wide); }
   /** The look-at heading: the road's, turned part of the way towards the run's scenic view. */
   private viewHeading() {
     const heading = this.roadHeading, scenic = this.skate!.course.view.chase.scenic;
     if (!scenic) return heading;
-    const [toward, weight] = scenic;
+    const [toward, full] = scenic, weight = full * this.narrow();
     return Math.atan2(Math.sin(heading) * (1 - weight) + Math.sin(toward) * weight, Math.cos(heading) * (1 - weight) + Math.cos(toward) * weight);
   }
   /** Put the chase camera straight where it rides, so a (re)start opens on the run's own view. */
   private snapChase() {
     const board = this.skate!.boardPose(this.data);
     this.roadHeading = board.heading; this.lift = 0; this.lead.set(0, 0, 0);
-    const heading = this.viewHeading(), { ahead, aim = 0 } = this.skate!.course.view.chase;
+    const heading = this.viewHeading(), { ahead } = this.skate!.course.view.chase, aim = (this.skate!.course.view.chase.aim ?? 0) * this.narrow();
     this.controls.target.set(board.x + Math.cos(heading) * ahead - Math.sin(heading) * aim, board.y + Math.sin(heading) * ahead + Math.cos(heading) * aim, board.z + 0.1);
     this.chase(Infinity);
     this.controls.update();
   }
   private chase(elapsed: number) {
     const heading = this.roadHeading, board = this.skate!.boardPose(this.data);
-    const { behind, side, height } = this.skate!.course.view.chase;
+    const { behind, height } = this.skate!.course.view.chase, side = this.skate!.course.view.chase.side * this.narrow();
     // Behind the board along the road and out to its side (left positive). Only
     // the look-at point turns towards the scenery, so the camera never swings
     // round onto the hillside.

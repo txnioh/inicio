@@ -306,3 +306,10 @@ paints before that blocking step.
 
 Enter: release. ←/→ or A/D: turn. W/S: toes/heels. P: pilot. R: reset. Wheel
 or pinch: zoom.
+
+## Phones
+
+On a screen narrower than 16:10 (a phone held upright) the camera keeps a landscape
+screen's width of view, widening its vertical angle up to 62°, and the chase camera's
+sideways offsets (side, aim, the turn towards the scenery) shrink in proportion, so the
+board stays in frame. The touch stick sits above the bottom row of pills.

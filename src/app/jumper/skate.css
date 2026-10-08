@@ -31,3 +31,5 @@
 .jumper-page .jumper-actions .skate-pill[aria-pressed="true"] { color: #d4583a; }
 .skate-pill kbd { padding: 0 5px; border: 1px solid currentColor; border-radius: 4px; font: inherit; font-size: 10px; opacity: .55; }
 @media (pointer: coarse) { .skate-pill kbd { display: none; } }
+/* The board's controls sit in a row at the bottom; the stick goes above them. */
+@media (pointer: coarse), (max-width: 700px) { .jumper-skate .jumper-touch { bottom: 128px; } }
