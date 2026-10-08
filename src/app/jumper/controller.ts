@@ -61,13 +61,13 @@ export class RobotController {
 
   private async bytes(file: string, verify = true) {
     const response = await fetch(`/jumper/app/${file}`, { signal: this.signal });
-    if (!response.ok) throw new Error(`No se pudo cargar ${file}.`);
+    if (!response.ok) throw new Error(`Could not load ${file}.`);
     const data = await response.arrayBuffer();
     const expected = this.bundle?.files[file];
     if (verify && expected) {
       const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
       const digest = Array.from(hash, b => b.toString(16).padStart(2, '0')).join('');
-      if (data.byteLength !== expected.bytes || digest !== expected.sha256) throw new Error(`Archivo original alterado: ${file}.`);
+      if (data.byteLength !== expected.bytes || digest !== expected.sha256) throw new Error(`Original file altered: ${file}.`);
     }
     return data;
   }
@@ -94,7 +94,7 @@ export class RobotController {
     try {
       this.parity = { ...JSON.parse(check.checkReference(decode(reference))), inference: 0 };
     } finally { check.free(); }
-    if (this.parity.observation > 1e-6 || this.parity.target > 1e-6 || this.parity.modeMismatches.length) throw new Error('El controlador no coincide con su referencia oficial.');
+    if (this.parity.observation > 1e-6 || this.parity.target > 1e-6 || this.parity.modeMismatches.length) throw new Error('The controller does not match its official reference.');
     ort.env.wasm.numThreads = 1;
     ort.env.wasm.wasmPaths = { wasm: ortWasm, mjs: ortModule };
     await Promise.all([this.session('locomotion'), this.session('jump')]);
@@ -104,7 +104,7 @@ export class RobotController {
       const action = await this.infer(frame.mode, new Float32Array(frame.obs!));
       this.parity.inference = Math.max(this.parity.inference, ...action.map((a, i) => Math.abs(a - frame.act![i])));
     }
-    if (this.parity.inference > 1e-4) throw new Error('La inferencia ONNX no coincide con la política original.');
+    if (this.parity.inference > 1e-4) throw new Error('ONNX inference does not match the original policy.');
     if (!this.disposed) this.reset();
   }
 
@@ -114,7 +114,7 @@ export class RobotController {
   private session(mode: string) {
     if (this.disposed) throw new DOMException('Controller disposed', 'AbortError');
     const file = this.bundle.modes[mode]?.models.onnx;
-    if (!file) throw new Error(`Política inexistente: ${mode}.`);
+    if (!file) throw new Error(`No such policy: ${mode}.`);
     let session = this.sessions.get(file);
     if (!session) {
       session = this.bytes(file).then(bytes => ort.InferenceSession.create(bytes, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' }));
@@ -137,7 +137,7 @@ export class RobotController {
     if (mode !== undefined) {
       const action = await this.infer(mode, fsm.observation());
       if (this.disposed || generation !== this.generation) return;
-      if (action.some(value => !Number.isFinite(value))) throw new Error('La política devolvió un valor no finito.');
+      if (action.some(value => !Number.isFinite(value))) throw new Error('The policy returned a non-finite value.');
       fsm.resume(action);
     }
   }

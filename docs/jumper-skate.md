@@ -14,8 +14,8 @@ physics and drawing.
 
 ## The minimal coast
 
-The start panel offers the longboard's coast road in two looks: *Costa*
-(below) and *Minimal*, in Inicio's palette like the obstacle road
+The start panel offers the longboard's coast road in two looks: *Coast*
+(below) and *Coast minimal*, in Inicio's palette like the obstacle road
 (`minimalCoast.ts`). Same road, physics and ground, drawn as a white site
 model. Contour lines every 50 cm, a heavier one every 2.5 m and a firmer one
 at the waterline are drawn in the ground's shader from the world height, and
@@ -293,11 +293,11 @@ run's own chase view, not from a fixed spot.
 
 The runs are entered from the Jumper playground: walk onto the pad in front
 of a run's sign and press Enter (see `docs/jumper-playground.md`). The run is
-in the address, `/jumper/skate?mapa=calle|costa|minimal`; without one the page
+in the address, `/jumper/skate?map=calle|costa|minimal`; without one the page
 goes back to the playground. There is no panel over the scene: before the
-release, *Empezar* (Enter) and *Piloto* (P) sit at the bottom beside pause and
+release, *Start* (Enter) and *Pilot* (P) sit at the bottom beside pause and
 restart, and a grid button goes back to the playground. At the finish a small
-panel shows the time with *Otra vez*.
+panel shows the time with *Again*.
 
 While the page loads, a line says what it is doing (*Cargando a Jumper*, then
 *Preparando la bajada* while the run and its terrain are built) over a thin

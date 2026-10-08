@@ -269,7 +269,7 @@ export const obstacleCourse: Course = {
   cones: obstacles.cones.map(([x, y]) => ({ x, y, slope: slopeAt(x), heading: 0 })),
   xml: courseXml,
   build: buildCourse,
-  route(x, y) { const { x0, x1 } = obstacles.island; return x > (x0 + x1) / 2 && x < x1 ? (y > 0 ? 'izquierda' : 'derecha') : undefined; },
+  route(x, y) { const { x0, x1 } = obstacles.island; return x > (x0 + x1) / 2 && x < x1 ? (y > 0 ? 'left' : 'right') : undefined; },
   view: { far: 60, fog: [12, 40], sky: '#fdfdfc', chase: { behind: 2.6, side: -0.6, height: 1.15, ahead: 1.2 } },
   ground: (x, y) => Math.abs(y) < road.verge ? surfaceAt(x) : 0,
 };

@@ -340,14 +340,15 @@
       </body>
     </body>
   <geom name="playground_floor" type="plane" size="10 10 .1" contype="1" conaffinity="1" friction="1 .01 .01"/>
-<geom name="box_0" type="box" pos="0.72 0 0.015" size="0.2 0.19 0.015" contype="1" conaffinity="1" friction="1 .01 .01"/>
-<geom name="box_1" type="box" pos="1.28 0.18 0.025" size="0.24 0.2 0.025" contype="1" conaffinity="1" friction="1 .01 .01"/>
-<geom name="box_2" type="box" pos="1.88 -0.14 0.04" size="0.26 0.23 0.04" contype="1" conaffinity="1" friction="1 .01 .01"/>
-<geom name="box_3" type="box" pos="2.55 0.1 0.05" size="0.32 0.29 0.05" contype="1" conaffinity="1" friction="1 .01 .01"/>
-<geom name="box_4" type="box" pos="0.6 -0.78 0.08" size="0.19 0.19 0.08" contype="1" conaffinity="1" friction="1 .01 .01"/>
-<geom name="box_5" type="box" pos="0.95 0.85 0.11" size="0.25 0.25 0.11" contype="1" conaffinity="1" friction="1 .01 .01"/>
-<geom name="box_6" type="box" pos="1.7 -0.85 0.16" size="0.275 0.19 0.16" contype="1" conaffinity="1" friction="1 .01 .01"/>
-<geom name="box_7" type="box" pos="2.1 1.1 0.07" size="0.325 0.27 0.07" contype="1" conaffinity="1" friction="1 .01 .01"/>
+<geom name="box_0" type="box" pos="2.6 0.45 0.015" size="0.2 0.19 0.015" contype="1" conaffinity="1" friction="1 .01 .01"/>
+<geom name="box_1" type="box" pos="2.45 2.1 0.07" size="0.325 0.27 0.07" contype="1" conaffinity="1" friction="1 .01 .01"/>
+<geom name="box_2" type="box" pos="0.7 2.9 0.11" size="0.25 0.25 0.11" contype="1" conaffinity="1" friction="1 .01 .01"/>
+<geom name="box_3" type="box" pos="-1.75 3.05 0.16" size="0.275 0.19 0.16" contype="1" conaffinity="1" friction="1 .01 .01"/>
+<geom name="box_4" type="box" pos="-2.8 0.7 0.04" size="0.26 0.23 0.04" contype="1" conaffinity="1" friction="1 .01 .01"/>
+<geom name="box_5" type="box" pos="-3 -1.45 0.08" size="0.19 0.19 0.08" contype="1" conaffinity="1" friction="1 .01 .01"/>
+<geom name="box_6" type="box" pos="-1.15 -2.6 0.025" size="0.24 0.2 0.025" contype="1" conaffinity="1" friction="1 .01 .01"/>
+<geom name="box_7" type="box" pos="1.2 -3.3 0.05" size="0.32 0.29 0.05" contype="1" conaffinity="1" friction="1 .01 .01"/>
+<geom name="box_8" type="box" pos="2.9 -1.6 0.025" size="0.21 0.2 0.025" contype="1" conaffinity="1" friction="1 .01 .01"/>
 </worldbody>
 
   <sensor>

@@ -98,7 +98,7 @@ export function skateXml(xml: string, kind: BoardKind = 'skate', look: Look = 's
   const course = courseFor(kind, look), hill = course.xml(), board = boards[kind], frame = stopperOf(board, course), q = frameQuat(frame), n = rotate(q, [0, 0, 1]);
   const stopper = `<geom name="skate_stopper" type="box" pos="${frame.p.map((v, i) => f(v + n[i] * 0.008)).join(' ')}" quat="${q.map(f).join(' ')}" size="0.01 0.3 0.01" contype="1" conaffinity="129"/>`;
   const replaced = xml.replace(/<geom name="playground_floor"[\s\S]*?(?=<\/worldbody>)/, `${hill.world}\n${stopper}\n${boardXml(board, course)}\n`).replace('</asset>', `${hill.asset}\n</asset>`);
-  if (replaced === xml || !replaced.includes('skate_board')) throw new Error('No se pudo montar la bajada.');
+  if (replaced === xml || !replaced.includes('skate_board')) throw new Error('Could not build the run.');
   return replaced;
 }
 
@@ -152,7 +152,7 @@ export class Skate {
   // Plain fields rather than parameter properties, so Node can run this file in tests.
   constructor(mujoco: MainModule, model: MjModel, scene: THREE.Scene, feet: Set<number>, steer: (lx: number, ly: number, rx: number, ry: number, nowUs: number) => void, kind: BoardKind = 'skate', look: Look = 'scenic') {
     this.mujoco = mujoco; this.model = model; this.feet = feet; this.steer = steer; this.board = boards[kind]; this.course = courseFor(kind, look);
-    const id = (type: number, name: string) => { const value = mujoco.mj_name2id(model, type, name); if (value < 0) throw new Error(`Falta ${name} en la bajada.`); return value; };
+    const id = (type: number, name: string) => { const value = mujoco.mj_name2id(model, type, name); if (value < 0) throw new Error(`${name} is missing from the run.`); return value; };
     this.boardBody = id(1, 'skate_board');
     const joint = id(3, 'skate_board');
     this.boardQ = model.jnt_qposadr[joint];
@@ -327,7 +327,7 @@ export class Skate {
         contact.delete();
       }
     } finally { contacts.delete(); }
-    if (ground && !this.offBoard) { this.offBoard = true; this.say('Fuera de la tabla'); }
+    if (ground && !this.offBoard) { this.offBoard = true; this.say('Off the board'); }
     this.onDeck = deck;
     // Closest foot to a side edge of the deck, in metres (negative: overhanging).
     const q = data.qpos.subarray(this.boardQ + 3, this.boardQ + 7);
@@ -341,23 +341,23 @@ export class Skate {
     for (const cone of this.cones) {
       if (cone.down) continue;
       const c = data.qpos, up = 1 - 2 * (c[cone.q + 4] ** 2 + c[cone.q + 5] ** 2);
-      if (up < Math.cos(35 * Math.PI / 180) || Math.hypot(c[cone.q] - cone.x, c[cone.q + 1] - cone.y) > 0.04) { cone.down = true; this.say('Cono derribado'); }
+      if (up < Math.cos(35 * Math.PI / 180) || Math.hypot(c[cone.q] - cone.x, c[cone.q + 1] - cone.y) > 0.04) { cone.down = true; this.say('Cone down'); }
     }
     // Stopped, or no longer riding, for 2 s: back to the start (also after the finish).
     const stuck = this.released && t - this.releasedAt > 1.5 && (speed < 0.05 || this.offBoard);
     if (!stuck) this.stuckSince = -1;
     else if (this.stuckSince < 0) this.stuckSince = t;
-    else if (t - this.stuckSince > 2 && this.restartAt < 0) { this.restartAt = t; if (this.finishedAt < 0) this.say('Atascado · vuelta a la salida'); }
+    else if (t - this.stuckSince > 2 && this.restartAt < 0) { this.restartAt = t; if (this.finishedAt < 0) this.say('Stuck · back to the start'); }
     // After the finish, 6 s to read the time; the board may rock in the run-out.
     if (this.finishedAt >= 0 && t - this.finishedAt > 6 && this.restartAt < 0) this.restartAt = t;
     // Progress along the line: nearest point of the pilot's path.
     this.pathIndex = nearest(this.course.path.points, x, y, this.pathIndex);
     const route = this.route ? undefined : this.course.route?.(x, y);
-    if (route) { this.route = route; this.say(`Por la ${route}`); }
+    if (route) { this.route = route; this.say(`Took the ${route}`); }
     if (this.finishedAt < 0 && this.released && this.course.path.s[this.pathIndex] >= this.course.finish) {
       this.finishedAt = t;
       const down = this.cones.filter(cone => cone.down).length;
-      this.say(`Meta · ${(t - this.releasedAt).toFixed(1).replace('.', ',')} s${down ? ` · ${down} ${down === 1 ? 'cono' : 'conos'}` : ' · limpio'}`);
+      this.say(`Finish · ${(t - this.releasedAt).toFixed(1)} s${down ? ` · ${down} ${down === 1 ? 'cone' : 'cones'}` : ' · clean'}`);
     }
   }
 

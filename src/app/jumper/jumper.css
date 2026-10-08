@@ -29,6 +29,7 @@
 .jumper-colors button { width: 12px; height: 12px; border-radius: 50%; position: relative; }
 .jumper-colors button[aria-pressed="true"]::after { content: ''; position: absolute; inset: -4px; border: 1px solid #bdbdb5; border-radius: 50%; }
 .jumper-views { display: flex; gap: 13px; font-size: 11px; }
+.jumper-views button[aria-pressed="true"] { color: #111; }
 .jumper-loading { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fdfdfc; font-size: 12px; color: #a3a29d; padding: 24px; text-align: center; }
 .jumper-loading-label { color: #111; font-size: 13px; }
 .jumper-loading-bar { width: 180px; height: 2px; margin: 14px 0 10px; background: #e6e5e0; overflow: hidden; border-radius: 2px; }

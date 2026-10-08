@@ -13,6 +13,7 @@ import { BokehShader } from 'three/addons/shaders/BokehShader.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { dressEva } from './eva';
 import { buildPortals, type PortalId } from './portals';
+import type { Lang } from './i18n';
 import { courseFor, Skate, skateXml, type BoardKind, type Look } from './skate';
 import { flushInputs, modeBinding, queueMode, type InputEdge } from './inputs';
 import { type Joint, type SkinId, type Stats, boxes, skins } from './settings';
@@ -38,7 +39,7 @@ function mujocoModule() {
 
 async function read<T>(path: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(`/jumper/${path}`, { signal });
-  if (!response.ok) throw new Error(`No se pudo cargar ${path} (${response.status}).`);
+  if (!response.ok) throw new Error(`Could not load ${path} (${response.status}).`);
   return response.json() as Promise<T>;
 }
 
@@ -111,7 +112,7 @@ export class Playground {
   private bokeh?: DepthBokeh;
   private focusPoint = new THREE.Vector3();
 
-  constructor(private host: HTMLElement, onStats: (stats: Stats) => void, private onError: (message: string) => void, private skateMode: false | BoardKind = false, private look: Look = 'scenic') {
+  constructor(private host: HTMLElement, onStats: (stats: Stats) => void, private onError: (message: string) => void, private skateMode: false | BoardKind = false, private look: Look = 'scenic', lang: Lang = 'en') {
     this.onStats = onStats;
     this.robot = new RobotController(this.abort.signal);
     // Antialias the scene's render target; canvas MSAA cannot filter that image.
@@ -147,7 +148,7 @@ export class Playground {
       this.scene.environmentIntensity = view?.environment ?? 0.35;
       pmrem.dispose();
     }
-    this.renderer.domElement.setAttribute('aria-label', 'Modelo 3D de Jumper. Arrastra para girar; usa la rueda para acercarte.');
+    this.renderer.domElement.setAttribute('aria-label', 'Jumper in 3D. Drag to orbit; scroll to zoom.');
     this.host.append(this.renderer.domElement);
     this.camera.up.set(0, 0, 1);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -226,7 +227,7 @@ export class Playground {
       this.scene.add(mesh);
     }
     // The downhill runs, as signs with pads to walk onto (Enter rides the run).
-    if (!skateMode) this.portalAt = buildPortals(this.scene);
+    if (!skateMode) this.portals = buildPortals(this.scene, lang);
     this.resize = new ResizeObserver(() => {
       const { width, height } = this.host.getBoundingClientRect();
       // Keep Retina detail without allocating oversized post-processing buffers. A run with
@@ -243,7 +244,7 @@ export class Playground {
     this.resize.observe(host);
   }
 
-  async load(onProgress: (value: number, stage?: string) => void) {
+  async load(onProgress: (value: number, stage?: 'robot' | 'run') => void) {
     const signal = this.abort.signal;
     const module = mujocoModule();
     const controllerRequest = this.robot.load();
@@ -251,7 +252,7 @@ export class Playground {
     void controllerRequest.catch(() => {});
     const manifest = await read<AssetManifest>('manifest.json', signal);
     const geometryRequest = fetch(`/jumper/${manifest.runtime.geometry}`, { signal }).then(async response => {
-      if (!response.ok) throw new Error('No se pudieron cargar las mallas.');
+      if (!response.ok) throw new Error('Could not load the meshes.');
       const bytes = await response.arrayBuffer();
       const prefix = new Uint8Array(bytes, 0, Math.min(2, bytes.byteLength));
       // Vite serves .gz with Content-Encoding, while static hosts may serve the
@@ -264,7 +265,7 @@ export class Playground {
       module, fetch(`/jumper/${manifest.runtime.model}`, { signal }), controllerRequest, geometryRequest, read<PhysicalConfig>('physics.json', signal),
     ]);
     if (this.disposed) return [];
-    if (!response.ok) throw new Error('No se pudo cargar el modelo original de Jumper.');
+    if (!response.ok) throw new Error('Could not load the original Jumper model.');
     this.mujoco = mujoco;
     const xml = await response.text();
     if (!mujoco.FS.analyzePath('/jumper', false).exists) mujoco.FS.mkdir('/jumper');
@@ -276,7 +277,7 @@ export class Playground {
       while (queue.length) {
         const path = queue.shift()!;
         const mesh = await fetch(`/jumper/${path}`, { signal });
-        if (!mesh.ok) throw new Error(`No se pudo cargar la malla ${path}.`);
+        if (!mesh.ok) throw new Error(`Could not load the mesh ${path}.`);
         const bytes = new Uint8Array(await mesh.arrayBuffer());
         if (this.disposed) return;
         const parts = path.split('/');
@@ -290,7 +291,7 @@ export class Playground {
           }
         }
         mujoco.FS.writeFile(`/jumper/${path}`, bytes);
-        onProgress(Math.round(++loaded / manifest.runtime.meshes.length * (this.skateMode ? 80 : 95)), 'Cargando a Jumper');
+        onProgress(Math.round(++loaded / manifest.runtime.meshes.length * (this.skateMode ? 80 : 95)), 'robot');
       }
     };
     await Promise.all(Array.from({ length: 6 }, download));
@@ -298,7 +299,7 @@ export class Playground {
     if (this.skateMode) {
       // Building the run (the coast's terrain and its erosion) takes a moment and
       // blocks the page: say so, and let the loading screen paint first.
-      onProgress(85, 'Preparando la bajada');
+      onProgress(85, 'run');
       await new Promise(resolve => setTimeout(resolve, 60));
       if (this.disposed) return [];
     }
@@ -313,7 +314,7 @@ export class Playground {
     for (const name of contract.wire_joint_order) {
       const id = mujoco.mj_name2id(this.model, 3, name);
       const motor = mujoco.mj_name2id(this.model, 19, `${name}_motor`);
-      if (id < 0 || motor < 0) throw new Error(`Articulación sin motor: ${name}.`);
+      if (id < 0 || motor < 0) throw new Error(`Joint without a motor: ${name}.`);
       this.joints.push({ name, min: contract.joint_limits[name][0], max: contract.joint_limits[name][1], home: contract.default_joint_pos[name] });
       this.qAddresses.push(this.model.jnt_qposadr[id]);
       this.vAddresses.push(this.model.jnt_dofadr[id]);
@@ -377,7 +378,7 @@ export class Playground {
       mesh.castShadow = mesh.receiveShadow = true;
       this.scene.add(mesh);
       const id = this.mujoco.mj_name2id(model, 1, visual.body);
-      if (id < 0) throw new Error(`Cuerpo ausente: ${visual.body}.`);
+      if (id < 0) throw new Error(`Missing body: ${visual.body}.`);
       const q = visual.quaternion;
       this.drawables.push({ id: -1, mesh, name: visual.name, color, collision: false,
         body: { id, position: new THREE.Vector3(...visual.position), quaternion: new THREE.Quaternion(q[1], q[2], q[3], q[0]) } });
@@ -431,7 +432,7 @@ export class Playground {
     const contract = this.robot.contracts[fsm.mode()] ?? this.robot.contracts.locomotion;
     const dt = contract.control.sim_dt;
     const substeps = Math.round(0.005 / dt);
-    if (Math.abs(substeps * dt - 0.005) > 1e-9) throw new Error('Cadencia física incompatible con el controlador.');
+    if (Math.abs(substeps * dt - 0.005) > 1e-9) throw new Error('Physics rate does not match the controller.');
     this.model.opt.timestep = dt;
     const servo = this.physical.servo;
     const rpm = Math.PI * 2 / 60;
@@ -468,7 +469,7 @@ export class Playground {
         contact?.delete();
       }
     } finally { contacts.delete(); }
-    if (this.data.qpos.some((value: number) => !Number.isFinite(value))) throw new Error('La simulación perdió estabilidad. Reinicia.');
+    if (this.data.qpos.some((value: number) => !Number.isFinite(value))) throw new Error('The simulation went unstable. Reset.');
   }
 
   private async advance() {
@@ -481,7 +482,7 @@ export class Playground {
         await this.controlStep();
       }
     } catch (error) {
-      if (!this.disposed) { this.setPlaying(false); this.onError(error instanceof Error ? error.message : 'Error del controlador.'); }
+      if (!this.disposed) { this.setPlaying(false); this.onError(error instanceof Error ? error.message : 'Controller error.'); }
     } finally { this.stepping = false; }
   }
 
@@ -520,8 +521,8 @@ export class Playground {
       if (this.skate) this.chase(elapsed);
       else this.camera.position.add(this.follow);
       this.skate?.course.animate?.(now / 1000);
-      if (this.portalAt) {
-        const portal = this.portalAt(this.data.qpos[0], this.data.qpos[1]);
+      if (this.portals) {
+        const portal = this.portals.at(this.data.qpos[0], this.data.qpos[1]);
         if (portal !== this.portal) { this.portal = portal; this.report(0); }
       }
       // Keep Jumper itself in focus.
@@ -631,7 +632,9 @@ export class Playground {
     return Math.min(lift, 8);
   }
   private lift = 0;
-  private portalAt?: (x: number, y: number) => PortalId | undefined;
+  private portals?: { at: (x: number, y: number) => PortalId | undefined; retitle: (lang: Lang) => void };
+  /** Retitle the signs (the rest of the words live in React). */
+  setLang(lang: Lang) { this.portals?.retitle(lang); }
   private portal?: PortalId;
   private lead = new THREE.Vector3();
   private clock = 0;
