@@ -1,6 +1,4 @@
-import * as ort from 'onnxruntime-web/wasm';
-import ortWasm from 'onnxruntime-web/ort-wasm-simd-threaded.wasm?url';
-import ortModule from 'onnxruntime-web/ort-wasm-simd-threaded.mjs?url';
+import { Mlp } from './mlp';
 
 export interface Contract {
   wire_joint_order: string[];
@@ -53,7 +51,7 @@ export class RobotController {
   private trajectories: Record<string, string> = {};
   private robot = '';
   private bundle!: Bundle;
-  private sessions = new Map<string, Promise<ort.InferenceSession>>();
+  private sessions = new Map<string, Promise<Mlp>>();
   private disposed = false;
   private generation = 0;
 
@@ -95,16 +93,14 @@ export class RobotController {
       this.parity = { ...JSON.parse(check.checkReference(decode(reference))), inference: 0 };
     } finally { check.free(); }
     if (this.parity.observation > 1e-6 || this.parity.target > 1e-6 || this.parity.modeMismatches.length) throw new Error('The controller does not match its official reference.');
-    ort.env.wasm.numThreads = 1;
-    ort.env.wasm.wasmPaths = { wasm: ortWasm, mjs: ortModule };
     await Promise.all([this.session('locomotion'), this.session('jump')]);
     const frames = JSON.parse(decode(reference)).frames as { mode: string; obs?: number[]; act?: number[] }[];
-    // Check the actual browser inference backend, separately from the controller.
+    // Check the browser's inference (mlp.ts) against the original policy, separately from the controller.
     for (const frame of frames.filter(f => f.obs && f.act)) {
       const action = await this.infer(frame.mode, new Float32Array(frame.obs!));
       this.parity.inference = Math.max(this.parity.inference, ...action.map((a, i) => Math.abs(a - frame.act![i])));
     }
-    if (this.parity.inference > 1e-4) throw new Error('ONNX inference does not match the original policy.');
+    if (this.parity.inference > 1e-4) throw new Error('Policy inference does not match the original policy.');
     if (!this.disposed) this.reset();
   }
 
@@ -117,7 +113,7 @@ export class RobotController {
     if (!file) throw new Error(`No such policy: ${mode}.`);
     let session = this.sessions.get(file);
     if (!session) {
-      session = this.bytes(file).then(bytes => ort.InferenceSession.create(bytes, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' }));
+      session = this.bytes(file).then(bytes => new Mlp(bytes));
       this.sessions.set(file, session);
       void session.catch(() => {});
     }
@@ -125,9 +121,7 @@ export class RobotController {
   }
 
   private async infer(mode: string, observation: Float32Array) {
-    const session = await this.session(mode);
-    const result = await session.run({ [session.inputNames[0]]: new ort.Tensor('float32', observation, [1, observation.length]) });
-    return result[session.outputNames[0]].data as Float32Array;
+    return (await this.session(mode)).run(observation);
   }
 
   async tick(nowUs: number) {
@@ -145,7 +139,6 @@ export class RobotController {
   dispose() {
     this.disposed = true;
     this.fsm?.free();
-    for (const session of this.sessions.values()) void session.then(value => value.release()).catch(() => {});
     this.sessions.clear();
   }
 }

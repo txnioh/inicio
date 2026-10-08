@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import loadMujoco from '@mujoco/mujoco';
 import * as ort from 'onnxruntime-node';
 import { queueMode, flushInputs } from '../src/app/jumper/inputs.ts';
+import { Mlp } from '../src/app/jumper/mlp.ts';
 const root = fileURLToPath(new URL('../public/jumper/', import.meta.url));
 const json = async file => JSON.parse(await readFile(root + file, 'utf8'));
 const bundle = await json('app/bundle.json'), physical = await json('physics.json');
@@ -46,6 +47,17 @@ for (const frame of JSON.parse(reference).frames.filter(f => f.obs)) {
   act.forEach((a, i) => { inferenceError = Math.max(inferenceError, Math.abs(a - frame.act[i])); });
 }
 assert(inferenceError < 1e-4);
+// The browser runs the policies with mlp.ts, not ONNX Runtime: it must match both the
+// original actions and ONNX Runtime on every reference frame.
+const mlps = new Map();
+let browserError = 0;
+for (const frame of JSON.parse(reference).frames.filter(f => f.obs)) {
+  const file = bundle.modes[frame.mode].models.onnx;
+  if (!mlps.has(file)) { const bytes = await readFile(root + 'app/' + file); mlps.set(file, new Mlp(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))); }
+  const act = mlps.get(file).run(Float32Array.from(frame.obs)), onnx = await infer(frame.mode, frame.obs);
+  act.forEach((a, i) => { browserError = Math.max(browserError, Math.abs(a - frame.act[i]), Math.abs(a - onnx[i])); });
+}
+assert(browserError < 1e-4, `Browser policy inference differs by ${browserError}`);
 const mj = await loadMujoco(); mj.FS.mkdir('/jumper');
 const manifest = await json('manifest.json');
 for (const file of manifest.runtime.meshes) {
@@ -140,7 +152,7 @@ for (let i = 0; i < 1200; i++) { await step(); peak = Math.max(peak, data.qpos[2
 assert(jumpSeen && airborne && peak > .2, 'Trained jump must leave the floor');
 assert(data.qpos[2] > .07 && data.qpos[2] < .14, 'Jump must land and return to locomotion');
 const final = Array.from(data.qpos.slice(0, 3));
-const result = { verifiedFiles, referenceModes: [...new Set(JSON.parse(reference).frames.map(f => f.mode))], parity, inferenceError, stand, walk, obstacle: { position: obstacle, footTouchedBox, crossed: obstacle[0] > .92 }, jump: { peak, airborne, landed: final, mode: fsm.mode() }, wasmMemoryMB: data.qpos.buffer.byteLength / 1e6 };
+const result = { verifiedFiles, referenceModes: [...new Set(JSON.parse(reference).frames.map(f => f.mode))], parity, inferenceError, browserError, stand, walk, obstacle: { position: obstacle, footTouchedBox, crossed: obstacle[0] > .92 }, jump: { peak, airborne, landed: final, mode: fsm.mode() }, wasmMemoryMB: data.qpos.buffer.byteLength / 1e6 };
 if (process.argv.includes('--all-modes')) {
   // A repeatable flat-floor fixture, independent of the user's park/obstacles.
   // The shipped scene file is never changed by this test.

@@ -85,7 +85,14 @@ that permit different legs to collide while excluding contacts within one leg.
 Solver options come from the training configuration; the active policy's own
 `sim_dt` controls integration: 1 ms for locomotion, 2.5 ms for jump, 5 ms for
 recorded gestures. The controller publishes at 200 Hz and decides each policy's
-inference cadence. ONNX Runtime Web executes the actual trained networks.
+inference cadence. The trained networks run from their own `.onnx` files in plain
+JavaScript (`mlp.ts`): each is a normaliser followed by Gemm/Elu layers, and
+`mlp.ts` reads exactly those graphs and refuses any other op. It replaces ONNX
+Runtime Web, whose WebAssembly a phone's Safari often could not fit beside
+MuJoCo's and the controller's (`RangeError: Out of memory`). On load the page
+still checks every reference frame against the original actions (≤ 1e-4), and
+`scripts/verify-jumper.mjs` checks `mlp.ts` against both those actions and ONNX
+Runtime (about 1e-6).
 
 The host supplies joint positions, velocities, actual MuJoCo motor torque,
 (w,x,y,z) orientation, and angular/linear velocity in the body frame, paired by
