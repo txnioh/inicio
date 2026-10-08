@@ -1,17 +1,13 @@
-import { stance, type BoardKind, type Look, type SkateStats } from './skate';
+import type { BoardKind, Look, SkateStats } from './skate';
 import './skate.css';
 
 const kmh = (speed: number) => (speed * 3.6).toFixed(1).replace('.', ',');
 
-export default function SkateHud({ stats, onRestart }: { stats: SkateStats; onRestart: () => void }) {
-  return <section className="skate-hud" aria-label="Skate">
-    <button className="skate-restart" onClick={onRestart} title="R">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg>
-      Reiniciar <kbd>R</kbd>
-    </button>
-    <div className="skate-speed" aria-live="off"><span>{kmh(stats.speed)}</span> km/h<small>máx {kmh(stats.top)} · {stats.time.toFixed(1).replace('.', ',')} s{stats.cones ? ` · ${stats.cones} ${stats.cones === 1 ? 'cono' : 'conos'}` : ''}{stats.pilot ? ' · piloto' : ''}</small></div>
-    <Weight stats={stats} />
-    <ol className="skate-feed" aria-live="polite">{stats.feed.map(item => <li key={item.id}>{item.text}</li>)}</ol>
+/** During the run: speed and time, nothing else. */
+export default function SkateHud({ stats }: { stats: SkateStats }) {
+  return <section className="skate-hud" aria-label="Skate" aria-live="off">
+    <span className="skate-speed"><b>{kmh(stats.speed)}</b> km/h</span>
+    <span className="skate-time">{stats.time.toFixed(1).replace('.', ',')} s{stats.pilot ? ' · piloto' : ''}</span>
   </section>;
 }
 
@@ -33,7 +29,6 @@ function Outline({ kind }: { kind: BoardKind }) {
 export function SkateStart({ stats, board, onBoard, look, onLook, onStart, onPilot }: { stats: SkateStats; board: BoardKind; onBoard: (kind: BoardKind) => void; look: Look; onLook: (look: Look) => void; onStart: () => void; onPilot: () => void }) {
   return <section className="skate-start" aria-label="Empezar la bajada">
     <h2>Bajada</h2>
-    <p>Jumper no empuja ni salta: solo mueve su peso sobre la tabla para girar.</p>
     <div className="skate-boards" role="radiogroup" aria-label="Tabla">
       {boardOptions.map(option => <button key={option.kind} role="radio" aria-checked={board === option.kind} onClick={() => onBoard(option.kind)}>
         <Outline kind={option.kind} /><strong>{option.name}</strong><span>{option.note}</span>
@@ -47,8 +42,6 @@ export function SkateStart({ stats, board, onBoard, look, onLook, onStart, onPil
       <button className="skate-primary" onClick={onStart} autoFocus>Empezar <kbd>Enter</kbd></button>
       <button className="skate-secondary" onClick={onPilot} aria-pressed={stats.pilot}>{stats.pilot ? 'Piloto activado' : 'Piloto automático'} <kbd>P</kbd></button>
     </div>
-    <p className="skate-keys"><kbd>←</kbd><kbd>→</kbd> girar · <kbd>W</kbd><kbd>S</kbd> puntas / talones · <kbd>R</kbd> reiniciar</p>
-    <p className="skate-touch">Joystick a los lados para girar, arriba y abajo para puntas y talones.</p>
   </section>;
 }
 
@@ -59,19 +52,4 @@ export function SkateFinish({ stats, onAgain }: { stats: SkateStats; onAgain: ()
     <p>{stats.cones ? `${stats.cones} ${stats.cones === 1 ? 'cono derribado' : 'conos derribados'}` : 'Sin tocar un cono'} · máx {kmh(stats.top)} km/h</p>
     <div className="skate-go"><button className="skate-primary" onClick={onAgain}>Otra vez <kbd>R</kbd></button></div>
   </section>;
-}
-
-// Top view of the deck: nose to the right, toes up. The ring is where the
-// rider asked the feet to be, the dot where they are, and the bar the body lean.
-function Weight({ stats }: { stats: SkateStats }) {
-  const x = (along: number) => 44 + along / stance.along * 18, y = (across: number) => 14 + across / stance.heels * 9;
-  const clampX = (v: number) => Math.max(6, Math.min(82, v)), clampY = (v: number) => Math.max(3, Math.min(25, v));
-  return <svg className="skate-weight" width="88" height="28" viewBox="0 0 88 28" role="img" aria-label="Peso sobre la tabla">
-    <rect x="1" y="1" width="86" height="26" rx="13" />
-    <line x1={x(-stance.along)} x2={x(stance.along)} y1="14" y2="14" />
-    <line x1="44" x2="44" y1={y(-stance.toes)} y2={y(stance.heels)} />
-    <circle className="skate-weight-target" cx={clampX(x(stats.target[1]))} cy={clampY(y(stats.target[0]))} r="4" />
-    <line className="skate-weight-lean" x1="44" x2="44" y1="14" y2={14 + stats.lean * 11} />
-    <circle className="skate-weight-feet" cx={clampX(x(stats.weight[1]))} cy={clampY(y(stats.weight[0]))} r="2.4" />
-  </svg>;
 }

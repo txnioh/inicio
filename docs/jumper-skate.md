@@ -286,14 +286,14 @@ would have to pass at more than 3 m/s, so the run asks for steering instead.
 
 ## Controls
 
-On the skate page the header, HUD and hints sit on light translucent panels
-with black text, so they read over the scenery. A *Reiniciar* button (R)
-stays in the HUD during the run.
+The page stays minimal. During the run a small pill under the header shows
+the speed and the time (and *piloto* when the pilot rides). Pause and restart
+sit centred at the bottom, over one line of keys. Every (re)start opens on the
+run's own chase view, not from a fixed spot.
 
-A panel in the middle of the screen picks the board and starts the run (Enter)
-or the pilot (P). At the finish it shows the time with *Otra vez*.
+A panel in the middle of the screen picks the board (and, for the longboard,
+*Costa* or *Minimal*) and starts the run (Enter) or the pilot (P). At the
+finish it shows the time with *Otra vez*.
 
-Enter: release. ←/→ or A/D: turn. W/S: toes/heels. P: pilot. R: reset. Wheel or pinch: zoom. The HUD
-shows speed, top speed, time and cones down. It also draws the deck from above:
-where the feet were asked to be (ring), where they are (dot) and the body lean
-(bar).
+Enter: release. ←/→ or A/D: turn. W/S: toes/heels. P: pilot. R: reset. Wheel
+or pinch: zoom.

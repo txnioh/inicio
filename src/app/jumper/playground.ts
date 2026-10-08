@@ -387,9 +387,8 @@ export class Playground {
     this.data.qpos[3] = 1;
     this.joints.forEach((_, i) => { this.data.qpos[this.qAddresses[i]] = this.targets[i]; });
     this.skate?.reset(this.data);
-    this.roadHeading = NaN; this.lift = 0;
     this.mujoco.mj_forward(this.model, this.data);
-    this.cameraView('iso');
+    if (this.skate) this.snapChase(); else this.cameraView('iso');
     this.draw();
     this.report(0);
     this.rateAt = performance.now(); this.rateTime = 0;
@@ -627,6 +626,15 @@ export class Playground {
     if (!scenic) return heading;
     const [toward, weight] = scenic;
     return Math.atan2(Math.sin(heading) * (1 - weight) + Math.sin(toward) * weight, Math.cos(heading) * (1 - weight) + Math.cos(toward) * weight);
+  }
+  /** Put the chase camera straight where it rides, so a (re)start opens on the run's own view. */
+  private snapChase() {
+    const board = this.skate!.boardPose(this.data);
+    this.roadHeading = board.heading; this.lift = 0; this.lead.set(0, 0, 0);
+    const heading = this.viewHeading(), { ahead, aim = 0 } = this.skate!.course.view.chase;
+    this.controls.target.set(board.x + Math.cos(heading) * ahead - Math.sin(heading) * aim, board.y + Math.sin(heading) * ahead + Math.cos(heading) * aim, board.z + 0.1);
+    this.chase(Infinity);
+    this.controls.update();
   }
   private chase(elapsed: number) {
     const heading = this.roadHeading, board = this.skate!.boardPose(this.data);
