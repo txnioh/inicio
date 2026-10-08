@@ -12,6 +12,20 @@ and the longboard carves a coast road (see *The coast road*). Both share the
 `Course` interface in `track.ts`: a road centre line, a pilot line, a finish,
 physics and drawing.
 
+## The minimal coast
+
+The start panel offers the longboard's coast road in two looks: *Costa*
+(below) and *Minimal*, in Inicio's palette like the obstacle road
+(`minimalCoast.ts`). Same road, physics and ground, drawn as a white site
+model. Contour lines every 50 cm, a heavier one every 2.5 m and a firmer one
+at the waterline are drawn in the ground's shader from the world height, and
+fade out in the distance before they crowd. The sea is a flat pale plane. The
+curb and the sea-side wall are off-white volumes swept along the road with
+fine edges. The finish is one black line under a thin black gate, and the
+lighthouse a white tower with one black band. A raking side light, as on an
+architectural model, lets the landform read in shade. The only colour is the
+board, Jumper and the stopper.
+
 ## The obstacle road (skate)
 
 Drawn minimal, in Inicio's palette: off-white volumes with fine edges, like the
@@ -105,7 +119,11 @@ bends by weight alone.
   bends, plus a curb on the mountain side and a guardrail on the sea side.
   The ground right beside the road (behind the curb and before the guardrail)
   is drawn on the road's own frame at 20–25 cm detail. The 60 cm terrain grid
-  is too coarse to meet an 8 cm curb cleanly.
+  is too coarse to meet an 8 cm curb cleanly. The grid sits a little lower
+  under these bands, which reach 1 m past that, and both carry the same
+  curvature (taken from the ground's shape before the sink), so the colours
+  run on across the seam without a line. The road cut eases into the
+  mountainside along an exponential, with no crease.
 - Drawing only: a hillside carved around the road (rock cut above, grass and
   scrub, a slope falling to a beach with surf), the sea out to the haze, far
   ranges and headlands, telephone poles with sagging wires along the uphill

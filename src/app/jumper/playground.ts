@@ -12,7 +12,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { BokehShader } from 'three/addons/shaders/BokehShader.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { dressEva } from './eva';
-import { courses, Skate, skateXml, type BoardKind } from './skate';
+import { courseFor, Skate, skateXml, type BoardKind, type Look } from './skate';
 import { flushInputs, modeBinding, queueMode, type InputEdge } from './inputs';
 import { type Joint, type SkinId, type Stats, boxes, skins } from './settings';
 
@@ -110,7 +110,7 @@ export class Playground {
   private bokeh?: DepthBokeh;
   private focusPoint = new THREE.Vector3();
 
-  constructor(private host: HTMLElement, onStats: (stats: Stats) => void, private onError: (message: string) => void, private skateMode: false | BoardKind = false) {
+  constructor(private host: HTMLElement, onStats: (stats: Stats) => void, private onError: (message: string) => void, private skateMode: false | BoardKind = false, private look: Look = 'scenic') {
     this.onStats = onStats;
     this.robot = new RobotController(this.abort.signal);
     // Antialias the scene's render target; canvas MSAA cannot filter that image.
@@ -122,7 +122,7 @@ export class Playground {
     this.renderer.toneMappingExposure = 0.9;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.setClearColor('#fdfdfc');
-    const view = skateMode ? courses[skateMode].view : undefined;
+    const view = skateMode ? courseFor(skateMode, look).view : undefined;
     // With depth of field the scene's own depth buffer feeds it (no second render of the scene).
     const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Math.min(4, this.renderer.capabilities.maxSamples), depthTexture: view?.post?.dof ? new THREE.DepthTexture(1, 1) : null });
     this.composer = new EffectComposer(this.renderer, target);
@@ -292,7 +292,7 @@ export class Playground {
     };
     await Promise.all(Array.from({ length: 6 }, download));
     if (this.disposed) return [];
-    mujoco.FS.writeFile('/jumper/scene.xml', this.skateMode ? skateXml(xml, this.skateMode) : xml);
+    mujoco.FS.writeFile('/jumper/scene.xml', this.skateMode ? skateXml(xml, this.skateMode, this.look) : xml);
     this.model = mujoco.MjModel.mj_loadXML('/jumper/scene.xml');
     this.data = new mujoco.MjData(this.model);
     this.velocityBuffer = new mujoco.DoubleBuffer(6);
@@ -315,7 +315,7 @@ export class Playground {
       this.skate = new Skate(mujoco, this.model, this.scene, this.footGeoms, (lx, ly, rx, ry, nowUs) => {
         const fsm = this.robot.fsm;
         fsm.setAxis('Lx', lx); fsm.setAxis('Ly', ly); fsm.setAxis('Rx', rx); fsm.setAxis('Ry', ry); fsm.padFrame(nowUs);
-      }, this.skateMode);
+      }, this.skateMode, this.look);
       for (const { id, mesh, name, collision, body } of this.skate.drawables) this.drawables.push({ id, mesh: mesh as Drawable['mesh'], name, color: new THREE.Color(), collision, body });
     }
     this.reset();

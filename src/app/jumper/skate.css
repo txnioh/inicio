@@ -26,6 +26,9 @@
 .skate-boards svg .skate-cut { fill: none; stroke: #fdfdfc; stroke-width: 3; }
 .skate-boards strong { font-size: 15px; font-weight: 600; }
 .skate-boards span { font-size: 12px; color: #77766f; }
+.skate-looks { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 10px; padding: 3px; border: 1px solid #e3e2dc; border-radius: 999px; background: #fff; }
+.jumper-page .skate-looks button { padding: 6px 10px; border-radius: 999px; color: #77766f; font-size: 13px; font-weight: 500; }
+.jumper-page .skate-looks button[aria-checked="true"] { background: #111; color: #fdfdfc; }
 .skate-go { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
 .jumper-page .skate-go .skate-primary { padding: 15px; border-radius: 10px; background: #111; color: #fdfdfc; font-size: 17px; font-weight: 600; }
 .jumper-page .skate-go .skate-primary:hover { background: #2b2b2b; color: #fdfdfc; }

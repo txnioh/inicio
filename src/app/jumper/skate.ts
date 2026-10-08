@@ -2,6 +2,7 @@ import type { MainModule, MjData, MjModel } from '@mujoco/mujoco';
 import * as THREE from 'three';
 import { coneMesh, obstacleCourse } from './course.ts';
 import { mountainCourse } from './mountain.ts';
+import { minimalCoastCourse } from './minimalCoast.ts';
 import { frameQuat, nearest, nearestAll, type Course } from './track.ts';
 import { safeTurn, skateboardParts } from './skateboard.ts';
 
@@ -34,6 +35,9 @@ export const boards: Record<BoardKind, Board> = {
 };
 /** Each board has its run: the skate weaves through cones, the longboard carves a coast road. */
 export const courses: Record<BoardKind, Course> = { skate: obstacleCourse, longboard: mountainCourse };
+/** How the run is drawn: the golden-hour coast, or minimal in Inicio's palette (the obstacle road is always minimal). */
+export type Look = 'scenic' | 'minimal';
+export const courseFor = (kind: BoardKind, look: Look = 'scenic') => kind === 'longboard' && look === 'minimal' ? minimalCoastCourse : courses[kind];
 /** The default board; the scene takes another by kind. */
 export const board = boards.skate;
 const deckHeight = (b: Board) => b.wheel - b.axle;
@@ -90,8 +94,8 @@ function boardXml(board: Board, course: Course) {
 }
 
 /** Swap the flat playground (floor and boxes) for the downhill and the board. */
-export function skateXml(xml: string, kind: BoardKind = 'skate') {
-  const course = courses[kind], hill = course.xml(), board = boards[kind], frame = stopperOf(board, course), q = frameQuat(frame), n = rotate(q, [0, 0, 1]);
+export function skateXml(xml: string, kind: BoardKind = 'skate', look: Look = 'scenic') {
+  const course = courseFor(kind, look), hill = course.xml(), board = boards[kind], frame = stopperOf(board, course), q = frameQuat(frame), n = rotate(q, [0, 0, 1]);
   const stopper = `<geom name="skate_stopper" type="box" pos="${frame.p.map((v, i) => f(v + n[i] * 0.008)).join(' ')}" quat="${q.map(f).join(' ')}" size="0.01 0.3 0.01" contype="1" conaffinity="129"/>`;
   const replaced = xml.replace(/<geom name="playground_floor"[\s\S]*?(?=<\/worldbody>)/, `${hill.world}\n${stopper}\n${boardXml(board, course)}\n`).replace('</asset>', `${hill.asset}\n</asset>`);
   if (replaced === xml || !replaced.includes('skate_board')) throw new Error('No se pudo montar la bajada.');
@@ -146,8 +150,8 @@ export class Skate {
   private pathIndex = 0;
 
   // Plain fields rather than parameter properties, so Node can run this file in tests.
-  constructor(mujoco: MainModule, model: MjModel, scene: THREE.Scene, feet: Set<number>, steer: (lx: number, ly: number, rx: number, ry: number, nowUs: number) => void, kind: BoardKind = 'skate') {
-    this.mujoco = mujoco; this.model = model; this.feet = feet; this.steer = steer; this.board = boards[kind]; this.course = courses[kind];
+  constructor(mujoco: MainModule, model: MjModel, scene: THREE.Scene, feet: Set<number>, steer: (lx: number, ly: number, rx: number, ry: number, nowUs: number) => void, kind: BoardKind = 'skate', look: Look = 'scenic') {
+    this.mujoco = mujoco; this.model = model; this.feet = feet; this.steer = steer; this.board = boards[kind]; this.course = courseFor(kind, look);
     const id = (type: number, name: string) => { const value = mujoco.mj_name2id(model, type, name); if (value < 0) throw new Error(`Falta ${name} en la bajada.`); return value; };
     this.boardBody = id(1, 'skate_board');
     const joint = id(3, 'skate_board');

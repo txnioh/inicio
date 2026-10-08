@@ -1,4 +1,4 @@
-import { stance, type BoardKind, type SkateStats } from './skate';
+import { stance, type BoardKind, type Look, type SkateStats } from './skate';
 import './skate.css';
 
 const kmh = (speed: number) => (speed * 3.6).toFixed(1).replace('.', ',');
@@ -20,6 +20,8 @@ const boardOptions: { kind: BoardKind; name: string; note: string }[] = [
   { kind: 'longboard', name: 'Longboard', note: 'Larga y baja: más estable.' },
 ];
 
+const lookOptions: { look: Look; name: string }[] = [{ look: 'scenic', name: 'Costa' }, { look: 'minimal', name: 'Minimal' }];
+
 /** Board outline seen from above, for the picker. */
 function Outline({ kind }: { kind: BoardKind }) {
   return kind === 'skate'
@@ -28,7 +30,7 @@ function Outline({ kind }: { kind: BoardKind }) {
 }
 
 /** Centre panel before the run: pick a board, then go or let the pilot ride. */
-export function SkateStart({ stats, board, onBoard, onStart, onPilot }: { stats: SkateStats; board: BoardKind; onBoard: (kind: BoardKind) => void; onStart: () => void; onPilot: () => void }) {
+export function SkateStart({ stats, board, onBoard, look, onLook, onStart, onPilot }: { stats: SkateStats; board: BoardKind; onBoard: (kind: BoardKind) => void; look: Look; onLook: (look: Look) => void; onStart: () => void; onPilot: () => void }) {
   return <section className="skate-start" aria-label="Empezar la bajada">
     <h2>Bajada</h2>
     <p>Jumper no empuja ni salta: solo mueve su peso sobre la tabla para girar.</p>
@@ -37,6 +39,10 @@ export function SkateStart({ stats, board, onBoard, onStart, onPilot }: { stats:
         <Outline kind={option.kind} /><strong>{option.name}</strong><span>{option.note}</span>
       </button>)}
     </div>
+    {/* The coast road can be drawn as the golden-hour coast or minimal, like the obstacle road. */}
+    {board === 'longboard' ? <div className="skate-looks" role="radiogroup" aria-label="Paisaje">
+      {lookOptions.map(option => <button key={option.look} role="radio" aria-checked={look === option.look} onClick={() => onLook(option.look)}>{option.name}</button>)}
+    </div> : null}
     <div className="skate-go">
       <button className="skate-primary" onClick={onStart} autoFocus>Empezar <kbd>Enter</kbd></button>
       <button className="skate-secondary" onClick={onPilot} aria-pressed={stats.pilot}>{stats.pilot ? 'Piloto activado' : 'Piloto automático'} <kbd>P</kbd></button>

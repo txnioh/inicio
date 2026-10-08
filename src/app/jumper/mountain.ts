@@ -163,26 +163,25 @@ function hill(x: number, y: number) {
   if (edge < 0) return d > 0 && Math.abs(d) > coast.half + 0.04 ? z + 0.07 : Math.abs(d) > coast.half ? z - 0.01 : beyond ? z - 0.08 + beyond * 0.02 : z - 0.08;
   const rough = (fbm(x * 0.18, y * 0.18) - 0.5);
   const near = d > 0
-    ? z + 0.07 + Math.min(edge * 0.9, 1.6 + edge * 0.35) + edge * edge * 0.012 + rough * Math.min(1, edge / 3) * 2.2 // rock cut, mountainside
-    : Math.max(coast.seaLevel - 1.5, z - edge * 0.55 - edge * edge * 0.02 + rough * Math.min(1, edge / 4) * 1.4); // falling to the sea
+    ? z + 0.07 + edge * 0.35 + 1.6 * (1 - Math.exp(-edge / 2.9)) + edge * edge * 0.012 + rough * smooth(0, 4, edge) * 2.2 // rock cut easing into the mountainside, with no crease
+    : Math.max(coast.seaLevel - 1.5, z - edge * 0.55 - edge * edge * 0.02 + rough * smooth(0, 5, edge) * 1.4); // falling to the sea
   const w = smooth(6, 26, edge) * (beyond ? 0.4 : 1);
   return near + (Math.max(d > 0 ? z + 1 : -50, farField(x, y)) - near) * w;
 }
 
-/** A height grid as an indexed, smooth-shaded mesh, shaded by the terrain material. */
-let ground: THREE.MeshStandardMaterial | undefined;
-function gridMesh(x0: number, y0: number, nx: number, ny: number, cell: number, heights: Float32Array) {
+/** A height grid as an indexed, smooth-shaded mesh, with its curvature for the material. */
+function gridMesh(x0: number, y0: number, nx: number, ny: number, cell: number, heights: Float32Array, material: THREE.Material, shape = heights) {
   const positions = new Float32Array((nx + 1) * (ny + 1) * 3), index: number[] = [];
   for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) { const k = j * (nx + 1) + i; positions.set([x0 + i * cell, y0 + j * cell, heights[k]], k * 3); }
   for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1; index.push(a, b, d, a, d, c); }
   const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setIndex(index); geometry.computeVertexNormals();
   // Hollows and ridges for the material: scrub in the gullies, bare rock on the crests, shade in the folds.
-  const bend = curvature(heights, nx, ny, cell);
+  // From the ground's shape before it was sunk under the shoulder bands: the sink's edge is not a landform.
+  const bend = curvature(shape, nx, ny, cell);
   for (let k = 0; k < bend.length; k++) bend[k] = Math.max(-1, Math.min(1, bend[k] * cell * 3));
   geometry.setAttribute('curvature', new THREE.BufferAttribute(bend, 1));
-  ground ??= terrainMaterial(coast.seaLevel);
-  const mesh = new THREE.Mesh(geometry, ground);
+  const mesh = new THREE.Mesh(geometry, material);
   mesh.receiveShadow = true;
   return mesh;
 }
@@ -196,7 +195,7 @@ const shoulder = { uphill: coast.half + 1.8, downhill: coast.half + 0.7 };
  */
 function shoulders(material: THREE.Material) {
   const group = new THREE.Group();
-  for (const [d0, d1] of [[coast.half + 0.11, shoulder.uphill + 0.35], [-(shoulder.downhill + 0.35), -(coast.half + 0.02)]]) {
+  for (const [d0, d1] of [[coast.half + 0.11, shoulder.uphill + 1], [-(shoulder.downhill + 1), -(coast.half + 0.02)]]) {
     const across = Math.ceil(Math.abs(d1 - d0) / 0.25), step = 0.2, rows = Math.floor(line.total / step);
     const positions: number[] = [], index: number[] = [];
     for (let r = 0; r <= rows; r++) for (let c = 0; c <= across; c++) {
@@ -206,6 +205,13 @@ function shoulders(material: THREE.Material) {
     }
     const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setIndex(index); geometry.computeVertexNormals();
+    // The same curvature the terrain grid carries (0.6 m Laplacian), so the colours run on across the seam.
+    const bend = new Float32Array(positions.length / 3), e = 0.6;
+    for (let k = 0; k < bend.length; k++) {
+      const x = positions[k * 3], y = positions[k * 3 + 1], h = hill(x, y);
+      bend[k] = Math.max(-1, Math.min(1, (hill(x + e, y) + hill(x - e, y) + hill(x, y + e) + hill(x, y - e) - 4 * h) / (e * e) * e * 3));
+    }
+    geometry.setAttribute('curvature', new THREE.BufferAttribute(bend, 1));
     const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow = true;
     group.add(mesh);
@@ -316,11 +322,12 @@ function curvature(heights: Float32Array, nx: number, ny: number, cell: number) 
   return out;
 }
 
-function terrain() {
+/** The ground round the road, in `material`; with `surf`, the band of surf along the waterline. */
+function terrain(material: THREE.Material, surf = true) {
   const xs = line.samples.map(c => c.x), ys = line.samples.map(c => c.y);
   const x0 = Math.min(...xs) - 60, x1 = Math.max(...xs) + 60, y0 = Math.min(...ys) - 45, y1 = Math.max(...ys) + 90;
   const cell = 0.6, nx = Math.ceil((x1 - x0) / cell), ny = Math.ceil((y1 - y0) / cell);
-  const heights = new Float32Array((nx + 1) * (ny + 1)), locked = new Uint8Array(heights.length), fade = new Float32Array(heights.length);
+  const heights = new Float32Array((nx + 1) * (ny + 1)), locked = new Uint8Array(heights.length), fade = new Float32Array(heights.length), sunk = new Float32Array(heights.length);
   for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
     const x = x0 + i * cell, y = y0 + j * cell, k = j * (nx + 1) + i;
     heights[k] = hill(x, y);
@@ -329,7 +336,7 @@ function terrain() {
     const { d } = roadNear(x, y);
     if (Math.abs(d) < coast.half + 3) locked[k] = 1;
     fade[k] = smooth(coast.half + 3, coast.half + 10, Math.abs(d));
-    if (d > 0 ? d < shoulder.uphill + 0.3 : -d < shoulder.downhill + 0.3) heights[k] -= 0.25;
+    if (d > 0 ? d < shoulder.uphill + 0.3 : -d < shoulder.downhill + 0.3) { heights[k] -= 0.25; sunk[k] = 0.25; }
   }
   // Erosion eases in away from the road, so its cut and fill meet the carved slopes without a step.
   const shaped = heights.slice();
@@ -345,7 +352,7 @@ function terrain() {
       if (diff > talus && !locked[k + o]) { const move = (diff - talus) * 0.2; heights[k] -= move; heights[k + o] += move; }
     }
   }
-  const near = gridMesh(x0, y0, nx, ny, cell, heights);
+  const near = gridMesh(x0, y0, nx, ny, cell, heights, material, heights.map((h, k) => h + sunk[k]));
   // The waterline, by marching squares over the near grid: where each cell's
   // corners straddle sea level, the crossing points on its edges.
   const level = coast.seaLevel + 0.02, segments: [number, number, number, number][] = [];
@@ -370,11 +377,12 @@ function terrain() {
     far[j * (fnx + 1) + i] = within(x, y, 2 * fcell) ? -60 : farField(x, y) - (within(x, y, fcell) ? 3 : 0.35);
   }
   const group = new THREE.Group();
-  group.add(near, gridMesh(fx0, fy0, fnx, fny, fcell, far), foam(segments), shoulders(near.material));
+  group.add(near, gridMesh(fx0, fy0, fnx, fny, fcell, far, material), shoulders(material));
+  if (surf) group.add(foam(segments));
   // The drawn ground: the fine shoulder bands beside the road, the near grid elsewhere.
   const surface = (x: number, y: number) => {
     const { d } = roadNear(x, y);
-    if ((d > coast.half && d < shoulder.uphill + 0.35) || (d < -coast.half && d > -(shoulder.downhill + 0.35))) return hill(x, y) + 0.004;
+    if ((d > coast.half && d < shoulder.uphill + 1) || (d < -coast.half && d > -(shoulder.downhill + 1))) return hill(x, y) + 0.004;
     const fx = (x - x0) / cell, fy = (y - y0) / cell, i = Math.floor(fx), j = Math.floor(fy);
     if (i < 0 || j < 0 || i >= nx || j >= ny) return hill(x, y);
     const u = fx - i, v = fy - j, k = j * (nx + 1) + i;
@@ -610,7 +618,7 @@ function build(scene: THREE.Scene, stopper: Frame) {
       for (const wing of g.children) if (wing.name) wing.rotation.x = (wing.name === 'left' ? 1 : -1) * flap;
     });
   }
-  const land = terrain();
+  const land = terrain(terrainMaterial(coast.seaLevel));
   add(land.group, false);
   if (foamMaterial?.alphaMap) { const surf = foamMaterial, map = surf.alphaMap!; motion.push(t => { surf.opacity = 0.6 + Math.sin(t * 0.9) * 0.25; map.offset.set(t * 0.03, Math.sin(t * 0.5) * 0.05); }); }
   const asphaltMap = asphaltTexture();
@@ -682,3 +690,6 @@ export const mountainCourse: Course = {
   animate(time) { for (const step of motion) step(time); },
   ground: hill,
 };
+
+/** The road and its ground, for other drawings of the same run (the minimal coast). */
+export const coastRoad = { line, frame, offset, band, terrain, hill, xml, path, lighthouseAt: () => offset(coast.lead + 52, -16) };
