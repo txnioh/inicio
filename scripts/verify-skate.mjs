@@ -82,7 +82,7 @@ async function step() {
   skate.afterControl(data);
 }
 
-const seen = [];
+const seen = [], bumps = [];
 let last = 0, safe = 0, edge = 1, worst = 0;
 skate.togglePilot();
 for (let i = 0; i < Math.round(45 / .005) && !skate.stats(data).finished; i++) {
@@ -91,9 +91,16 @@ for (let i = 0; i < Math.round(45 / .005) && !skate.stats(data).finished; i++) {
   const st = skate.stats(data);
   if (fsm.mode() === 'locomotion' && st.released) { edge = Math.min(edge, st.edge); worst = Math.max(worst, Math.abs(data.qpos[1])); }
   for (const item of st.feed) if (item.id > last) { seen.push(`${data.time.toFixed(2)}s ${item.text}`); last = item.id; }
+  if (process.env.BUMPS && st.released) {
+    const v = skate.boardV, b = bumps.at(-1);
+    const row = { t: Math.floor(data.time), speed: st.speed, vz: Math.abs(data.qvel[v + 2]), roll: Math.abs(data.qvel[v + 3]), pitch: Math.abs(data.qvel[v + 4]), dv: Math.abs(st.speed - (bumps.lastSpeed ?? st.speed)) / .005 };
+    bumps.lastSpeed = st.speed;
+    if (!b || b.t !== row.t) bumps.push({ ...row, n: 1 }); else { for (const k of ['vz', 'roll', 'pitch', 'dv']) b[k] = Math.max(b[k], row[k]); b.speed = row.speed; }
+  }
   if (process.env.TRACE && i % +(process.env.EVERY ?? 100) === 0) console.log(data.time.toFixed(2), fsm.mode(), 'x', data.qpos[0].toFixed(2), 'y', data.qpos[1].toFixed(2), 'v', st.speed.toFixed(2), 'w', st.weight[0].toFixed(3), 'lean', st.lean.toFixed(2), 'edge', st.edge.toFixed(3));
 }
 const stats = skate.stats(data);
+if (process.env.BUMPS) for (const b of bumps) console.log(`${b.t}s speed ${b.speed.toFixed(2)} max |vz| ${b.vz.toFixed(3)} roll ${b.roll.toFixed(2)} pitch ${b.pitch.toFixed(2)} accel ${b.dv.toFixed(1)}`);
 console.log(seen.join('\n'));
 console.log(`${kind}: top ${(stats.top * 3.6).toFixed(1)} km/h · ${stats.time.toFixed(1)} s · cones down ${stats.cones} · safe frames ${safe} · closest foot to a deck edge ${(edge * 100).toFixed(1)} cm · widest |y| ${worst.toFixed(2)} m`);
 assert(stats.finished, 'The pilot reaches the finish by weight alone');

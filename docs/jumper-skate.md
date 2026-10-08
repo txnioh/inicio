@@ -210,10 +210,16 @@ The pilot stays on, so it rides the run again.
   (`DepthBokeh`), instead of `BokehPass`'s second render of the whole scene,
   and the bloom works at half its usual resolution (`HalfBloom`). On a Retina
   screen a coast frame went from about 27 ms to 14.5 ms (8 ms at 1×).
-- The physics advances in 5 ms steps and the screen every 8 ms or more, so a
-  frame's pose is up to one step old by a varying amount. The camera and
-  everything that moves are drawn ahead by that leftover time at the board's
-  velocity, so the road no longer judders past the camera.
+- The physics advances in 5 ms steps, in bursts between policy inferences,
+  and the screen every 8 ms or more, so a frame's pose lagged by a different
+  amount each frame. On the coast's textured ground that read as the board
+  moving in jerks (on the obstacle road's plain white ground it hardly
+  showed). The camera and everything that moves are drawn at a clock that
+  advances steadily with the screen, carried on from the last physics step at
+  the board's velocity. Measured per drawn frame, the board's apparent speed
+  varied by 31 % before and 6 % after (the board's own speed changes through
+  the bends). `BUMPS=1 node scripts/verify-skate.mjs` prints the board's
+  speed, bounce and jolts per second of a run.
 
 ## Pilot
 

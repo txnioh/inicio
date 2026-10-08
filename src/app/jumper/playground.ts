@@ -486,11 +486,17 @@ export class Playground {
       }
       if (this.skate) {
         // Look a little ahead of the board, down the road.
-        // The physics runs in 5 ms steps and the screen every 8–17 ms, so each
-        // frame's pose is up to one step old by a varying amount: carry
-        // everything drawn on to the frame's time at the board's velocity, or
-        // the scenery judders past the camera.
-        const board = this.skate.boardPose(this.data), lead = this.playing ? Math.min(this.accumulator, 0.005) : 0;
+        // The physics runs in 5 ms steps, in bursts between policy inferences,
+        // while the screen draws every 8–17 ms: a frame's pose can be one or two
+        // steps behind, by a different amount each frame. Everything drawn is
+        // carried on, at the board's velocity, to a clock that advances
+        // steadily with the screen, or the scenery judders past the camera.
+        const board = this.skate.boardPose(this.data);
+        if (this.playing) this.clock += elapsed;
+        // The clock eases towards the simulation, and jumps to it after a reset or a stall.
+        this.clock += (this.data.time + 0.005 - this.clock) * (1 - Math.exp(-elapsed * 1.5));
+        if (!this.playing || Math.abs(this.clock - this.data.time) > 0.05) this.clock = this.data.time;
+        const lead = Math.min(0.03, Math.max(-0.01, this.clock - this.data.time));
         this.lead.set(board.v[0] * lead, board.v[1] * lead, board.v[2] * lead);
         this.steer(board.heading, elapsed);
         const heading = this.viewHeading(), { ahead, aim = 0 } = this.skate.course.view.chase;
@@ -611,6 +617,7 @@ export class Playground {
   }
   private lift = 0;
   private lead = new THREE.Vector3();
+  private clock = 0;
   private desired = new THREE.Vector3();
   /** The look-at heading: the road's, turned part of the way towards the run's scenic view. */
   private viewHeading() {
