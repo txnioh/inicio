@@ -16,7 +16,10 @@ const boardOptions: { kind: BoardKind; name: string; note: string }[] = [
   { kind: 'longboard', name: 'Longboard', note: 'Larga y baja: más estable.' },
 ];
 
-const lookOptions: { look: Look; name: string }[] = [{ look: 'scenic', name: 'Costa' }, { look: 'minimal', name: 'Minimal' }];
+const lookOptions: { look: Look; name: string; image: string }[] = [
+  { look: 'scenic', name: 'Costa', image: '/jumper/skate-costa.webp' },
+  { look: 'minimal', name: 'Minimal', image: '/jumper/skate-minimal.webp' },
+];
 
 /** Board outline seen from above, for the picker. */
 function Outline({ kind }: { kind: BoardKind }) {
@@ -34,9 +37,11 @@ export function SkateStart({ stats, board, onBoard, look, onLook, onStart, onPil
         <Outline kind={option.kind} /><strong>{option.name}</strong><span>{option.note}</span>
       </button>)}
     </div>
-    {/* The coast road can be drawn as the golden-hour coast or minimal, like the obstacle road. */}
-    {board === 'longboard' ? <div className="skate-looks" role="radiogroup" aria-label="Paisaje">
-      {lookOptions.map(option => <button key={option.look} role="radio" aria-checked={look === option.look} onClick={() => onLook(option.look)}>{option.name}</button>)}
+    {/* The coast road's two maps side by side: the golden-hour coast and the minimal one. */}
+    {board === 'longboard' ? <div className="skate-maps" role="radiogroup" aria-label="Mapa">
+      {lookOptions.map(option => <button key={option.look} role="radio" aria-checked={look === option.look} onClick={() => onLook(option.look)}>
+        <img src={option.image} alt="" width="640" height="400" /><strong>{option.name}</strong>
+      </button>)}
     </div> : null}
     <div className="skate-go">
       <button className="skate-primary" onClick={onStart} autoFocus>Empezar <kbd>Enter</kbd></button>

@@ -20,6 +20,7 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
   const engine = useRef<Playground | null>(null);
   const [ready, setReady] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [stage, setStage] = useState('');
   const [error, setError] = useState('');
   const [stats, setStats] = useState(initialStats);
   const [settings, setSettings] = useState(false);
@@ -34,7 +35,7 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
     document.title = variant === 'eva' ? 'EVA-01' : variant === 'skate' ? 'Jumper · Skate' : 'Jumper';
     let active = true;
     let playground: Playground | undefined;
-    setReady(false); setProgress(0); setStats(initialStats);
+    setReady(false); setProgress(0); setStage(''); setStats(initialStats);
     try {
       playground = new Playground(host.current!, value => {
         if (!active) return;
@@ -49,7 +50,7 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
         }
       }, message => { if (active) setError(message); }, variant === 'skate' ? board : false, look);
       engine.current = playground;
-      void playground.load(value => { if (active) setProgress(value); }).then(() => {
+      void playground.load((value, label) => { if (active) { setProgress(value); if (label) setStage(label); } }).then(() => {
         if (!active) return;
         if (variant === 'eva') playground!.setEva();
         playground!.setPlaying(!matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -102,7 +103,11 @@ export default function Jumper({ variant = 'jumper' }: { variant?: 'jumper' | 'e
   return <main className={`minimal-portfolio-page jumper-page${variant === 'skate' ? ' jumper-skate' : ''}`} tabIndex={-1}>
     <div className="jumper-canvas" ref={host} tabIndex={0} aria-label={`Playground de ${modelName}. WASD: caminar. J/L: girar. Espacio: salto. R: reiniciar.`} onPointerDown={() => host.current?.focus({ preventScroll: true })} />
     <header className="jumper-header"><div><a className="minimal-basic-link" href="/">Index</a><nav className="jumper-models" aria-label="Modelo">{variant === 'jumper' ? <h1>Jumper</h1> : <a href="/jumper">Jumper</a>}<span aria-hidden="true">/</span>{variant === 'eva' ? <h1>EVA-01</h1> : <a href="/jumper/eva">EVA-01</a>}<span aria-hidden="true">/</span>{variant === 'skate' ? <h1>Skate</h1> : <a href="/jumper/skate">Skate</a>}</nav></div><button aria-expanded={settings} aria-controls="jumper-settings" onClick={() => setSettings(value => !value)}>Ajustes</button></header>
-    {!ready ? <div className="jumper-loading" role="status">{error ? <><p>{error}</p><button onClick={() => location.reload()}>Reintentar</button></> : <span>{progress}%</span>}</div> : null}
+    {!ready ? <div className="jumper-loading" role="status">{error ? <><p>{error}</p><button onClick={() => location.reload()}>Reintentar</button></> : <>
+      <span className="jumper-loading-label">{stage || 'Cargando'}</span>
+      <span className="jumper-loading-bar" aria-hidden="true"><i style={{ transform: `scaleX(${progress / 100})` }} /></span>
+      <span className="jumper-loading-value">{progress}%</span>
+    </>}</div> : null}
     {ready && error ? <p className="jumper-error jumper-runtime-error" role="alert">{error}</p> : null}
     {settings ? <section className="jumper-settings" id="jumper-settings" aria-label="Ajustes">
       <label className="jumper-setting">Acción<select aria-label="Acción" value={stats.controllerMode} disabled={!ready || !stats.playing} onChange={event => engine.current?.action(event.target.value)}>{motions.map(motion => <option key={motion.id} value={motion.id} disabled={!engine.current?.canAction(motion.id)}>{motion.name}</option>)}{stats.controllerMode === 'safe' ? <option value="safe">Detenido</option> : null}</select></label>

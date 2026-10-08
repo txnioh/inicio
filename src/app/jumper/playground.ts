@@ -240,7 +240,7 @@ export class Playground {
     this.resize.observe(host);
   }
 
-  async load(onProgress: (value: number) => void) {
+  async load(onProgress: (value: number, stage?: string) => void) {
     const signal = this.abort.signal;
     const module = mujocoModule();
     const controllerRequest = this.robot.load();
@@ -287,11 +287,18 @@ export class Playground {
           }
         }
         mujoco.FS.writeFile(`/jumper/${path}`, bytes);
-        onProgress(Math.round(++loaded / manifest.runtime.meshes.length * 95));
+        onProgress(Math.round(++loaded / manifest.runtime.meshes.length * (this.skateMode ? 80 : 95)), 'Cargando a Jumper');
       }
     };
     await Promise.all(Array.from({ length: 6 }, download));
     if (this.disposed) return [];
+    if (this.skateMode) {
+      // Building the run (the coast's terrain and its erosion) takes a moment and
+      // blocks the page: say so, and let the loading screen paint first.
+      onProgress(85, 'Preparando la bajada');
+      await new Promise(resolve => setTimeout(resolve, 60));
+      if (this.disposed) return [];
+    }
     mujoco.FS.writeFile('/jumper/scene.xml', this.skateMode ? skateXml(xml, this.skateMode, this.look) : xml);
     this.model = mujoco.MjModel.mj_loadXML('/jumper/scene.xml');
     this.data = new mujoco.MjData(this.model);

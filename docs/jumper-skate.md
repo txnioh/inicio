@@ -291,9 +291,16 @@ the speed and the time (and *piloto* when the pilot rides). Pause and restart
 sit centred at the bottom, over one line of keys. Every (re)start opens on the
 run's own chase view, not from a fixed spot.
 
-A panel in the middle of the screen picks the board (and, for the longboard,
-*Costa* or *Minimal*) and starts the run (Enter) or the pilot (P). At the
+A panel in the middle of the screen picks the board and starts the run
+(Enter) or the pilot (P). With the longboard, the coast road's two maps sit
+side by side under the boards, each as a picture of the run (*Costa* left,
+*Minimal* right; `public/jumper/skate-*.webp`), and a click picks one. At the
 finish it shows the time with *Otra vez*.
+
+While the page loads, a line says what it is doing (*Cargando a Jumper*, then
+*Preparando la bajada* while the run and its terrain are built) over a thin
+progress bar. The page yields once before building the run, so the screen
+paints before that blocking step.
 
 Enter: release. ←/→ or A/D: turn. W/S: toes/heels. P: pilot. R: reset. Wheel
 or pinch: zoom.
