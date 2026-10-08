@@ -26,11 +26,18 @@ export interface Course {
   /** Camera and atmosphere. */
   view: {
     far: number; fog: [number, number]; sky: string; ground?: boolean;
-    /** Chase camera: metres behind the board, to its left, above it, and how far ahead it looks. */
-    chase: { behind: number; side: number; height: number; ahead: number };
+    /** Chase camera: metres behind the board, to its left, above it, how far ahead it looks, and how far to the left of the road it aims (negative: right),
+     *  and optionally a scenic heading (rad) and how much the camera turns towards it (0–1). */
+    chase: { behind: number; side: number; height: number; ahead: number; aim?: number; scenic?: [number, number] };
     /** Optional lighting: sun colour and intensity, sun direction (scaled to ~1.5 m), sky and ground fill, rim light, exposure. */
     light?: { sun: string; intensity: number; direction: [number, number, number]; sky: string; ground: string; fill: number; rim: string; rimIntensity: number; exposure: number };
+    /** Studio environment strength (reflections); default 0.35. */
+    environment?: number;
+    /** Post-processing: bloom [strength, radius, threshold] and depth of field focused on the rider. */
+    post?: { bloom?: [number, number, number]; dof?: { aperture: number; maxblur: number } };
   };
+  /** Ground height at (x, y), so the camera stays above the scenery and keeps the rider in sight. */
+  ground?(x: number, y: number): number;
   /** Per-frame animation of the scenery (waves, clouds, boats), seconds. */
   animate?(time: number): void;
 }

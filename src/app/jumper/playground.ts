@@ -8,6 +8,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { dressEva } from './eva';
 import { courses, Skate, skateXml, type BoardKind } from './skate';
 import { flushInputs, modeBinding, queueMode, type InputEdge } from './inputs';
@@ -87,6 +89,8 @@ export class Playground {
   private onStats: (stats: Stats) => void;
 
   private skate?: Skate;
+  private bokeh?: BokehPass;
+  private focusPoint = new THREE.Vector3();
 
   constructor(private host: HTMLElement, onStats: (stats: Stats) => void, private onError: (message: string) => void, private skateMode: false | BoardKind = false) {
     this.onStats = onStats;
@@ -108,12 +112,18 @@ export class Playground {
     const view = skateMode ? courses[skateMode].view : undefined;
     this.scene.fog = view ? new THREE.Fog(view.sky, ...view.fog) : new THREE.Fog('#fdfdfc', 3, 7);
     if (view) { this.camera.far = view.far; this.camera.updateProjectionMatrix(); this.renderer.setClearColor(view.sky); }
+    // Depth of field (focused on the rider every frame) and bloom, before SMAA.
+    if (view?.post?.dof) {
+      this.bokeh = new BokehPass(this.scene, this.camera, { focus: 3, aperture: view.post.dof.aperture, maxblur: view.post.dof.maxblur });
+      this.composer.insertPass(this.bokeh, 1);
+    }
+    if (view?.post?.bloom) this.composer.insertPass(new UnrealBloomPass(new THREE.Vector2(256, 256), ...view.post.bloom), this.bokeh ? 2 : 1);
     // A soft studio environment, only on the skate run, so the trucks' aluminium
     // and steel read as metal and the urethane and clear coat catch highlights.
     if (skateMode) {
       const pmrem = new THREE.PMREMGenerator(this.renderer);
       this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-      this.scene.environmentIntensity = 0.35;
+      this.scene.environmentIntensity = view?.environment ?? 0.35;
       pmrem.dispose();
     }
     this.renderer.domElement.setAttribute('aria-label', 'Modelo 3D de Jumper. Arrastra para girar; usa la rueda para acercarte.');
@@ -122,7 +132,7 @@ export class Playground {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.minDistance = 0.25;
-    this.controls.maxDistance = skateMode ? 12 : 3;
+    this.controls.maxDistance = skateMode ? 20 : 3;
     this.controls.maxPolarAngle = Math.PI * 0.49;
     this.controls.addEventListener('start', () => { this.chasePaused = performance.now() + 4000; });
     this.cameraView('iso');
@@ -438,14 +448,16 @@ export class Playground {
       }
       if (this.skate) {
         // Look a little ahead of the board, down the road.
-        const pose = this.skate.boardPose(this.data), ahead = this.skate.course.view.chase.ahead;
-        this.follow.set(this.data.qpos[0] + Math.cos(pose.heading) * ahead, this.data.qpos[1] + Math.sin(pose.heading) * ahead, this.data.qpos[2] - 0.07);
+        const heading = this.viewHeading(), { ahead, aim = 0 } = this.skate.course.view.chase;
+        this.follow.set(this.data.qpos[0] + Math.cos(heading) * ahead - Math.sin(heading) * aim, this.data.qpos[1] + Math.sin(heading) * ahead + Math.cos(heading) * aim, this.data.qpos[2] - 0.07);
       } else this.follow.set(this.data.qpos[0], this.data.qpos[1], Math.max(0.09, this.data.qpos[2] * 0.7));
       this.follow.sub(this.controls.target).multiplyScalar(1 - Math.exp(-elapsed * 5));
       this.controls.target.add(this.follow);
       this.camera.position.add(this.follow);
       if (this.skate && now > this.chasePaused) this.chase(elapsed);
       this.skate?.course.animate?.(now / 1000);
+      // Keep Jumper itself in focus.
+      if (this.bokeh) (this.bokeh.uniforms as Record<string, { value: number }>).focus.value = this.camera.position.distanceTo(this.focusPoint.set(this.data.qpos[0], this.data.qpos[1], this.data.qpos[2]));
       this.light.target.position.set(this.data.qpos[0], this.data.qpos[1], this.skate ? this.data.qpos[2] - 0.17 : 0);
       this.light.position.copy(this.light.target.position).add(this.lightOffset);
       this.controls.update();
@@ -524,14 +536,36 @@ export class Playground {
   // (course view.chase). Dragging the view pauses it for 4 s.
   private chasePaused = 0;
   private chaseOffset = new THREE.Vector3();
+  // Keep the camera above the ground and Jumper in sight: rise over any rise in
+  // the terrain between the camera and the rider (the scenery has no colliders).
+  private keepClear() {
+    const ground = this.skate?.course.ground;
+    if (!ground) return;
+    const camera = this.camera.position, rider = this.focusPoint.set(this.data.qpos[0], this.data.qpos[1], this.data.qpos[2]);
+    let lift = Math.max(0, ground(camera.x, camera.y) + 0.8 - camera.z);
+    for (let i = 1; i < 12; i++) {
+      const t = i / 12, x = rider.x + (camera.x - rider.x) * t, y = rider.y + (camera.y - rider.y) * t, z = rider.z + (camera.z + lift - rider.z) * t;
+      const blocked = ground(x, y) + 0.35 - z;
+      if (blocked > 0) lift += blocked / t;
+    }
+    camera.z += Math.min(lift, 6);
+  }
+  /** The camera's heading: the board's, turned part of the way towards the run's scenic view. */
+  private viewHeading() {
+    const { heading } = this.skate!.boardPose(this.data), scenic = this.skate!.course.view.chase.scenic;
+    if (!scenic) return heading;
+    const [toward, weight] = scenic;
+    return Math.atan2(Math.sin(heading) * (1 - weight) + Math.sin(toward) * weight, Math.cos(heading) * (1 - weight) + Math.cos(toward) * weight);
+  }
   private chase(elapsed: number) {
-    const { heading } = this.skate!.boardPose(this.data);
+    const heading = this.viewHeading();
     const { behind, side, height, ahead } = this.skate!.course.view.chase;
     // Offset from the look-at point (ahead of the board); side is to the board's left.
     this.chaseOffset.set(-Math.cos(heading) * (behind + ahead) - Math.sin(heading) * side, -Math.sin(heading) * (behind + ahead) + Math.cos(heading) * side, height);
     const current = this.camera.position.clone().sub(this.controls.target);
     current.lerp(this.chaseOffset, 1 - Math.exp(-elapsed * 2.2));
     this.camera.position.copy(this.controls.target).add(current);
+    this.keepClear();
   }
   togglePilot() { const on = this.skate?.togglePilot() ?? false; this.report(0); return on; }
   setGrid(on: boolean) { this.grid.visible = on; }

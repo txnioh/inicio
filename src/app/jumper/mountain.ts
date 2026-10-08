@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Water } from 'three/addons/objects/Water.js';
 import { bannerTexture, tree } from './course.ts';
 import { frameQuat, resample, stopperBoom, type Course, type Frame, type Point } from './track.ts';
 
@@ -114,56 +115,140 @@ function roadNear(x: number, y: number) {
   return { d: side, along: Math.cos(sample.heading) * (x - sample.x) + Math.sin(sample.heading) * (y - sample.y), z: sample.z, s: sample.s };
 }
 
-/** Hill height: the road's cut on the uphill (left) side, a falling slope to the sea on the right. */
+// ——— Landscape ———
+// Heights follow the usual recipe for believable mountains: a ridged
+// multifractal (sharp crests, each octave damped where the ones before are
+// low, so detail gathers on ridges), sampled through a low-frequency domain warp
+// so the crests meander, then a few thermal-erosion passes near the road.
+const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+function ridged(x: number, y: number) {
+  const wx = x + (fbm(x * 0.006, y * 0.006) - 0.5) * 90, wy = y + (fbm(x * 0.006 + 31, y * 0.006 + 17) - 0.5) * 90;
+  let sum = 0, amplitude = 0.5, frequency = 1 / 70, weight = 1;
+  for (let octave = 0; octave < 6; octave++) {
+    let n = 1 - Math.abs(noise(wx * frequency + octave * 13.1, wy * frequency - octave * 7.7) * 2 - 1);
+    n = n * n * weight;
+    weight = Math.min(1, Math.max(0, n * 1.8));
+    sum += n * amplitude; amplitude *= 0.5; frequency *= 2.02;
+  }
+  return sum;
+}
+const coastline = (x: number) => -13 + 4 * Math.sin(x * 0.045) + 2.5 * Math.sin(x * 0.11 + 1.3);
+const farCoast = (x: number) => -240 + 35 * Math.sin(x * 0.012 + 2);
+/** The landscape away from the road: a cliffy coast rising to ranges inland, and headlands across the bay. */
+function farField(x: number, y: number) {
+  const inland = y - coastline(x);
+  let h = inland < 0 ? coast.seaLevel - 0.6 + inland * 0.5
+    : 0.6 + inland * 0.42 - Math.max(0, inland - 25) * 0.25 + ridged(x, y) * (2 + smooth(15, 160, inland) * 95);
+  const across = farCoast(x) - y;
+  if (across > 0) h = Math.max(h, 0.6 + across * 0.3 + ridged(x + 500, y) * (2 + smooth(10, 120, across) * 70));
+  return h;
+}
+/** Height anywhere: the road's cut and fill near it, easing into the landscape. */
 function hill(x: number, y: number) {
   const { d, z: road, along, s } = roadNear(x, y);
   // Behind the start the ground keeps rising gently, the same on both sides, so
   // there is no step where the uphill and downhill sides meet. Past the finish
-  // the coast just carries on, falling to the sea.
+  // the coast just carries on.
   const beyond = s < 1 && along < -1 ? -along - 1 : 0, z = road + beyond * 0.35;
   const edge = Math.abs(d) - coast.half - 0.25;
   if (edge < 0) return beyond ? z - 0.08 + beyond * 0.02 : z - 0.08;
   const rough = (fbm(x * 0.18, y * 0.18) - 0.5);
-  if (d > 0) {
-    // Rock cut, then the mountainside rising behind.
-    return z + Math.min(edge * 0.9, 1.6 + edge * 0.35) + edge * edge * 0.012 + rough * Math.min(1, edge / 3) * 3;
+  const near = d > 0
+    ? z + Math.min(edge * 0.9, 1.6 + edge * 0.35) + edge * edge * 0.012 + rough * Math.min(1, edge / 3) * 2.2 // rock cut, mountainside
+    : Math.max(coast.seaLevel - 1.5, z - edge * 0.55 - edge * edge * 0.02 + rough * Math.min(1, edge / 4) * 1.4); // falling to the sea
+  const w = smooth(6, 26, edge) * (beyond ? 0.4 : 1);
+  return near + (Math.max(d > 0 ? z + 1 : -50, farField(x, y)) - near) * w;
+}
+
+const palette = {
+  surf: new THREE.Color('#ece8de'), sand: new THREE.Color('#cdb88c'), grass: new THREE.Color('#5b7a3a'), meadow: new THREE.Color('#7d9147'),
+  dry: new THREE.Color('#a39256'), scrub: new THREE.Color('#3d5a2b'), rock: new THREE.Color('#8a7f72'), cliff: new THREE.Color('#6a625a'), peak: new THREE.Color('#b4aea4'),
+};
+/** Colour by height above the sea, steepness (1 - normal z) and a little noise. */
+function groundColour(c: THREE.Color, x: number, y: number, h: number, steep: number) {
+  if (h < coast.seaLevel + 0.12) return c.copy(palette.surf);
+  if (h < coast.seaLevel + 0.6 && steep < 0.35) return c.copy(palette.sand);
+  const n = noise(x * 0.09, y * 0.09) * 0.6 + noise(x * 0.35, y * 0.35) * 0.4, m = noise(x * 0.8 + 9, y * 0.8);
+  c.copy(palette.grass).lerp(palette.meadow, n * 0.8).lerp(palette.dry, smooth(18, 70, h) * 0.8);
+  if (noise(x * 0.12 + 5, y * 0.12) > 0.6) c.lerp(palette.scrub, 0.65);
+  c.lerp(steep > 0.5 ? palette.cliff : palette.rock, smooth(0.22, 0.5, steep));
+  if (h > 110) c.lerp(palette.peak, smooth(110, 160, h));
+  return c.offsetHSL((m - 0.5) * 0.02, 0, (m - 0.5) * 0.1);
+}
+
+let grain: THREE.CanvasTexture | null | undefined;
+/** Grass and soil grain: tufts and specks around mid-grey, multiplied over the colours. */
+function groundGrain() {
+  if (grain !== undefined) return grain;
+  if (typeof document === 'undefined') return (grain = null);
+  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
+  const c = canvas.getContext('2d')!;
+  c.fillStyle = '#d8d8d8'; c.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 9000; i++) {
+    const x = Math.random() * 256, y = Math.random() * 256, g = 150 + Math.random() * 105;
+    c.strokeStyle = `rgba(${g},${g},${g},0.55)`; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(x, y); c.lineTo(x + (Math.random() - 0.5) * 3, y - 2 - Math.random() * 4); c.stroke();
   }
-  const fall = z - edge * 0.55 - edge * edge * 0.02 + rough * Math.min(1, edge / 4) * 1.6;
-  return Math.max(coast.seaLevel - 1.5, fall);
+  for (let i = 0; i < 2500; i++) { const g = 90 + Math.random() * 60; c.fillStyle = `rgba(${g},${g - 6},${g - 14},0.5)`; c.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
+  grain = new THREE.CanvasTexture(canvas);
+  grain.wrapS = grain.wrapT = THREE.RepeatWrapping; grain.colorSpace = THREE.SRGBColorSpace; grain.anisotropy = 8;
+  return grain;
+}
+
+/** A height grid as an indexed, smooth-shaded mesh with colours by slope and height. */
+function gridMesh(x0: number, y0: number, nx: number, ny: number, cell: number, heights: Float32Array) {
+  const positions = new Float32Array((nx + 1) * (ny + 1) * 3), index: number[] = [];
+  for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) { const k = j * (nx + 1) + i; positions.set([x0 + i * cell, y0 + j * cell, heights[k]], k * 3); }
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1; index.push(a, b, d, a, d, c); }
+  const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setIndex(index); geometry.computeVertexNormals();
+  const normals = geometry.getAttribute('normal'), colours = new Float32Array(positions.length), c = new THREE.Color();
+  for (let k = 0; k < normals.count; k++) {
+    groundColour(c, positions[k * 3], positions[k * 3 + 1], positions[k * 3 + 2], 1 - normals.getZ(k));
+    colours.set([c.r, c.g, c.b], k * 3);
+  }
+  geometry.setAttribute('color', new THREE.BufferAttribute(colours, 3));
+  // World-space UVs for the ground's grain, tiled every 2.5 m.
+  const uvs = new Float32Array((nx + 1) * (ny + 1) * 2);
+  for (let k = 0; k < uvs.length / 2; k++) { uvs[k * 2] = positions[k * 3] / 2.5; uvs[k * 2 + 1] = positions[k * 3 + 1] / 2.5; }
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, map: groundGrain(), roughness: 1, envMapIntensity: 0.3 }));
+  mesh.receiveShadow = true;
+  return mesh;
 }
 
 function terrain() {
   const xs = line.samples.map(c => c.x), ys = line.samples.map(c => c.y);
-  const x0 = Math.min(...xs) - 35, x1 = Math.max(...xs) + 35, y0 = Math.min(...ys) - 30, y1 = Math.max(...ys) + 45;
-  const cell = 0.55, nx = Math.ceil((x1 - x0) / cell), ny = Math.ceil((y1 - y0) / cell);
-  const heights = new Float32Array((nx + 1) * (ny + 1));
-  for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) heights[j * (nx + 1) + i] = hill(x0 + i * cell, y0 + j * cell);
-  // Flat-shaded triangles, coloured by height and steepness.
-  const positions: number[] = [], colours: number[] = [];
-  const sand = new THREE.Color('#cdb88c'), grass = new THREE.Color('#5f7d3e'), dry = new THREE.Color('#9c8f55'), rock = new THREE.Color('#857a6c'), dark = new THREE.Color('#5f5850'), c = new THREE.Color();
-  const vertex = (i: number, j: number) => [x0 + i * cell, y0 + j * cell, heights[j * (nx + 1) + i]];
-  const tri = (a: number[], b: number[], d: number[]) => {
-    const e1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], e2 = [d[0] - a[0], d[1] - a[1], d[2] - a[2]];
-    const nz = e1[0] * e2[1] - e1[1] * e2[0], len = Math.hypot(e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], nz);
-    const steep = 1 - Math.abs(nz) / len, h = (a[2] + b[2] + d[2]) / 3;
-    if (h < coast.seaLevel + 0.12) c.set('#f1ede4'); // surf
-    else if (h < coast.seaLevel + 0.5) c.copy(sand);
-    else c.copy(grass).lerp(dry, Math.min(1, Math.max(0, (h - 9) / 12)));
-    c.lerp(steep > 0.45 ? dark : rock, Math.min(1, Math.max(0, (steep - 0.25) * 2.2)));
-    c.offsetHSL(0, 0, (noise(a[0] * 0.7, a[1] * 0.7) - 0.5) * 0.08);
-    // Scrub patches on the gentler slopes.
-    if (steep < 0.35 && noise(a[0] * 0.35 + 7, a[1] * 0.35) > 0.62) c.lerp(new THREE.Color('#3f5a2c'), 0.6);
-    for (const p of [a, b, d]) { positions.push(p[0], p[1], p[2]); colours.push(c.r, c.g, c.b); }
-  };
-  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
-    const a = vertex(i, j), b = vertex(i + 1, j), d = vertex(i, j + 1), e = vertex(i + 1, j + 1);
-    tri(a, b, e); tri(a, e, d);
+  const x0 = Math.min(...xs) - 60, x1 = Math.max(...xs) + 60, y0 = Math.min(...ys) - 45, y1 = Math.max(...ys) + 90;
+  const cell = 0.6, nx = Math.ceil((x1 - x0) / cell), ny = Math.ceil((y1 - y0) / cell);
+  const heights = new Float32Array((nx + 1) * (ny + 1)), locked = new Uint8Array(heights.length);
+  for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
+    const x = x0 + i * cell, y = y0 + j * cell, k = j * (nx + 1) + i;
+    heights[k] = hill(x, y);
+    // The road, its shoulders and the cut stay as designed.
+    if (Math.abs(roadNear(x, y).d) < coast.half + 3) locked[k] = 1;
   }
-  const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)).setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
-  geometry.computeVertexNormals();
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, flatShading: true }));
-  mesh.receiveShadow = true;
-  return mesh;
+  // Thermal erosion: material slides down wherever a slope exceeds the talus angle.
+  const talus = cell * 1.1;
+  for (let pass = 0; pass < 4; pass++) for (let j = 1; j < ny; j++) for (let i = 1; i < nx; i++) {
+    const k = j * (nx + 1) + i;
+    if (locked[k]) continue;
+    for (const o of [1, -1, nx + 1, -(nx + 1)]) {
+      const diff = heights[k] - heights[k + o];
+      if (diff > talus && !locked[k + o]) { const move = (diff - talus) * 0.2; heights[k] -= move; heights[k + o] += move; }
+    }
+  }
+  const near = gridMesh(x0, y0, nx, ny, cell, heights);
+  // The far landscape, out to the horizon, a little lower where the near grid covers it.
+  const fx0 = -1200, fy0 = -900, fcell = 9, fnx = Math.ceil(2400 / fcell), fny = Math.ceil(2200 / fcell);
+  const far = new Float32Array((fnx + 1) * (fny + 1));
+  for (let j = 0; j <= fny; j++) for (let i = 0; i <= fnx; i++) {
+    const x = fx0 + i * fcell, y = fy0 + j * fcell, inside = x > x0 + fcell && x < x1 - fcell && y > y0 + fcell && y < y1 - fcell;
+    far[j * (fnx + 1) + i] = farField(x, y) - (inside ? 3 : 0.35);
+  }
+  const group = new THREE.Group();
+  group.add(near, gridMesh(fx0, fy0, fnx, fny, fcell, far));
+  return group;
 }
 
 /** A strip following the road between lateral offsets d0..d1, lifted by h. */
@@ -195,27 +280,6 @@ function skyDome(horizon: string, zenith: string) {
   const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }));
   mesh.renderOrder = -1;
   return mesh;
-}
-
-/** Distant low-poly ridges, hazed by the fog into the sky. */
-function ridges() {
-  const group = new THREE.Group();
-  const material = new THREE.MeshStandardMaterial({ color: '#5d6f7d', roughness: 1, flatShading: true });
-  // Ranges behind the coast, and headlands across the bay.
-  const peaks: [number, number, number, number][] = [
-    [-80, 150, 70, 90], [-10, 200, 95, 120], [60, 170, 75, 95], [130, 220, 110, 140], [200, 160, 70, 95], [280, 120, 60, 85],
-    [-150, 110, 45, 70], [330, 40, 45, 70], [300, -90, 28, 45], [240, -150, 22, 40], [-120, -40, 18, 35],
-  ];
-  for (const [x, y, h, r] of peaks) {
-    const geometry = new THREE.ConeGeometry(r, h, 9, 3).rotateX(Math.PI / 2);
-    const p = geometry.getAttribute('position');
-    for (let i = 0; i < p.count; i++) { const z = p.getZ(i); if (z > -h / 2 + 0.01 && z < h / 2 - 0.01) { p.setX(i, p.getX(i) * (0.8 + noise(i, x) * 0.4)); p.setY(i, p.getY(i) * (0.8 + noise(x, i) * 0.4)); } }
-    geometry.computeVertexNormals();
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(x, y, h / 2 - 4);
-    group.add(mesh);
-  }
-  return group;
 }
 
 /** The sun's disc and halo, far along the sun direction. */
@@ -325,13 +389,24 @@ function build(scene: THREE.Scene, stopper: Frame) {
   const add = <T extends THREE.Object3D>(o: T, cast = true) => { o.traverse(m => { if (m instanceof THREE.Mesh) { m.castShadow = cast; m.receiveShadow = true; } }); scene.add(o); return o; };
   const layer = (m: THREE.MeshStandardMaterial, level: number) => { m.polygonOffset = true; m.polygonOffsetFactor = -level; m.polygonOffsetUnits = -level * 2; return m; };
   motion.length = 0;
-  scene.add(skyDome('#f4d2ad', '#6a93c4'), sunDisc());
-  // The sea: glossy blue with drifting ripples that catch the low sun.
-  const ripples = seaNormals();
-  const sea = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshStandardMaterial({ color: '#2a6582', roughness: 0.22, metalness: 0.2, normalMap: ripples, normalScale: new THREE.Vector2(0.35, 0.35) }));
+  scene.add(skyDome('#ecd9c2', '#5b88c0'), sunDisc());
+  // The sea: three.js's Water (a mirror reflection distorted by four scrolling
+  // ripple layers, Fresnel, and the sun's glitter), turned to this Z-up world.
+  const sea = new Water(new THREE.PlaneGeometry(4000, 4000), {
+    textureWidth: 1024, textureHeight: 1024, waterNormals: seaNormals() ?? undefined,
+    sunDirection: sun.clone(), sunColor: 0xffdcae, waterColor: 0x1d5a78, distortionScale: 0.7, fog: true,
+  });
+  const shader = sea.material as THREE.ShaderMaterial;
+  shader.fragmentShader = shader.fragmentShader
+    .replace('getNoise( worldPosition.xz * size )', 'getNoise( worldPosition.xy * size )')
+    .replace('normalize( noise.xzy * vec3( 1.5, 1.0, 1.5 ) )', 'normalize( noise.xyz * vec3( 1.5, 1.5, 1.0 ) )')
+    .replace('surfaceNormal.xz * ( 0.001 + 1.0 / distance )', 'surfaceNormal.xy * ( 0.001 + 1.0 / distance )')
+    // Less mirror, more water: the sea keeps its own deep blue and the sun's path.
+    .replace('vec3 albedo = mix( ( sunColor * diffuseLight * 0.3 + scatter ) * getShadowMask(), reflectionSample + specularLight, reflectance );',
+      'vec3 albedo = mix( ( sunColor * diffuseLight * 0.12 + scatter + waterColor * 0.35 ) * getShadowMask(), reflectionSample * 0.5 + specularLight, reflectance * 0.75 );');
+  shader.uniforms.size.value = 22;
   sea.position.z = coast.seaLevel; scene.add(sea);
-  if (ripples) motion.push(t => { ripples.offset.set(t * 0.004, t * 0.0025); });
-  scene.add(ridges());
+  motion.push(t => { shader.uniforms.time.value = t * 0.6; });
   // Clouds drifting along the coast, boats on the bay, a lighthouse on a point.
   for (let i = 0; i < 9; i++) {
     const c = cloud(i), angle = -2.2 + i * 0.55, distance = 260 + noise(i, 3) * 260;
@@ -381,13 +456,13 @@ function build(scene: THREE.Scene, stopper: Frame) {
     const d0 = -coast.half + i * coast.half * 2 / 16;
     add(new THREE.Mesh(band(d0, d0 + coast.half * 2 / 16, 0.006, line.finish + j * 0.1, line.finish + (j + 1) * 0.1, 0.1), (i + j) % 2 ? white : black), false);
   }
-  const steel = new THREE.MeshStandardMaterial({ color: '#a9b0b7', roughness: 0.35, metalness: 0.7 });
+  const steel = new THREE.MeshStandardMaterial({ color: '#a9b0b7', roughness: 0.55, metalness: 0.35 });
   const fin = frame(line.finish), arch = new THREE.Group(), q = frameQuat({ ...fin, slope: 0 });
   arch.position.set(...fin.p); arch.quaternion.set(q[1], q[2], q[3], q[0]);
   for (const side of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.9), steel); leg.position.set(0, side * (coast.half + 0.2), 0.45); arch.add(leg); }
   const texture = bannerTexture();
   const banner = new THREE.Mesh(new THREE.BoxGeometry(0.03, coast.half * 2 + 0.45, 0.14), [steel, new THREE.MeshStandardMaterial({ map: texture, color: texture ? '#ffffff' : '#d4583a' }), steel, steel, steel, steel]);
-  banner.position.z = 0.86; arch.add(banner); add(arch);
+  banner.position.z = 0.86; arch.add(banner); add(arch, false);
   // Mountain side: concrete curb. Sea side: W-beam guardrail on posts.
   const concrete = new THREE.MeshStandardMaterial({ color: '#cfcac0', roughness: 0.9 });
   const n = Math.floor(line.total / coast.chord);
@@ -395,19 +470,21 @@ function build(scene: THREE.Scene, stopper: Frame) {
   const postGeometry = new THREE.BoxGeometry(0.03, 0.03, 0.16);
   for (let i = 0; i < n; i++) {
     const s = (i + 0.5) * coast.chord, fr = frame(s), fq = frameQuat(fr), quat = new THREE.Quaternion(fq[1], fq[2], fq[3], fq[0]);
-    const curb = new THREE.Mesh(curbGeometry, concrete); curb.position.set(...offset(s, coast.half + 0.08, coast.rail / 2)); curb.quaternion.copy(quat); add(curb);
-    if (i % 3 === 0) { const post = new THREE.Mesh(postGeometry, steel); post.position.set(...offset(s, -coast.half - 0.1, 0.08)); post.quaternion.copy(quat); add(post); }
+    // Road furniture receives shadows but casts none: with the sun this low, its long
+    // shadows would sweep in and out of the shadow map around the rider.
+    const curb = new THREE.Mesh(curbGeometry, concrete); curb.position.set(...offset(s, coast.half + 0.08, coast.rail / 2)); curb.quaternion.copy(quat); add(curb, false);
+    if (i % 3 === 0) { const post = new THREE.Mesh(postGeometry, steel); post.position.set(...offset(s, -coast.half - 0.1, 0.08)); post.quaternion.copy(quat); add(post, false); }
   }
   const beam = band(-coast.half - 0.125, -coast.half - 0.125, 0, 0, line.total, 0.2);
   const p = beam.getAttribute('position');
   for (let i = 0; i < p.count; i++) p.setZ(i, p.getZ(i) + (i % 2 ? 0.07 : 0.15));
   beam.computeVertexNormals();
-  add(new THREE.Mesh(beam, new THREE.MeshStandardMaterial({ color: '#c7ccd1', roughness: 0.3, metalness: 0.75, side: THREE.DoubleSide })));
+  add(new THREE.Mesh(beam, new THREE.MeshStandardMaterial({ color: '#b9bec3', roughness: 0.55, metalness: 0.35, side: THREE.DoubleSide })), false);
   // A few pines above the cut and along the shoulder on the sea side.
   for (let s = 3; s < line.total - 3; s += 3.7) {
     const k = Math.sin(s * 12.9898) * 43758.5453, r = k - Math.floor(k);
     const [x, y] = offset(s, coast.half + 8 + r * 7);
-    add(tree(x, y, hill(x, y), 0.9 + r * 0.6));
+    add(tree(x, y, hill(x, y), 0.9 + r * 0.6), false);
   }
   return stopperBoom(scene, stopper);
 }
@@ -422,11 +499,18 @@ export const mountainCourse: Course = {
   cones: [],
   xml,
   build,
-  // Wide and high, from the mountain side, so the sea and the horizon show.
   // Golden hour: a warm, low sun over the sea and a warm haze.
   view: {
-    far: 1200, fog: [35, 820], sky: '#f1d2ae', ground: false, chase: { behind: 3.6, side: 0.9, height: 1.6, ahead: 2.2 },
+    // Behind and a little out over the sea side (where the ground falls away),
+    // looking far down the road: the horizon sits in the top third, the sea on
+    // one side and the mountains on the other. The view leans halfway towards
+    // the bay, so bends into the hill still open onto the sea.
+    far: 1200, fog: [35, 820], sky: '#f1d2ae', ground: false, chase: { behind: 5.2, side: -1.3, height: 2.3, ahead: 7, aim: -0.5, scenic: [-0.45, 0.5] },
+    environment: 0.12,
+    // A soft bloom on the sun, its glitter and the lantern; a shallow depth of field on Jumper.
+    post: { bloom: [0.35, 0.5, 0.93], dof: { aperture: 0.00008, maxblur: 0.0009 } },
     light: { sun: '#ffcf9e', intensity: 3.6, direction: [sun.x * 1.5, sun.y * 1.5, sun.z * 1.5 + 0.35], sky: '#ffe4c8', ground: '#55623f', fill: 1.8, rim: '#a9bdf5', rimIntensity: 0.9, exposure: 0.95 },
   },
   animate(time) { for (const step of motion) step(time); },
+  ground: hill,
 };

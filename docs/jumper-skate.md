@@ -110,9 +110,30 @@ bends by weight alone.
   Clouds drift, sailing boats rock on the bay, gulls circle the cliff and a
   lighthouse stands on a point among shore rocks (`animate`).
 
+The landscape follows the usual recipe for believable mountains (see the
+three.js TerrainGenerator and Musgrave's ridged multifractal). The heights are
+a ridged multifractal, with each octave damped where the ones before it are
+low, sampled through a low-frequency domain warp so the crests meander. Near
+the road it is blended with the road's cut and fill, then run through four
+passes of thermal erosion. The ground is coloured by slope and height (surf,
+sand, grass, meadow, dry grass, scrub, rock, cliff) and carries a grass grain
+texture. A far mesh carries the ranges inland and the headlands across the
+bay out to the horizon. The sea is three.js's `Water` (mirror reflection,
+Fresnel, scrolling ripples and sun glitter), with its Y-up shader turned to
+this Z-up world and tuned to keep its own deep blue. A soft bloom and a very
+light depth of field, focused on Jumper, finish the frame (`view.post`).
+
 The chase camera is set per run (`view.chase`). On the coast road it sits
-3.6 m back and 1.6 m up on the mountain side, looking 2.2 m ahead, so the sea
-and the horizon stay in frame.
+5.2 m behind, out over the sea side and 2.3 m up, looking 7 m down the road.
+Its heading leans halfway towards the bay, so bends into the hill still open
+onto the sea. It never goes through the scenery: it stays 0.8 m above the
+ground and rises over any rise that would hide Jumper (`course.ground`). The
+road furniture casts no shadows, because with the sun this low its long
+shadows would sweep in and out of the shadow map around the rider.
+
+Sources: [three.js TerrainGenerator](https://threejs.org/docs/pages/TerrainGenerator.html),
+[Procedural eroded terrain in three.js](https://getbutterfly.com/procedural-eroded-terrain-in-three-js-theory-techniques-field-notes/),
+[Classic ocean shader with Gerstner waves (three.js forum)](https://discourse.threejs.org/t/classic-ocean-shader-example-with-gestner-waves/29227).
 
 Sources: [10 best longboarding roads in the US (Solgaard)](https://solgaard.co/blogs/stories/10-best-longboarding-roads-in-the-us),
 [Pacific Coast Highway road trip (Enterprise)](https://www.enterpriserentacar.it/en/inspiration/road-trip/california-pacific-coast-highway.html),
