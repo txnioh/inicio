@@ -25,7 +25,7 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
 
 export default function App() {
   const { path, Article, Carrete, arrived } = usePageNavigation();
-  if (path === '/jumper' || path === '/jumper/eva' || path === '/jumper/skate') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Cargando Jumper" />}><Jumper key={path} variant={path === '/jumper/eva' ? 'eva' : path === '/jumper/skate' ? 'skate' : 'jumper'} /></Suspense>;
+  if (path === '/jumper' || path === '/jumper/eva' || path === '/jumper/skate') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Cargando Jumper" />}><Jumper key={path} variant={path === '/jumper/skate' ? 'skate' : 'jumper'} initialSkin={path === '/jumper/eva' ? 'eva' : undefined} /></Suspense>;
   if (path === '/neural') return <Suspense fallback={<main style={{ position: 'fixed', inset: 0, background: '#000' }} aria-label="Cargando la red neuronal" />}><Neural /></Suspense>;
   if (path === '/acuarela') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading Acuarela" />}><Acuarela /></Suspense>;
   if (path === '/critters') return <Suspense fallback={<main className="minimal-portfolio-page" aria-label="Loading critters" />}><Critters /></Suspense>;

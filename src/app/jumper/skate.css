@@ -24,22 +24,10 @@
 .jumper-skate .jumper-controls { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .jumper-skate .jumper-mode { display: none; }
 
-/* On entering: the three runs, large, side by side. */
-.skate-maps { position: fixed; inset: 0; z-index: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-content: center; padding: 96px 32px 72px; background: #fdfdfc; overflow-y: auto; animation: skate-in .3s ease-out; }
-.jumper-page .skate-maps button { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 0; background: none; color: #111; text-align: left; cursor: pointer; }
-.skate-maps img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 12px; background: #efeee9; box-shadow: 0 0 0 1px #e6e5e0; transition: transform .25s ease-out, box-shadow .25s ease-out; }
-.jumper-page .skate-maps button:hover img, .jumper-page .skate-maps button:focus-visible img { transform: translateY(-3px); box-shadow: 0 0 0 1.5px #111, 0 14px 40px #11111114; }
-.skate-maps span { display: flex; flex-direction: column; gap: 3px; padding: 0 2px; }
-.skate-maps strong { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
-.skate-maps small { font-size: 12px; color: #77766f; }
-.skate-maps kbd { position: absolute; top: 12px; left: 12px; min-width: 22px; padding: 2px 6px; border-radius: 6px; background: #fdfdfcd9; backdrop-filter: blur(8px); font: inherit; font-size: 11px; text-align: center; color: #111; }
-@media (max-width: 800px) { .skate-maps { grid-template-columns: 1fr; align-content: start; padding: 80px 20px 32px; gap: 24px; } }
-@media (pointer: coarse) { .skate-maps kbd { display: none; } }
-@media (prefers-reduced-motion: reduce) { .skate-maps, .skate-maps img { animation: none; transition: none; } }
 /* Before the release: start and pilot, with the other controls at the bottom. */
 .jumper-skate .jumper-actions { align-items: center; }
-.jumper-page.jumper-skate .jumper-actions .skate-pill { width: auto; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; height: 30px; border-radius: 999px; font-size: 12px; font-weight: 500; }
-.jumper-page.jumper-skate .jumper-actions .skate-pill-primary { background: #111; color: #fdfdfc; }
-.jumper-page.jumper-skate .jumper-actions .skate-pill[aria-pressed="true"] { color: #d4583a; }
+.jumper-page .jumper-actions .skate-pill { width: auto; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; height: 30px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+.jumper-page .jumper-actions .skate-pill-primary { background: #111; color: #fdfdfc; }
+.jumper-page .jumper-actions .skate-pill[aria-pressed="true"] { color: #d4583a; }
 .skate-pill kbd { padding: 0 5px; border: 1px solid currentColor; border-radius: 4px; font: inherit; font-size: 10px; opacity: .55; }
 @media (pointer: coarse) { .skate-pill kbd { display: none; } }

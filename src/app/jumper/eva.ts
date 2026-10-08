@@ -27,6 +27,7 @@ export function dressEva(name: string, mesh: THREE.Mesh<THREE.BufferGeometry, TH
       new THREE.MeshStandardMaterial({ color: '#a3e147', roughness: 0.5 }),
     ]);
     fin.castShadow = fin.receiveShadow = true;
+    fin.userData.eva = true;
     mesh.add(fin);
     horn.dispose();
   }
@@ -37,6 +38,7 @@ export function dressEva(name: string, mesh: THREE.Mesh<THREE.BufferGeometry, TH
   // Source display plane: +X is its normal, +Y is up, +Z runs across it.
   display.position.set(-0.001748549, 0.000016063, -0.000652644);
   display.quaternion.set(0.674767937, -0.211454873, 0.211535150, 0.674705823).normalize();
+  display.userData.eva = true;
   mesh.add(display);
   const eyes = new THREE.MeshBasicMaterial({ color: '#e5ffac', toneMapped: false });
   for (const side of [-1, 1]) {

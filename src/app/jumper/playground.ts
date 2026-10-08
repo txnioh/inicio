@@ -12,6 +12,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { BokehShader } from 'three/addons/shaders/BokehShader.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { dressEva } from './eva';
+import { buildPortals, type PortalId } from './portals';
 import { courseFor, Skate, skateXml, type BoardKind, type Look } from './skate';
 import { flushInputs, modeBinding, queueMode, type InputEdge } from './inputs';
 import { type Joint, type SkinId, type Stats, boxes, skins } from './settings';
@@ -224,6 +225,8 @@ export class Playground {
       mesh.add(edges);
       this.scene.add(mesh);
     }
+    // The downhill runs, as signs with pads to walk onto (Enter rides the run).
+    if (!skateMode) this.portalAt = buildPortals(this.scene);
     this.resize = new ResizeObserver(() => {
       const { width, height } = this.host.getBoundingClientRect();
       // Keep Retina detail without allocating oversized post-processing buffers. A run with
@@ -517,6 +520,10 @@ export class Playground {
       if (this.skate) this.chase(elapsed);
       else this.camera.position.add(this.follow);
       this.skate?.course.animate?.(now / 1000);
+      if (this.portalAt) {
+        const portal = this.portalAt(this.data.qpos[0], this.data.qpos[1]);
+        if (portal !== this.portal) { this.portal = portal; this.report(0); }
+      }
       // Keep Jumper itself in focus.
       if (this.bokeh) (this.bokeh.uniforms as Record<string, { value: number }>).focus.value = this.camera.position.distanceTo(this.focusPoint.set(this.data.qpos[0], this.data.qpos[1], this.data.qpos[2]));
       this.light.target.position.set(this.data.qpos[0], this.data.qpos[1], this.skate ? this.data.qpos[2] - 0.17 : 0);
@@ -558,7 +565,7 @@ export class Playground {
   }
 
   private report(fps: number) {
-    this.onStats({ time: this.phase, playing: this.playing, fps, height: this.data.qpos[2], contacts: this.data.ncon, joints: this.qAddresses.map(address => this.data.qpos[address]), x: this.data.qpos[0], y: this.data.qpos[1], grounded: this.grounded, controllerMode: this.robot.fsm.mode(), policyRunning: this.robot.fsm.is_running_policy(), simRate: this.simRate, parity: this.robot.parity, skate: this.skate?.stats(this.data) });
+    this.onStats({ time: this.phase, playing: this.playing, fps, height: this.data.qpos[2], contacts: this.data.ncon, joints: this.qAddresses.map(address => this.data.qpos[address]), x: this.data.qpos[0], y: this.data.qpos[1], grounded: this.grounded, controllerMode: this.robot.fsm.mode(), policyRunning: this.robot.fsm.is_running_policy(), simRate: this.simRate, parity: this.robot.parity, skate: this.skate?.stats(this.data), portal: this.portal });
   }
 
   setPlaying(playing: boolean) {
@@ -624,6 +631,8 @@ export class Playground {
     return Math.min(lift, 8);
   }
   private lift = 0;
+  private portalAt?: (x: number, y: number) => PortalId | undefined;
+  private portal?: PortalId;
   private lead = new THREE.Vector3();
   private clock = 0;
   private desired = new THREE.Vector3();
@@ -667,19 +676,20 @@ export class Playground {
   }
   setSkin(id: SkinId) {
     const skin = skins.find(skin => skin.id === id)!;
+    // Only the robot: the board and the course keep their own colours.
+    const board = new Set<THREE.Object3D>(this.skate?.drawables.map(drawable => drawable.mesh));
     for (const drawable of this.drawables) {
-      if (drawable.collision) continue;
+      if (drawable.collision || board.has(drawable.mesh)) continue;
       const material = drawable.mesh.material;
+      // Undo EVA-01's armour and eyes, then dress for the new skin.
+      for (const child of [...drawable.mesh.children]) if (child.userData.eva) drawable.mesh.remove(child);
+      material.roughness = 0.48;
+      if (id === 'eva') { dressEva(drawable.name, drawable.mesh); continue; }
       if (id === 'original') material.color.copy(drawable.color);
       else if (/upper_shell/.test(drawable.name)) material.color.set(skin.shell);
       else if (drawable.color.getHSL({ h: 0, s: 0, l: 0 }).l > 0.25) material.color.set(skin.limb);
+      else material.color.copy(drawable.color);
       material.metalness = id === 'silver' ? 0.65 : 0.15;
-    }
-  }
-  setEva() {
-    this.renderer.domElement.setAttribute('aria-label', 'Modelo 3D de EVA-01. Arrastra para girar; usa la rueda para acercarte.');
-    for (const { name, mesh, collision } of this.drawables) {
-      if (!collision) dressEva(name, mesh);
     }
     this.draw();
   }

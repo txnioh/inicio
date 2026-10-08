@@ -4,11 +4,21 @@ Open `/jumper` on the Inicio development server (`npm run dev`). The page uses
 Inicio's minimal interface: a full-screen scene, pause/reset and a small settings
 popover. Drag the scene to orbit; scroll to zoom.
 
-`/jumper/eva` is a separate Evangelion EVA-01 appearance: purple armour, green
-accents, angular eyes and a horn. The header switches between both pages.
-EVA reuses the exact CAD bodies, collision meshes and controller. Its eyes and
-horn attach to the display/shell meshes as visual decoration, not extra
-physical bodies. It is a cosmetic concept, not a separately calibrated robot.
+EVA-01 is one of Jumper's skins (*Ajustes → Color*), beside the plain colours:
+purple armour, green accents, angular eyes and a horn. It reuses the exact CAD
+bodies, collision meshes and controller. Its eyes and horn attach to the
+display/shell meshes as visual decoration (tagged, so another skin removes
+them), not extra physical bodies. It is a cosmetic concept, not a separately
+calibrated robot. `/jumper/eva` opens the playground already in it. The
+chosen skin is kept in the browser and follows Jumper into the downhill runs;
+the board keeps its own colours.
+
+The downhill runs live in the playground too (`portals.ts`): three signs, each
+a picture of its run (*Calle*, *Costa*, *Costa minimal*), stand in the open
+area the default camera looks at, square to it, with a pad on the floor in
+front of each. Walk Jumper onto a pad and it turns black, and *Enter* (or the
+pill at the bottom) rides that run at `/jumper/skate?mapa=…`. The signs and pads
+are drawing only; the robot walks over the pads.
 
 The default camera shows the front and claws. The Z-up lighting and a 2048 px
 shadow map, with depth bias -0.0003 and normal bias 0.002 m, remove the

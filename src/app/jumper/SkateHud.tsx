@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import type { BoardKind, Look, SkateStats } from './skate';
 import './skate.css';
 
@@ -12,28 +11,13 @@ export default function SkateHud({ stats }: { stats: SkateStats }) {
   </section>;
 }
 
-/** The runs, each with its board and look: picked on entering the page. */
+/** The runs, each with its board and look (the playground's signs pick one). */
 export type SkateMap = 'calle' | 'costa' | 'minimal';
-export const skateMaps: { id: SkateMap; name: string; note: string; board: BoardKind; look: Look; image: string }[] = [
-  { id: 'calle', name: 'Calle', note: 'Skate · conos y chicanes', board: 'skate', look: 'minimal', image: '/jumper/skate-calle.webp' },
-  { id: 'costa', name: 'Costa', note: 'Longboard · carretera sobre el mar', board: 'longboard', look: 'scenic', image: '/jumper/skate-costa.webp' },
-  { id: 'minimal', name: 'Costa minimal', note: 'Longboard · la costa en blanco', board: 'longboard', look: 'minimal', image: '/jumper/skate-minimal.webp' },
+export const skateMaps: { id: SkateMap; name: string; board: BoardKind; look: Look }[] = [
+  { id: 'calle', name: 'Calle', board: 'skate', look: 'minimal' },
+  { id: 'costa', name: 'Costa', board: 'longboard', look: 'scenic' },
+  { id: 'minimal', name: 'Costa minimal', board: 'longboard', look: 'minimal' },
 ];
-
-/** On entering: the three runs, large, side by side. A click (or 1–3) picks one and loads it. */
-export function SkateMaps({ onPick }: { onPick: (map: SkateMap) => void }) {
-  useEffect(() => {
-    const key = (event: KeyboardEvent) => { const map = skateMaps[Number(event.key) - 1]; if (map && !event.repeat) onPick(map.id); };
-    window.addEventListener('keydown', key);
-    return () => window.removeEventListener('keydown', key);
-  }, [onPick]);
-  return <section className="skate-maps" aria-label="Elige la bajada">
-    {skateMaps.map((map, i) => <button key={map.id} onClick={() => onPick(map.id)}>
-      <img src={map.image} alt="" width="640" height="400" />
-      <span><strong>{map.name}</strong><small>{map.note}</small></span><kbd>{i + 1}</kbd>
-    </button>)}
-  </section>;
-}
 
 /** Centre panel at the finish. */
 export function SkateFinish({ stats, onAgain }: { stats: SkateStats; onAgain: () => void }) {

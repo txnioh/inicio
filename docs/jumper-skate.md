@@ -291,14 +291,13 @@ the speed and the time (and *piloto* when the pilot rides). Pause and restart
 sit centred at the bottom, over one line of keys. Every (re)start opens on the
 run's own chase view, not from a fixed spot.
 
-The page opens on its three runs, large and side by side, each a picture of
-the ride (`public/jumper/skate-*.webp`): *Calle* (the skate's obstacle road),
-*Costa* and *Costa minimal* (the longboard's coast road in its two looks). A
-click, or 1–3, picks one, and only then does the page load Jumper and build
-the run. There is no panel over the scene: before the release, *Empezar*
-(Enter) and *Piloto* (P) sit at the bottom beside pause and restart, and a
-grid button goes back to the runs. At the finish a small panel shows the time
-with *Otra vez*.
+The runs are entered from the Jumper playground: walk onto the pad in front
+of a run's sign and press Enter (see `docs/jumper-playground.md`). The run is
+in the address, `/jumper/skate?mapa=calle|costa|minimal`; without one the page
+goes back to the playground. There is no panel over the scene: before the
+release, *Empezar* (Enter) and *Piloto* (P) sit at the bottom beside pause and
+restart, and a grid button goes back to the playground. At the finish a small
+panel shows the time with *Otra vez*.
 
 While the page loads, a line says what it is doing (*Cargando a Jumper*, then
 *Preparando la bajada* while the run and its terrain are built) over a thin

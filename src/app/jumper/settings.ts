@@ -1,4 +1,4 @@
-export type SkinId = 'original' | 'sand' | 'sage' | 'silver';
+export type SkinId = 'original' | 'sand' | 'sage' | 'silver' | 'eva';
 import type { Parity } from './controller';
 import type { SkateStats } from './skate';
 
@@ -16,6 +16,7 @@ export const skins: { id: SkinId; name: string; shell: string; limb: string }[] 
   { id: 'sand', name: 'Desierto', shell: '#d9a660', limb: '#d4c4a8' },
   { id: 'sage', name: 'Salvia', shell: '#82967b', limb: '#bdc7b4' },
   { id: 'silver', name: 'Plata', shell: '#b5bcc5', limb: '#ced2d7' },
+  { id: 'eva', name: 'EVA-01', shell: '#7350ae', limb: '#9cdb46' },
 ];
 
 export interface Joint { name: string; min: number; max: number; home: number }
@@ -34,6 +35,8 @@ export interface Stats {
   simRate: number;
   parity?: Parity;
   skate?: SkateStats;
+  /** The run whose pad Jumper stands on, in the playground. */
+  portal?: string;
 }
 
 export const initialStats: Stats = {
