@@ -11,7 +11,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { BokehShader } from 'three/addons/shaders/BokehShader.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { dressEva } from './eva';
+import { dressMarea } from './marea';
 import { buildPortals, pad, type PortalId } from './portals';
 import type { Lang } from './i18n';
 /** Jumper's heading at the start of the playground: square to the signs, towards them. */
@@ -111,6 +111,8 @@ export class Playground {
   private matrix = new THREE.Matrix4();
   private bodyRotation = new THREE.Quaternion();
   private onStats: (stats: Stats) => void;
+  /** Runs right after each render, while the frame is still readable (clip recording). */
+  onFrame?: (canvas: HTMLCanvasElement) => void;
 
   private skate?: Skate;
   private bokeh?: DepthBokeh;
@@ -572,6 +574,7 @@ export class Playground {
       if (geomBody[id]) mesh.position.add(this.lead);
     }
     this.composer.render();
+    this.onFrame?.(this.renderer.domElement);
   }
 
   private report(fps: number) {
@@ -696,10 +699,10 @@ export class Playground {
     for (const drawable of this.drawables) {
       if (drawable.collision || board.has(drawable.mesh)) continue;
       const material = drawable.mesh.material;
-      // Undo EVA-01's armour and eyes, then dress for the new skin.
-      for (const child of [...drawable.mesh.children]) if (child.userData.eva) drawable.mesh.remove(child);
+      // Undo Marea's antennae and eyes, then dress for the new skin.
+      for (const child of [...drawable.mesh.children]) if (child.userData.dress) drawable.mesh.remove(child);
       material.roughness = 0.48;
-      if (id === 'eva') { dressEva(drawable.name, drawable.mesh); continue; }
+      if (id === 'marea') { dressMarea(drawable.name, drawable.mesh); continue; }
       if (id === 'original') material.color.copy(drawable.color);
       else if (/upper_shell/.test(drawable.name)) material.color.set(skin.shell);
       else if (drawable.color.getHSL({ h: 0, s: 0, l: 0 }).l > 0.25) material.color.set(skin.limb);

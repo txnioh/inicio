@@ -4,14 +4,22 @@ Open `/jumper` on the Inicio development server (`npm run dev`). The page uses
 Inicio's minimal interface: a full-screen scene, pause/reset and a small settings
 popover. Drag the scene to orbit; scroll to zoom.
 
-EVA-01 is one of Jumper's skins (*Settings → Colour*), beside the plain colours:
-purple armour, green accents, angular eyes and a horn. It reuses the exact CAD
-bodies, collision meshes and controller. Its eyes and horn attach to the
-display/shell meshes as visual decoration (tagged, so another skin removes
-them), not extra physical bodies. It is a cosmetic concept, not a separately
-calibrated robot. `/jumper/eva` opens the playground already in it. The
-chosen skin is kept in the browser and follows Jumper into the downhill runs;
-the board keeps its own colours.
+Marea is one of Jumper's skins (*Settings → Colour*), beside the plain colours:
+an original design with a deep-sea shell, coral tips, two antennae and round
+eyes. It replaces an earlier EVA-01 skin, which copied a third-party character
+and could not be entered in the Crab Robot challenge. It reuses the exact CAD
+bodies, collision meshes and controller. The antennae and eyes attach to the
+shell/display meshes as visual decoration (tagged `dress`, so another skin
+removes them), not extra physical bodies. `/jumper/marea` opens the playground
+already in it. The chosen skin is kept in the browser and follows Jumper into
+the downhill runs; the board keeps its own colours.
+
+The record button (bottom left, a circle) films the 3D view for X or YouTube:
+every rendered frame, a caption in the corner (the run, time and speed on the
+skate page), and a 3 s closing card with the challenge's tags. Press it again
+to finish; the count turns black past 16 s, the challenge's minimum being 15.
+It saves an MP4 (H.264, up to 1920×1080) where the browser can encode one,
+WebM otherwise. The page's own interface is not in the video.
 
 The downhill runs live in the playground too (`portals.ts`): three signs, each
 a picture of its run (*Street*, *Coast*, *Coast minimal*), stand in the open

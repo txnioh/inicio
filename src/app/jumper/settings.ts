@@ -1,4 +1,4 @@
-export type SkinId = 'original' | 'sand' | 'sage' | 'silver' | 'eva';
+export type SkinId = 'original' | 'sand' | 'sage' | 'silver' | 'marea';
 import type { Parity } from './controller';
 import type { SkateStats } from './skate';
 
@@ -17,7 +17,7 @@ export const skins: { id: SkinId; shell: string; limb: string }[] = [
   { id: 'sand', shell: '#d9a660', limb: '#d4c4a8' },
   { id: 'sage', shell: '#82967b', limb: '#bdc7b4' },
   { id: 'silver', shell: '#b5bcc5', limb: '#ced2d7' },
-  { id: 'eva', shell: '#7350ae', limb: '#9cdb46' },
+  { id: 'marea', shell: '#1f5673', limb: '#ff7a59' },
 ];
 
 export interface Joint { name: string; min: number; max: number; home: number }

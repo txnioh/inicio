@@ -4,14 +4,16 @@ import { initialStats, motions, skins, type SkinId } from './settings';
 import { langs, storeLang, storedLang, strings, type Lang } from './i18n';
 import LoadingJumper from './LoadingJumper';
 import SkateHud, { SkateFinish, skateMaps } from './SkateHud';
+import { ClipRecorder, canRecord, minimumClip } from './recorder';
 import './jumper.css';
 
-function Icon({ name }: { name: 'play' | 'pause' | 'reset' | 'jump' | 'maps' }) {
+function Icon({ name }: { name: 'play' | 'pause' | 'reset' | 'jump' | 'maps' | 'record' }) {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     {name === 'play' ? <path d="m9 5 11 7-11 7Z" /> : null}
     {name === 'pause' ? <path d="M8 5v14M16 5v14" /> : null}
     {name === 'reset' ? <path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /> : null}
     {name === 'jump' ? <path d="M12 20V4m-6 6 6-6 6 6" /> : null}
+    {name === 'record' ? <circle cx="12" cy="12" r="6" /> : null}
     {name === 'maps' ? <path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v4H4zM14 15h6v4h-6z" /> : null}
   </svg>;
 }
@@ -43,6 +45,10 @@ export default function Jumper({ variant = 'jumper', initialSkin }: { variant?: 
   const [run] = useState(() => { const query = new URLSearchParams(location.search); return skateMaps.find(item => item.id === (query.get('map') ?? query.get('mapa'))); });
   const portal = useRef<string | undefined>(undefined);
   portal.current = stats.portal;
+  const latest = useRef(stats);
+  latest.current = stats;
+  const clip = useRef<ClipRecorder | null>(null);
+  const [recording, setRecording] = useState<'off' | 'on' | 'saving'>('off');
   useEffect(() => { if (variant === 'skate' && !run) location.replace('/jumper'); }, [variant, run]);
   useEffect(() => { try { localStorage.setItem('jumper-skin', skin); } catch { /* private mode */ } }, [skin]);
   useEffect(() => { storeLang(lang); document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'; engine.current?.setLang(lang); }, [lang]);
@@ -78,7 +84,7 @@ export default function Jumper({ variant = 'jumper', initialSkin }: { variant?: 
         if (active) { setError(error instanceof Error ? error.message : strings[lang].loadFailed); playground?.dispose(); }
       });
     } catch (error) { setError(error instanceof Error ? error.message : strings[lang].noWebgl); }
-    return () => { active = false; playground?.dispose(); engine.current = null; document.title = title; };
+    return () => { active = false; clip.current?.cancel(); clip.current = null; setRecording('off'); playground?.dispose(); engine.current = null; document.title = title; };
   }, [variant, run]);
 
   useEffect(() => {
@@ -102,6 +108,37 @@ export default function Jumper({ variant = 'jumper', initialSkin }: { variant?: 
     document.addEventListener('visibilitychange', clear);
     return () => { clear(); window.removeEventListener('keydown', key); window.removeEventListener('keyup', key); window.removeEventListener('blur', clear); document.removeEventListener('visibilitychange', clear); };
   }, [ready, variant]);
+
+  /** What the clip shows in its corner, in English: the clip is for X or YouTube. */
+  function caption() {
+    const value = latest.current, en = strings.en;
+    if (variant !== 'skate' || !value.skate || !run) return skin === 'original' ? 'Jumper' : `Jumper · ${en.skins[skin]}`;
+    return `Jumper · ${en.maps[run.id][0]} · ${value.skate.time.toFixed(1)} s · ${(value.skate.speed * 3.6).toFixed(1)} km/h`;
+  }
+  async function record() {
+    const playground = engine.current;
+    if (!playground || recording === 'saving') return;
+    if (recording === 'off') {
+      try { clip.current = new ClipRecorder(caption); } catch (error) { setError(error instanceof Error ? error.message : t.recordFailed); return; }
+      playground.onFrame = clip.current.frame;
+      setRecording('on');
+      return;
+    }
+    const current = clip.current!;
+    playground.onFrame = undefined;
+    setRecording('saving');
+    try {
+      const video = await current.stop();
+      if (!video) throw new Error(t.emptyClip);
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(video);
+      link.download = `jumper-${run?.id ?? skin}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${current.extension}`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 10_000);
+    } catch (error) { setError(error instanceof Error ? error.message : t.recordFailed); }
+    clip.current = null;
+    setRecording('off');
+  }
 
   function joystick(event: PointerEvent<HTMLDivElement>) {
     if (!ready) return;
@@ -136,7 +173,7 @@ export default function Jumper({ variant = 'jumper', initialSkin }: { variant?: 
       <label className="jumper-setting">{t.collisions}<input type="checkbox" checked={collision} onChange={event => { setCollision(event.target.checked); engine.current?.setCollision(event.target.checked); }} /></label>
       <div className="jumper-setting"><span>{t.camera}</span><div className="jumper-views"><button onClick={() => engine.current?.cameraView('iso')}>3D</button><button onClick={() => engine.current?.cameraView('front')}>{t.front}</button><button onClick={() => engine.current?.cameraView('top')}>{t.top}</button></div></div>
       <div className="jumper-measurements"><span>{(stats.height * 100).toFixed(1)} cm</span><span>{stats.simRate.toFixed(2)}×</span><span>{stats.contacts} {t.contacts}</span></div>
-      <p className="jumper-provenance">{skin === 'eva' ? <>{t.evaSkin}<br /></> : null}{t.provenance[0]}<br />{t.provenance[1]}</p>
+      <p className="jumper-provenance">{skin === 'marea' ? <>{t.mareaSkin}<br /></> : null}{t.provenance[0]}<br />{t.provenance[1]}</p>
       <div className="jumper-setting"><span>{t.language}</span><div className="jumper-views">{langs.map(item => <button key={item.id} lang={item.id === 'zh' ? 'zh-CN' : 'en'} aria-pressed={lang === item.id} onClick={() => setLang(item.id)}>{item.name}</button>)}</div></div>
       <div className="jumper-links"><a href="https://github.com/KingKongRobotics/jumper" target="_blank" rel="noreferrer">Repo ↗</a><a href="https://beunlimited.me/en/simulator" target="_blank" rel="noreferrer">{t.simulator} ↗</a></div>
     </section> : null}
@@ -146,7 +183,7 @@ export default function Jumper({ variant = 'jumper', initialSkin }: { variant?: 
         <button className="skate-pill skate-pill-primary" onClick={() => engine.current?.releaseBoard()}>{t.start} <kbd>Enter</kbd></button>
         <button className="skate-pill" aria-pressed={stats.skate.pilot} onClick={() => engine.current?.togglePilot()}>{stats.skate.pilot ? t.pilotOn : t.pilot} <kbd>P</kbd></button>
       </> : null}
-      <button aria-label={stats.playing ? t.pause : t.play} title={stats.playing ? t.pause : t.play} disabled={!ready} onClick={() => engine.current?.setPlaying(!stats.playing)}><Icon name={stats.playing ? 'pause' : 'play'} /></button><button aria-label={t.reset} title={t.reset} disabled={!ready} onClick={() => { setError(''); engine.current?.reset(); }}><Icon name="reset" /></button>{variant === 'skate' ? <button aria-label={t.back} title={t.back} onClick={() => { location.href = '/jumper'; }}><Icon name="maps" /></button> : null}</div>
+      <button aria-label={stats.playing ? t.pause : t.play} title={stats.playing ? t.pause : t.play} disabled={!ready} onClick={() => engine.current?.setPlaying(!stats.playing)}><Icon name={stats.playing ? 'pause' : 'play'} /></button><button aria-label={t.reset} title={t.reset} disabled={!ready} onClick={() => { setError(''); engine.current?.reset(); }}><Icon name="reset" /></button>{variant === 'skate' ? <button aria-label={t.back} title={t.back} onClick={() => { location.href = '/jumper'; }}><Icon name="maps" /></button> : null}{canRecord() ? <button className="jumper-record" aria-pressed={recording !== 'off'} aria-label={recording === 'off' ? t.record : t.stopRecord} title={recording === 'off' ? t.recordTitle : t.stopRecord} disabled={!ready || recording === 'saving'} onClick={event => { event.currentTarget.blur(); void record(); }}><Icon name="record" />{recording === 'on' ? <span className={(clip.current?.seconds ?? 0) >= minimumClip ? 'jumper-record-long' : undefined}>{Math.floor(clip.current?.seconds ?? 0)} s</span> : recording === 'saving' ? <span>{t.saving}</span> : null}</button> : null}</div>
       <span className="jumper-hint">{variant === 'skate' ? t.hintSkate : t.hintJumper}</span>
       <span className="jumper-mode">{ready && !stats.policyRunning ? stats.controllerMode === 'safe' ? t.stopped : t.preparing : stats.controllerMode === 'locomotion' ? '' : t.motions[stats.controllerMode as keyof typeof t.motions]}</span>
     </footer>
