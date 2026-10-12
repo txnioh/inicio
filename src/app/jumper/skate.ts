@@ -64,17 +64,17 @@ const weightKeys: Record<string, [number, number, number]> = {
 // The deck centre at rest on the start ramp, and where the stopper meets the front wheels.
 // The deck centre at rest on the start ramp, lifted along the road normal, and
 // the frame where the stopper meets the front wheels.
-function startOf(b: Board, course: Course) {
-  const frame = course.frame(course.rampStart + b.start), q = frameQuat(frame), n = rotate(q, [0, 0, 1]);
+function startOf(b: Board, course: Course, start = b.start) {
+  const frame = course.frame(course.rampStart + start), q = frameQuat(frame), n = rotate(q, [0, 0, 1]);
   return { p: frame.p.map((v, i) => v + n[i] * (deckHeight(b) + 0.001)), q };
 }
 const stopperOf = (b: Board, course: Course) => course.frame(course.rampStart + b.start + b.base + b.wheel + 0.012);
 
 const f = (value: number) => value.toFixed(5);
-function boardXml(board: Board, course: Course) {
+function boardXml(board: Board, course: Course, startAt?: number) {
   // Trucks stop turning just before a wheel would touch the deck (wheelbite).
   const turn = safeTurn(board);
-  const start = startOf(board, course), c = Math.cos(board.pivot * Math.PI / 180), s = Math.sin(board.pivot * Math.PI / 180), [hx, hy, hz] = board.half;
+  const start = startOf(board, course, startAt), c = Math.cos(board.pivot * Math.PI / 180), s = Math.sin(board.pivot * Math.PI / 180), [hx, hy, hz] = board.half;
   const truck = (side: number, name: string) => `
     <geom name="skate_${name}_base" type="box" pos="${side * board.base} 0 -0.011" size="0.04 0.03 0.005" mass="0.06" contype="0" conaffinity="0"/>
     <body name="skate_${name}_hanger" pos="${side * board.base} 0 ${board.axle}">
@@ -93,11 +93,12 @@ function boardXml(board: Board, course: Course) {
   </body>`;
 }
 
-/** Swap the flat playground (floor and boxes) for the downhill and the board. */
-export function skateXml(xml: string, kind: BoardKind = 'skate', look: Look = 'scenic') {
+/** Swap the flat playground (floor and boxes) for the downhill and the board.
+ *  `startAt` moves the board (deck centre, metres past the start ramp's foot). */
+export function skateXml(xml: string, kind: BoardKind = 'skate', look: Look = 'scenic', startAt?: number) {
   const course = courseFor(kind, look), hill = course.xml(), board = boards[kind], frame = stopperOf(board, course), q = frameQuat(frame), n = rotate(q, [0, 0, 1]);
   const stopper = `<geom name="skate_stopper" type="box" pos="${frame.p.map((v, i) => f(v + n[i] * 0.008)).join(' ')}" quat="${q.map(f).join(' ')}" size="0.01 0.3 0.01" contype="1" conaffinity="129"/>`;
-  const replaced = xml.replace(/<geom name="playground_floor"[\s\S]*?(?=<\/worldbody>)/, `${hill.world}\n${stopper}\n${boardXml(board, course)}\n`).replace('</asset>', `${hill.asset}\n</asset>`);
+  const replaced = xml.replace(/<geom name="playground_floor"[\s\S]*?(?=<\/worldbody>)/, `${hill.world}\n${stopper}\n${boardXml(board, course, startAt)}\n`).replace('</asset>', `${hill.asset}\n</asset>`);
   if (replaced === xml || !replaced.includes('skate_board')) throw new Error('Could not build the run.');
   return replaced;
 }

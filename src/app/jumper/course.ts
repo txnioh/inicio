@@ -12,13 +12,15 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 // cone bodies that the board and robot can knock over.
 
 const rad = Math.PI / 180;
-export const road = { half: 1.5, verge: 3, curb: [0.05, 0.035] as [number, number], start: -1.2, rollIn: 5 };
+// `flat`: level road above the start ramp, where a board can wait (the .map's drop-in).
+export const road = { half: 1.5, verge: 3, curb: [0.05, 0.035] as [number, number], start: -1.2, rollIn: 5, flat: 1.6 };
 
 import { resample, stopperBoom, type Course, type Frame, type Point } from './track.ts';
 function profile() {
-  let x = road.start, z = 0, heading = -road.rollIn * rad;
+  let x = road.start - road.flat, z = 0, heading = 0;
   const points: Point[] = [[x, z]], marks: Record<string, number> = {};
   const line = (length: number) => { x += length * Math.cos(heading); z += length * Math.sin(heading); points.push([x, z]); };
+  line(road.flat); heading = -road.rollIn * rad;  // level top, then over the edge
   const turn = (radius: number, degrees: number) => {
     const to = degrees * rad, n = Math.max(1, Math.ceil(Math.abs(to - heading) * radius / 0.1)), d = (to - heading) / n;
     for (let i = 0; i < n; i++) {

@@ -17,14 +17,16 @@ import { frameQuat, resample, stopperBoom, type Course, type Frame, type Point }
 // side. The hillside, sea, sky and far mountains are drawing only.
 
 const rad = Math.PI / 180;
-export const coast = { half: 1.2, rail: 0.08, seaLevel: 0, top: 8.5, chord: 0.4, lead: 40, tail: 35 };
+// `flat`: the last metres of the lead-in are level, where a board can wait (the .map's drop-in).
+export const coast = { half: 1.2, rail: 0.08, seaLevel: 0, top: 8.5, chord: 0.4, lead: 40, tail: 35, flat: 2.4 };
 
 interface Sample { x: number; y: number; z: number; heading: number; slope: number; s: number }
 /** Centre line: straights and arcs in plan, each with a grade; grades blend over 1 m. */
 function centreLine() {
-  // [length or arc angle (deg), radius (0 = straight; + left, - right), grade (deg)]
-  const plan: [number, number, number][] = [
-    [coast.lead, 0, -4], // the road coming down to the start, so it doesn't begin from nowhere
+  // [length or arc angle (deg), radius (0 = straight; + left, - right), grade (deg), crisp: no grade blend at its ends]
+  const plan: [number, number, number, boolean?][] = [
+    [coast.lead - coast.flat, 0, -4], // the road coming down to the start, so it doesn't begin from nowhere
+    [coast.flat, 0, 0, true], // level, above the start ramp, with a clean edge for a waiting board
     [1.2, 0, -5],     // start ramp with the stopper
     [2.0, 0, -6],     // drop in: about 2 m/s
     [5, 0, -1.3],
@@ -41,7 +43,7 @@ function centreLine() {
   ];
   const step = 0.05, samples: Sample[] = [];
   let x = 0, y = 0, heading = 0, s = 0;
-  const pieces = plan.map(([a, r, grade]) => ({ length: r ? Math.abs(r) * a * rad : a, curvature: r ? 1 / r : 0, grade: grade * rad }));
+  const pieces = plan.map(([a, r, grade, crisp]) => ({ length: r ? Math.abs(r) * a * rad : a, curvature: r ? 1 / r : 0, grade: grade * rad, crisp: !!crisp }));
   const total = pieces.reduce((sum, piece) => sum + piece.length, 0);
   const gradeAt = (at: number) => {
     // Linear blend over 1 m around each boundary.
@@ -50,8 +52,8 @@ function centreLine() {
       const end = start + pieces[i].length;
       if (at < end || i === pieces.length - 1) {
         const next = pieces[i + 1], prev = pieces[i - 1];
-        if (next && at > end - 0.5) return pieces[i].grade + (next.grade - pieces[i].grade) * (at - (end - 0.5));
-        if (prev && at < start + 0.5) return pieces[i].grade + (prev.grade - pieces[i].grade) * (start + 0.5 - at);
+        if (next && !pieces[i].crisp && !next.crisp && at > end - 0.5) return pieces[i].grade + (next.grade - pieces[i].grade) * (at - (end - 0.5));
+        if (prev && !pieces[i].crisp && !prev.crisp && at < start + 0.5) return pieces[i].grade + (prev.grade - pieces[i].grade) * (start + 0.5 - at);
         return pieces[i].grade;
       }
       start = end;
@@ -94,8 +96,13 @@ function xml() {
     // Box centre below the surface, along the road normal.
     const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(new THREE.Quaternion(q[1], q[2], q[3], q[0]));
     const centre = fr.p.map((v, k) => v - [normal.x, normal.y, normal.z][k] * t);
-    // Long enough to overlap through the tightest bend at the road's edge.
-    out.push(`<geom name="skate_road_${i}" type="box" pos="${centre.map(f).join(' ')}" quat="${q.map(f).join(' ')}" size="${f(coast.chord / 2 + 0.05)} ${f(coast.half + 0.4)} ${t}" contype="1" conaffinity="129" friction="1 .01 .01"/>`);
+    // Long enough to overlap through the tightest bend at the road's edge; the
+    // boxes either side of the start ramp's edge don't reach over it, so the
+    // edge is clean where a board waits.
+    const shift = Math.abs(i * coast.chord - coast.lead) < 1e-6 ? 0.05 : Math.abs((i + 1) * coast.chord - coast.lead) < 1e-6 ? -0.05 : 0;
+    const along = [Math.cos(fr.heading) * Math.cos(fr.slope), Math.sin(fr.heading) * Math.cos(fr.slope), Math.sin(fr.slope)];
+    const at = centre.map((v, k) => v + along[k] * shift);
+    out.push(`<geom name="skate_road_${i}" type="box" pos="${at.map(f).join(' ')}" quat="${q.map(f).join(' ')}" size="${f(coast.chord / 2 + 0.05)} ${f(coast.half + 0.4)} ${t}" contype="1" conaffinity="129" friction="1 .01 .01"/>`);
     for (const side of [1, -1]) {
       const [x, y, z] = offset(s, side * (coast.half + 0.08), coast.rail / 2);
       out.push(`<geom name="skate_${side > 0 ? 'curb' : 'rail'}_${i}" type="box" pos="${f(x)} ${f(y)} ${f(z)}" quat="${q.map(f).join(' ')}" size="${f(coast.chord / 2 + 0.02)} 0.04 ${coast.rail / 2}" contype="1" conaffinity="129" friction="0.6 .01 .01"/>`);
